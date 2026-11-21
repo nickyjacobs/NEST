@@ -1,0 +1,166 @@
+/* NEST: idea pages (25-ideas)
+ * Callouts and labels for the pages The Council (idea skill) and The Architects (blueprint skill)
+ * write in their styled mode: idea.md, the runs in blueprints/ and the verdicts in reviews/. The names
+ * below are exactly the ones in kit/skills/idea/reference.md ("Review layout", "Idea page layout") and
+ * kit/skills/blueprint/reference.md (section 11). Rename a type in the skills, rename it here.
+ * Without this snippet the skills write plain Markdown (quote and info callouts) and need no CSS.
+ *
+ *   idea.md       [!verdict] or [!blueprint] stamp, [!core] Core, [!blueprint]- Full blueprint (with the
+ *                 section callouts below nested inside), [!open] "No blueprint yet"
+ *   blueprints/   one callout per section: [!one-liner] [!problem] [!first-user] [!why-now] [!landscape]
+ *                 [!directions] [!solution] [!scope] [!model] [!assumptions] [!validation] [!first-step]
+ *                 [!open] [!council-brief] [!changed]; desks [!surveyor] [!dreamer] [!client] [!engineer]
+ *                 [!inspector] [!draftsman]
+ *   reviews/      the reports: [!believer] [!skeptic] [!investor] [!outsider]
+ *   labels        <span class="lbl lbl-yours|proposed|assumed|open|fact">, only in the folded blueprint
+ *                 copy on idea.md; the run files keep plain [yours] [fact n], read back by the skills
+ *
+ * Colour roles: core = what it is, adjunct = what belongs with it, risk = what can go wrong or is open,
+ * context = background. The type names are vault-wide: do not reuse them for other callouts.
+ *
+ * Minimal gotcha: the Minimal theme does not apply --callout-color to custom callout types, and since
+ * Obsidian 1.13 --callout-color must be a valid CSS colour (rgb(var(--x)), never a bare triplet).
+ * So section 3 sets border, background, title and icon colour explicitly, with !important.
+ * Obsidian does not reload a changed snippet: Settings -> Appearance -> CSS snippets -> idea-note off and on.
+ */
+
+/* ---------- 1. Palette ---------- */
+/* customise: the four role colours (default gold, amber, ember, sand); keep "adjunct" close to the
+ * accent in base.css */
+body {
+  --nest-idea-core-rgb: 212, 175, 55;
+  --nest-idea-adjunct-rgb: 255, 159, 28;
+  --nest-idea-risk-rgb: 255, 107, 18;
+  --nest-idea-context-rgb: 243, 221, 176;
+  --nest-idea-proposed-rgb: 141, 180, 232;
+}
+.theme-light {
+  --nest-idea-core-rgb: 166, 131, 20;
+  --nest-idea-adjunct-rgb: 214, 120, 0;
+  --nest-idea-risk-rgb: 214, 80, 0;
+  --nest-idea-context-rgb: 140, 112, 64;
+  --nest-idea-proposed-rgb: 52, 101, 164;
+}
+
+/* ---------- 2. Role and icon per callout type ---------- */
+.callout:is([data-callout="verdict"], [data-callout="core"], [data-callout="one-liner"],
+  [data-callout="problem"], [data-callout="directions"], [data-callout="solution"],
+  [data-callout="first-step"], [data-callout="council-brief"], [data-callout="dreamer"],
+  [data-callout="draftsman"], [data-callout="believer"]) { --idea: var(--nest-idea-core-rgb); }
+.callout:is([data-callout="blueprint"], [data-callout="first-user"], [data-callout="scope"],
+  [data-callout="model"], [data-callout="changed"], [data-callout="client"],
+  [data-callout="engineer"], [data-callout="investor"]) { --idea: var(--nest-idea-adjunct-rgb); }
+.callout:is([data-callout="open"], [data-callout="assumptions"], [data-callout="validation"],
+  [data-callout="inspector"], [data-callout="skeptic"]) { --idea: var(--nest-idea-risk-rgb); }
+.callout:is([data-callout="why-now"], [data-callout="landscape"], [data-callout="surveyor"],
+  [data-callout="outsider"]) { --idea: var(--nest-idea-context-rgb); }
+
+/* Stamps and idea.md */
+.callout[data-callout="verdict"]       { --callout-icon: lucide-gavel; }
+.callout[data-callout="blueprint"]     { --callout-icon: lucide-drafting-compass; }
+.callout[data-callout="core"]          { --callout-icon: lucide-layout-dashboard; }
+.callout[data-callout="open"]          { --callout-icon: lucide-circle-dashed; }
+/* Blueprint sections */
+.callout[data-callout="one-liner"]     { --callout-icon: lucide-target; }
+.callout[data-callout="problem"]       { --callout-icon: lucide-briefcase; }
+.callout[data-callout="first-user"]    { --callout-icon: lucide-user; }
+.callout[data-callout="why-now"]       { --callout-icon: lucide-clock; }
+.callout[data-callout="landscape"]     { --callout-icon: lucide-map; }
+.callout[data-callout="directions"]    { --callout-icon: lucide-git-branch; }
+.callout[data-callout="solution"]      { --callout-icon: lucide-lightbulb; }
+.callout[data-callout="scope"]         { --callout-icon: lucide-ruler; }
+.callout[data-callout="model"]         { --callout-icon: lucide-coins; }
+.callout[data-callout="assumptions"]   { --callout-icon: lucide-alert-triangle; }
+.callout[data-callout="validation"]    { --callout-icon: lucide-flask-conical; }
+.callout[data-callout="first-step"]    { --callout-icon: lucide-footprints; }
+.callout[data-callout="council-brief"] { --callout-icon: lucide-scroll; }
+.callout[data-callout="changed"]       { --callout-icon: lucide-history; }
+/* The Architects' desks */
+.callout[data-callout="surveyor"]      { --callout-icon: lucide-map; }
+.callout[data-callout="dreamer"]       { --callout-icon: lucide-cloud; }
+.callout[data-callout="client"]        { --callout-icon: lucide-user; }
+.callout[data-callout="engineer"]      { --callout-icon: lucide-wrench; }
+.callout[data-callout="inspector"]     { --callout-icon: lucide-search-check; }
+.callout[data-callout="draftsman"]     { --callout-icon: lucide-pen-tool; }
+/* The Council's seats */
+.callout[data-callout="believer"]      { --callout-icon: lucide-heart; }
+.callout[data-callout="skeptic"]       { --callout-icon: lucide-search; }
+.callout[data-callout="investor"]      { --callout-icon: lucide-coins; }
+.callout[data-callout="outsider"]      { --callout-icon: lucide-eye; }
+
+/* ---------- 3. One look for every idea callout (the Minimal workaround) ---------- */
+.callout:is([data-callout="verdict"], [data-callout="blueprint"], [data-callout="core"],
+  [data-callout="open"], [data-callout="one-liner"], [data-callout="problem"],
+  [data-callout="first-user"], [data-callout="why-now"], [data-callout="landscape"],
+  [data-callout="directions"], [data-callout="solution"], [data-callout="scope"],
+  [data-callout="model"], [data-callout="assumptions"], [data-callout="validation"],
+  [data-callout="first-step"], [data-callout="council-brief"], [data-callout="changed"],
+  [data-callout="surveyor"], [data-callout="dreamer"], [data-callout="client"],
+  [data-callout="engineer"], [data-callout="inspector"], [data-callout="draftsman"],
+  [data-callout="believer"], [data-callout="skeptic"], [data-callout="investor"],
+  [data-callout="outsider"]) {
+  --callout-color: rgb(var(--idea));
+  border-left-color: rgb(var(--idea)) !important;
+  background-color: rgba(var(--idea), 0.1) !important;
+}
+/* The title row of the same types; `>` keeps a nested callout of another type in its own colour */
+.callout:is([data-callout="verdict"], [data-callout="blueprint"], [data-callout="core"],
+  [data-callout="open"], [data-callout="one-liner"], [data-callout="problem"],
+  [data-callout="first-user"], [data-callout="why-now"], [data-callout="landscape"],
+  [data-callout="directions"], [data-callout="solution"], [data-callout="scope"],
+  [data-callout="model"], [data-callout="assumptions"], [data-callout="validation"],
+  [data-callout="first-step"], [data-callout="council-brief"], [data-callout="changed"],
+  [data-callout="surveyor"], [data-callout="dreamer"], [data-callout="client"],
+  [data-callout="engineer"], [data-callout="inspector"], [data-callout="draftsman"],
+  [data-callout="believer"], [data-callout="skeptic"], [data-callout="investor"],
+  [data-callout="outsider"])
+  > .callout-title :is(.callout-title-inner, .callout-icon, .callout-icon svg) {
+  color: rgb(var(--idea)) !important;
+  stroke: rgb(var(--idea)) !important;
+}
+
+/* Details */
+/* The stamp at the top of idea.md: the title a little larger */
+.callout:is([data-callout="verdict"], [data-callout="blueprint"]) > .callout-title .callout-title-inner { font-size: 1.05em; }
+/* Tables inside the reports: the header in the colour of its block, cells aligned to the top */
+.callout:is([data-callout="surveyor"], [data-callout="client"], [data-callout="engineer"],
+  [data-callout="inspector"], [data-callout="believer"], [data-callout="skeptic"],
+  [data-callout="investor"], [data-callout="outsider"], [data-callout="landscape"],
+  [data-callout="model"]) table th { color: rgba(var(--idea), 0.9) !important; }
+.callout[data-callout] table td { vertical-align: top; }
+
+/* ---------- 4. Labels in the folded blueprint copy: <span class="lbl lbl-…">…</span> ---------- */
+.lbl {
+  --lbl: var(--nest-idea-core-rgb);
+  display: inline-block;
+  font-family: var(--font-interface);
+  font-size: 0.68em;
+  font-weight: 600;
+  font-style: normal;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.55;
+  padding: 0 0.45em;
+  margin: 0 0.15em;
+  border: 1px solid rgba(var(--lbl), 0.45) !important;
+  border-radius: 3px;
+  vertical-align: 0.12em;
+  white-space: nowrap;
+  color: rgb(var(--lbl)) !important;
+  background-color: rgba(var(--lbl), 0.1) !important;
+}
+/* customise: label text in the user's language when the blueprint skill translates it; keep the class names */
+.lbl-yours    { --lbl: var(--nest-idea-context-rgb); }                             /* what the user said */
+.lbl-proposed { --lbl: var(--nest-idea-proposed-rgb); border-style: dashed !important; } /* a team choice to take or leave */
+.lbl-assumed  { --lbl: var(--nest-idea-adjunct-rgb); }                             /* no read page backs it */
+.lbl-open     { --lbl: var(--nest-idea-risk-rgb); }                                /* only the user can decide */
+.lbl-fact     { --lbl: var(--nest-idea-core-rgb); background-color: rgba(var(--lbl), 0.16) !important; } /* [fact n] */
+
+/* A [fact n] as a link to its source: the same label, no underline or link icon */
+a.lbl,
+a.lbl:hover {
+  text-decoration: none !important;
+  background-image: none !important;
+  padding-right: 0.45em !important;
+}
+a.lbl:hover { filter: brightness(1.2); }

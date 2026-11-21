@@ -1,0 +1,50 @@
+{
+  "wiki_dir": "wiki",
+  "index_marker": "<!-- AUTO-INDEX -->",
+  "index_empty": "_Nothing here yet._",
+  "log": {
+    "file": "log.md",
+    "marker": "<!-- Begin of the log -->",
+    "title": "Operations log",
+    "ops": ["ingest", "distill", "query", "lint", "migrate"]
+  },
+  "status_words": ["draft", "active", "done", "parked", "archived", "question"],
+  "status_roles": {"active": "active", "draft": "draft", "question": "question"},
+  "question_kind": "question",
+  "required_fields": ["title", "tags", "category", "status"],
+  "authors": ["user", "assistant", "claude"],
+  "author_required_from": null,
+  "created_fields": ["created", "date", "ingest-date"],
+  "unsourced_authors": ["assistant"],
+  "source_fields": ["sources", "source-url"],
+  "stale_days": 90,
+  "raw_folders": ["_inbox"],
+  "nav_headings": ["related", "sources", "see also", "links", "references", "further reading"],
+  "repeat_link_exempt": ["index.md", "*/index.md", "log.md", "*/log.md"],
+  "sections": {
+    "00-context": {"index": "manual"},
+    "10-projects": {"index": "projects", "readme": "README.md", "fields": ["status"], "stale": true},
+    "20-knowledge": {
+      "index": "by_kind",
+      "kinds": {"tool": "Tools", "concept": "Concepts", "procedure": "Procedures", "skill": "Skills", "technique": "Techniques"},
+      "other_label": "Other",
+      "stale": true,
+      "sourced": true
+    },
+    "26-research": {"index": "flat", "dated": true, "stale": true, "sourced": true},
+    "30-sessions": {"index": "flat", "dated": true, "lint_active": false, "frontmatter": false},
+    "40-references": {"index": "references", "raw_subdirs": ["sources"], "ingest_log": "log.md", "sourced": true},
+    "50-decisions": {"index": "manual"},
+    "90-archives": {"index": "none", "archive": true, "lint_active": false, "frontmatter": false},
+    "_inbox": {
+      "index": "flat",
+      "dated": true,
+      "raw": true,
+      "kinds": {"capture": "Capture", "question": "Question", "link": "Link"},
+      "lint_active": false
+    },
+    "_templates": {"index": "none", "lint": false},
+    "_bases": {"index": "none", "lint": false}
+  },
+  "content_sections": ["10-projects", "20-knowledge", "26-research", "40-references", "50-decisions"]
+}

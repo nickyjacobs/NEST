@@ -1,0 +1,212 @@
+# NEST dashboard base: the views Home.md embeds (![[_bases/dashboard.base#<view name>]]).
+# customise: folder names (_inbox, 10-projects, 25-ideas, 26-research, 30-sessions, 90-archives) to the
+#   user's folder design; view names and displayName labels to the user's language (Home.md embeds the
+#   view names, so rename them there too); drop the Ideas views when the user has neither The Council
+#   nor The Architects; drop the three KPI views or point them at the user's own goal note.
+# Obsidian rewrites this file without comments once a view is edited in the app; that is fine after setup.
+filters:
+  and:
+    - file.ext == "md"
+    - '!file.inFolder("90-archives")'
+    - '!file.inFolder("_templates")'
+    - '!file.inFolder("_bases")'
+formulas:
+  title: if(title, file.asLink(title), file.asLink())
+  updated: if(updated, updated, file.mtime.date())
+  by: if(author, author, "")
+  session: file.asLink(file.basename.slice(11))
+  # KPI formulas read the frontmatter of one goal note: goal-done, goal-total (numbers), goal-date (ISO date), next-step (text).
+  progress: 'if(note["goal-total"], "█".repeat((note["goal-done"] / note["goal-total"] * 20).round()) + "░".repeat(20 - (note["goal-done"] / note["goal-total"] * 20).round()) + "  " + note["goal-done"] + "/" + note["goal-total"] + " · " + (note["goal-done"] / note["goal-total"] * 100).round() + " %", "set goal-done and goal-total")'
+  countdown: 'if(note["goal-date"], "in " + (date(note["goal-date"]) - today()).days + " days · " + note["goal-date"], "no date set")'
+  next: 'if(note["next-step"], note["next-step"], "")'
+properties:
+  formula.title:
+    displayName: Title
+  formula.updated:
+    displayName: Updated
+  formula.by:
+    displayName: By
+  formula.session:
+    displayName: Session
+  formula.progress:
+    displayName: Progress
+  formula.countdown:
+    displayName: Target date
+  formula.next:
+    displayName: Next step
+  note.kind:
+    displayName: Kind
+  note.phase:
+    displayName: Phase
+  note.deadline:
+    displayName: Deadline
+  note.category:
+    displayName: Section
+  note.status:
+    displayName: Status
+  note.verdict:
+    displayName: Verdict
+  note.score:
+    displayName: Score
+  note.version:
+    displayName: Version
+  note.date:
+    displayName: Date
+views:
+  # customise: the goal note path (default 00-context/goal.md) in the three KPI views
+  - type: list
+    name: KPI progress
+    filters:
+      and:
+        - file.path == "00-context/goal.md"
+    order:
+      - formula.progress
+  - type: list
+    name: KPI date
+    filters:
+      and:
+        - file.path == "00-context/goal.md"
+    order:
+      - formula.countdown
+  - type: list
+    name: KPI next
+    filters:
+      and:
+        - file.path == "00-context/goal.md"
+    order:
+      - formula.next
+  - type: list
+    name: Inbox
+    filters:
+      and:
+        - file.inFolder("_inbox")
+        - file.basename != "index"
+        - status != "question"
+    order:
+      - formula.title
+      - kind
+      - formula.updated
+    sort:
+      - property: file.ctime
+        direction: DESC
+  - type: list
+    name: Questions
+    filters:
+      and:
+        - file.inFolder("_inbox")
+        - status == "question"
+    order:
+      - formula.title
+      - formula.updated
+    sort:
+      - property: file.ctime
+        direction: DESC
+  - type: table
+    name: New
+    filters:
+      and:
+        - file.basename != "index"
+        - file.basename != "log"
+        - file.basename != "Home"
+        - '!file.inFolder("_inbox")'
+        - or:
+            - updated > today() - "2d"
+            - file.ctime > now() - "2d"
+    order:
+      - formula.title
+      - formula.by
+      - category
+      - formula.updated
+    sort:
+      - property: updated
+        direction: DESC
+      - property: file.mtime
+        direction: DESC
+    limit: 15
+  - type: list
+    name: Answers
+    filters:
+      and:
+        - file.inFolder("26-research")
+        - file.basename != "index"
+        - tags.contains("query")
+    order:
+      - formula.title
+      - formula.by
+      - formula.updated
+    sort:
+      - property: updated
+        direction: DESC
+    limit: 8
+  - type: list
+    name: Research
+    filters:
+      and:
+        - file.inFolder("26-research")
+        - file.basename != "index"
+        - '!tags.contains("query")'
+    order:
+      - formula.title
+      - status
+      - formula.updated
+    sort:
+      - property: updated
+        direction: DESC
+    limit: 8
+  - type: list
+    name: Projects
+    filters:
+      and:
+        - file.inFolder("10-projects")
+        - file.basename == "README"
+        - status != "done"
+        - status != "archived"
+    order:
+      - formula.title
+      - phase
+      - deadline
+    sort:
+      - property: phase
+        direction: ASC
+  - type: list
+    name: Ideas
+    filters:
+      and:
+        - file.inFolder("25-ideas")
+        - file.basename == "idea"
+    order:
+      - formula.title
+      - status
+      - verdict
+    sort:
+      - property: updated
+        direction: DESC
+  - type: table
+    name: Ideas table
+    filters:
+      and:
+        - file.inFolder("25-ideas")
+        - file.basename == "idea"
+    order:
+      - formula.title
+      - status
+      - version
+      - verdict
+      - score
+      - updated
+    sort:
+      - property: updated
+        direction: DESC
+  - type: list
+    name: Sessions
+    filters:
+      and:
+        - file.inFolder("30-sessions")
+        - file.basename != "index"
+    order:
+      - formula.session
+      - date
+    sort:
+      - property: date
+        direction: DESC
+    limit: 8

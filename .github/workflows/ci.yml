@@ -1,0 +1,36 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.4.0
+      # Git for Windows ships the sh that runs the pre-commit hook; make sure the test can find it.
+      - name: Put the Git for Windows sh on PATH
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not (Get-Command sh -ErrorAction SilentlyContinue)) {
+            $root = Split-Path (Split-Path (Get-Command git).Source)
+            Add-Content $env:GITHUB_PATH (Join-Path $root 'bin')
+          }
+      - name: Tests
+        env:
+          NEST_REQUIRE_HOOK_TEST: "1"  # a missing git, uv or sh fails the hook test instead of skipping it
+        run: uv run --project kit/scripts pytest -q kit/scripts/tests
+      - name: Release check (changelog template and version numbers)
+        run: uv run --script tools/release_check.py
+      - name: Tests for the repository tools
+        run: uv run --with pytest pytest -q tools/tests

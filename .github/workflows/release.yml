@@ -1,0 +1,29 @@
+name: release
+
+# A pushed tag vX.Y.Z becomes the GitHub release "NEST vX.Y.Z", with that version's changelog
+# block as its text. See docs/project/releasing.md.
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v10.4.0
+      - name: The tag must be on main
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+      - name: The tag must match the changelog and the version numbers
+        run: uv run --script tools/release_check.py --tag "$GITHUB_REF_NAME"
+      - name: Take the release text from the changelog
+        run: uv run --script tools/release_check.py --notes "$GITHUB_REF_NAME" > "$RUNNER_TEMP/notes.md"
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --verify-tag --title "NEST $GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md"

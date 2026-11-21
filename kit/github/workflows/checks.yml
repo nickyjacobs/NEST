@@ -1,0 +1,21 @@
+# Only when the workspace has its own tests or wants lint in CI.
+# The wiki is usually not in the repo (it has its own backup), so wiki lint runs locally.
+name: checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.4.0
+      - name: Skills catalogue
+        run: uv run --script scripts/skills_catalog.py --check
+      - name: Secret scan of tracked files
+        run: git ls-files -z | xargs -0 -n 50 uv run --quiet --script scripts/validate.py --file

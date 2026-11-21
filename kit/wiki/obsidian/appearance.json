@@ -1,0 +1,10 @@
+{
+  "accentColor": "#ff9f1c",
+  "theme": "obsidian",
+  "cssTheme": "Minimal",
+  "enabledCssSnippets": [
+    "base",
+    "idea-note"
+  ],
+  "showRibbon": true
+}

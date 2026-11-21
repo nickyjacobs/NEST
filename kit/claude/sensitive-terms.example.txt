@@ -1,0 +1,20 @@
+# Private terms for scripts/validate.py. Copy to .claude/sensitive-terms.txt (gitignored) and fill in.
+#
+# One term per line. A plain term matches as a whole word, case-insensitive.
+# A line written as /regex/ is used as a Python regular expression, as written (add (?i) for
+# case-insensitive). Lines starting with # are comments; empty lines are ignored.
+#
+# The scanner reports where a term occurs (file and line), never the term itself.
+# By default a hit is feedback after writing (and blocks a git commit); set
+# "private_terms": "block" under "secret_scan" in nest.json to block the write itself.
+#
+# Never commit the filled-in file: it is the list of what must not leave this machine.
+
+# Client or employer names
+<fill in: client name>
+
+# Internal hostnames and domains
+/\b[a-z0-9-]+\.<fill in: internal domain>\b/
+
+# Internal address ranges, for example a home lab subnet
+/\b<fill in: first two octets, dots escaped as \.>\.\d{1,3}\.\d{1,3}\b/

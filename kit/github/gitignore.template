@@ -1,0 +1,35 @@
+# OS and editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Private and per-machine: never committed
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/sensitive-terms.txt
+.claude/.history/
+.claude/.session/
+.claude/.nest-update/
+.claude/.nest-update.json
+*.local.*
+.env
+.env.*
+
+# Working files of skills and the setup
+.runs/
+_setup/
+
+# The wiki, when it has its own backup repo (answer E4 = a). Remove this line for E4 = b.
+/wiki/
+
+# Obsidian per-device state, if the wiki is in this repo (E4 = b)
+wiki/.obsidian/workspace*.json
+wiki/.obsidian/cache
+wiki/.trash/

@@ -1,0 +1,16 @@
+name: Feature request
+description: An idea for the setup, a skill or the wiki
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would it help with
+      description: The situation, for example "I keep losing track of ...".
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How it could work
+      description: An interview question, a skill, a wiki section, an integration.

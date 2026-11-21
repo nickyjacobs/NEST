@@ -1,0 +1,196 @@
+{
+  "devMode": false,
+  "ignoreCodeBlockRestrictions": false,
+  "preferredDateFormat": "YYYY-MM-DD",
+  "firstWeekday": "Monday",
+  "syncInterval": 200,
+  "enableJs": false,
+  "viewFieldDisplayNullAsEmpty": false,
+  "enableSyntaxHighlighting": true,
+  "enableEditorRightClickMenu": true,
+  "inputFieldTemplates": [],
+  "buttonTemplates": [
+    {
+      "id": "mk-note",
+      "label": "Note",
+      "icon": "pencil-line",
+      "style": "primary",
+      "tooltip": "Capture something: a thought, something you read or heard (template note)",
+      "action": {
+        "type": "templaterCreateNote",
+        "templateFile": "_templates/note.md",
+        "folderPath": "_inbox",
+        "openNote": true
+      }
+    },
+    {
+      "id": "mk-question",
+      "label": "Question",
+      "icon": "message-circle-question",
+      "style": "primary",
+      "tooltip": "A question for the wiki; /wiki-inbox answers it (template question)",
+      "action": {
+        "type": "templaterCreateNote",
+        "templateFile": "_templates/question.md",
+        "folderPath": "_inbox",
+        "openNote": true
+      }
+    },
+    {
+      "id": "mk-source",
+      "label": "Source",
+      "icon": "link",
+      "style": "primary",
+      "tooltip": "Keep a URL to have it ingested later (template source)",
+      "action": {
+        "type": "templaterCreateNote",
+        "templateFile": "_templates/source.md",
+        "folderPath": "_inbox",
+        "openNote": true
+      }
+    },
+    {
+      "id": "mk-research",
+      "label": "Research",
+      "icon": "microscope",
+      "style": "primary",
+      "tooltip": "New research in 26-research (template research)",
+      "action": {
+        "type": "templaterCreateNote",
+        "templateFile": "_templates/research.md",
+        "folderPath": "26-research",
+        "openNote": true
+      }
+    },
+    {
+      "id": "mk-tool",
+      "label": "Knowledge (tool)",
+      "icon": "wrench",
+      "style": "primary",
+      "tooltip": "New knowledge note for a tool or technique (template knowledge-tool)",
+      "action": {
+        "type": "templaterCreateNote",
+        "templateFile": "_templates/knowledge-tool.md",
+        "folderPath": "20-knowledge",
+        "openNote": true
+      }
+    },
+    {
+      "id": "mk-concept",
+      "label": "Knowledge (concept)",
+      "icon": "brain",
+      "style": "primary",
+      "tooltip": "New knowledge note about a concept (template knowledge-note)",
+      "action": {
+        "type": "templaterCreateNote",
+        "templateFile": "_templates/knowledge-note.md",
+        "folderPath": "20-knowledge",
+        "openNote": true
+      }
+    },
+    {
+      "id": "mk-project",
+      "label": "Project",
+      "icon": "folder-plus",
+      "style": "primary",
+      "tooltip": "New project with its own folder and README (template project-readme)",
+      "action": {
+        "type": "templaterCreateNote",
+        "templateFile": "_templates/project-readme.md",
+        "folderPath": "10-projects",
+        "openNote": true
+      }
+    },
+    {
+      "id": "ga-goal",
+      "label": "Priorities",
+      "icon": "flag",
+      "style": "default",
+      "tooltip": "Current priorities",
+      "action": {
+        "type": "open",
+        "link": "[[00-context/current-priorities]]"
+      }
+    },
+    {
+      "id": "ga-inbox",
+      "label": "Inbox",
+      "icon": "inbox",
+      "style": "default",
+      "tooltip": "Inbox overview",
+      "action": {
+        "type": "open",
+        "link": "[[_inbox/index]]"
+      }
+    },
+    {
+      "id": "ga-research",
+      "label": "Research",
+      "icon": "microscope",
+      "style": "default",
+      "tooltip": "Research overview",
+      "action": {
+        "type": "open",
+        "link": "[[26-research/index]]"
+      }
+    },
+    {
+      "id": "ga-decisions",
+      "label": "Decisions",
+      "icon": "scale",
+      "style": "default",
+      "tooltip": "Decision log",
+      "action": {
+        "type": "open",
+        "link": "[[50-decisions/log]]"
+      }
+    },
+    {
+      "id": "ga-log",
+      "label": "Log",
+      "icon": "history",
+      "style": "default",
+      "tooltip": "Operations log: what the LLM did when",
+      "action": {
+        "type": "open",
+        "link": "[[log]]"
+      }
+    },
+    {
+      "id": "ga-how",
+      "label": "How it works",
+      "icon": "book-open",
+      "style": "default",
+      "tooltip": "How this wiki works",
+      "action": {
+        "type": "open",
+        "link": "[[how-this-wiki-works]]"
+      }
+    },
+    {
+      "id": "ga-templates",
+      "label": "Templates",
+      "icon": "layout-template",
+      "style": "default",
+      "tooltip": "Which template for what",
+      "action": {
+        "type": "open",
+        "link": "[[_templates/README]]"
+      }
+    },
+    {
+      "id": "ga-index",
+      "label": "Index",
+      "icon": "list-tree",
+      "style": "default",
+      "tooltip": "The catalogue of the wiki",
+      "action": {
+        "type": "open",
+        "link": "[[index]]"
+      }
+    }
+  ],
+  "excludedFolders": [
+    "_templates"
+  ]
+}

@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!-- The look is shared with scene.html: build.py copies its <style> block in here. -->
+__SHARED_STYLE__
+</head>
+<body>
+<div class="win">
+  <div class="title">
+    <div class="lights"><span style="background:#ff5f57"></span><span style="background:#febc2e"></span><span style="background:#28c840"></span></div>
+    <span>CLAUDE.md — my-workspace — Visual Studio Code</span>
+  </div>
+  <div class="main">
+    <div class="act">
+      <div class="on"><svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg></div>
+      <div><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></div>
+      <div><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="9" r="2"/><path d="M6 8v8M18 11c0 4-6 3-11 6"/></svg></div>
+      <div><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7"/><rect x="13" y="4" width="7" height="7"/><rect x="4" y="13" width="7" height="7"/><rect x="13" y="13" width="7" height="7"/></svg></div>
+    </div>
+    <div class="side">
+      <h4>EXPLORER</h4>
+      <div class="row sec"><span class="chev">⌄</span>MY-WORKSPACE</div>
+      <div id="tree"></div>
+    </div>
+    <div class="work" style="position:relative">
+      <div class="tabs"><div class="tab on"><span style="color:#519aba;font-family:var(--mono);font-size:11px">M↓</span>CLAUDE.md</div></div>
+      <div class="editor" id="editor"></div>
+      <div class="panel">
+        <div class="ptabs"><span>PROBLEMS</span><span>OUTPUT</span><span>DEBUG CONSOLE</span><span class="on">TERMINAL</span></div>
+        <div class="term" id="term"></div>
+      </div>
+      <div class="steps" id="steps"></div>
+    </div>
+  </div>
+  <div class="status"><span class="rem">&gt;&lt;</span><span>⊗ 0 ⚠ 0</span></div>
+</div>
+<script>
+const COMMAND = "/nest-update";
+const CHOICE = "1 and 2, skip 3";
+const SESSION_LINE = 'Workspace: wiki inbox 3 notes, <span class="o">NEST 1.1.0 is available</span> (this workspace is on 1.0.0)';
+const FILES = [["d",".claude"],["d","docs"],["d","scripts"],["d","wiki"],["f","CLAUDE.md"],["f","README.md"],["f","nest.json"]];
+const CLAUDE_MD = [
+  "# My workspace",
+  "",
+  "You are Juno, the assistant in this workspace. Keep answers short, and ask before",
+  "anything that cannot be undone.",
+  "",
+  "## Layout",
+  "",
+  "- wiki/: the notes. New material goes through the inbox first.",
+  "- .claude/: skills, agents and hooks.",
+  "- docs/next-session.md: what is open.",
+];
+const OVERVIEW = [
+  '<span style="color:#e7e7e7">●</span> <span class="bold">NEST 1.1.0 is out.</span> You are on 1.0.0.',
+  "",
+  '  <span class="bold">What is new for you</span>',
+  '  1. The wiki check now reports links that point at nothing.  <span class="p">(safe)</span>',
+  "  2. The inbox skill tells you what is waiting before it starts.",
+  '     <span class="d">(you adapted this skill: I merge it and show you first)</span>',
+  '  3. New: a reading list skill.  <span class="d">(optional)</span>',
+  "",
+  '  <span class="bold">All, none, or pick by number?</span>',
+];
+const RESULT = [
+  '<span style="color:#e7e7e7">●</span> <span class="bold">You are now on NEST 1.1.0.</span>',
+  "  Updated: the wiki check, the inbox skill (your own rules kept).",
+  "  Skipped: the reading list skill (I will not ask again).",
+  '  Old versions are in <span class="code">.claude/.history/</span>. <span class="code">"/nest-update undo"</span> puts them back.',
+];
+
+// timeline (seconds)
+const T = { session: 0.8, typeCommand: 2.6 };
+T.commandDone = T.typeCommand + COMMAND.length / 8;
+T.submit = T.commandDone + 0.7;
+T.overview = T.submit + 1.4; T.overviewDone = T.overview + OVERVIEW.length / 4;
+T.typeChoice = T.overviewDone + 4.0; T.choiceDone = T.typeChoice + CHOICE.length / 8;
+T.submitChoice = T.choiceDone + 0.7;
+T.result = T.submitChoice + 1.6; T.resultDone = T.result + RESULT.length / 3;
+T.end = T.resultDone + 6.5;
+window.TOTAL = T.end;
+
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const typed = (s, t0, t, cps) => t < t0 ? "" : s.slice(0, Math.min(s.length, Math.floor((t - t0) * cps)));
+const blink = t => Math.floor(t * 2) % 2 === 0;
+const working = (label, t0, t) => `<span class="o">✻</span> <span class="o">${label}${".".repeat(1 + Math.floor((t - t0) * 3) % 3)}</span>`;
+
+// explorer and editor never change
+document.getElementById("tree").innerHTML = FILES.map(([k, n]) => {
+  const ico = k === "d" ? '<span class="chev">›</span><span class="ico" style="color:#dcb67a">▣</span>'
+                        : `<span class="chev"></span><span class="ico" style="color:${n.endsWith(".md") ? "#519aba" : "#cbcb41"}">${n.endsWith(".md") ? "M↓" : "≡"}</span>`;
+  return `<div class="row${n === "CLAUDE.md" ? " sel" : ""}" style="padding-left:18px">${ico}${n}</div>`;
+}).join("");
+document.getElementById("editor").innerHTML = CLAUDE_MD.map((l, i) =>
+  `<div class="ln"><b>${i + 1}</b><span class="${l.startsWith("#") ? "md-h" : ""}">${esc(l) || "&nbsp;"}</span></div>`).join("");
+
+function render(t) {
+  const cursor = blink(t) ? '<span class="cursor"></span>' : '<span class="cursor" style="opacity:0"></span>';
+  // the welcome box scrolls out of the terminal once the second answer needs the room
+  const lines = t >= T.submitChoice ? [] : ['<div class="wbox"><div><span class="o">✻</span> <span class="w">Welcome to Claude Code</span></div><div class="d">  cwd: ~/Projects/my-workspace</div></div>'];
+  if (t >= T.session) lines.push(`  <span class="d">⎿</span>  ${SESSION_LINE}`);
+  lines.push("");
+
+  let input = `<span class="w">${esc(typed(COMMAND, T.typeCommand, t, 8))}</span>`;
+  if (t >= T.submit) {
+    input = "";
+    lines.push(`<span class="d">&gt; ${COMMAND}</span>`, "");
+    if (t < T.overview) lines.push(working("Checking for a newer NEST", T.submit, t), "");
+    else lines.push(...OVERVIEW.slice(0, Math.floor((t - T.overview) * 4) + 1), "");
+  }
+  if (t >= T.typeChoice) input = `<span class="w">${esc(typed(CHOICE, T.typeChoice, t, 8))}</span>`;
+  if (t >= T.submitChoice) {
+    input = "";
+    lines.push(`<span class="d">&gt; ${CHOICE}</span>`, "");
+    if (t < T.result) lines.push(working("Updating, with a backup of every file", T.submitChoice, t), "");
+    else lines.push(...RESULT.slice(0, Math.floor((t - T.result) * 3) + 1), "");
+  }
+  lines.push(`<div class="inbox">&gt; ${input}${cursor}</div>`);
+  if (t < T.submit) lines.push('<span class="d">  ? for shortcuts</span>');
+  document.getElementById("term").innerHTML = lines.map(l => l.startsWith("<div") ? l : `<div>${l || "&nbsp;"}</div>`).join("");
+
+  // step badges
+  const stage = t < T.typeChoice - 0.6 ? 0 : t < T.result ? 1 : 2;
+  const labels = ["See what is new", "Pick what you want", "Undo any time"];
+  document.getElementById("steps").innerHTML = labels.map((s, i) =>
+    `<div class="step ${i < stage ? "done" : i === stage ? "now" : ""}"><span class="n">${i < stage ? "✓" : i + 1}</span>${s}</div>`).join("");
+}
+window.render = render;
+render(0);
+</script>
+</body>
+</html>

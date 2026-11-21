@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv run scripts/graph.py mail list *)",
+      "Bash(uv run scripts/graph.py mail search *)",
+      "Bash(uv run scripts/graph.py mail read *)",
+      "Bash(uv run scripts/graph.py mail unread-count)",
+      "Bash(uv run scripts/graph.py mail folders)",
+      "Bash(uv run scripts/graph.py mail rules)",
+      "Bash(uv run scripts/graph.py calendar list *)",
+      "Bash(uv run scripts/graph.py calendar invites *)",
+      "Bash(uv run scripts/graph.py organize scan)",
+      "Bash(uv run scripts/graph.py organize check *)",
+      "Bash(uv run scripts/graph.py organize status)",
+      "WebFetch(domain:api.open-meteo.com)",
+      "mcp__<tasks-server>__<list-tool>"
+    ],
+    "ask": [
+      "Bash(*graph.py mail delete*)",
+      "Bash(*graph.py mail rule-create*)",
+      "Bash(*graph.py organize apply*)",
+      "Bash(*graph.py organize undo*)",
+      "Bash(*graph.py calendar add *--rrule*)",
+      "Bash(*graph.py calendar update*)",
+      "Bash(*graph.py calendar delete*)",
+      "Bash(*graph.py calendar respond*)",
+      "mcp__<calendar-server>__<update-tool>",
+      "mcp__<calendar-server>__<delete-tool>",
+      "mcp__<calendar-server>__<respond-tool>",
+      "mcp__<mail-server>__<delete-tool>",
+      "mcp__<home-server>__<action-tool>",
+      "Edit(/.claude/skills/**)",
+      "Edit(/.claude/agents/**)"
+    ],
+    "deny": [
+      "mcp__<mail-server>__<send-tool>",
+      "mcp__<mail-server>__<permanent-delete-tool>",
+      "Read(~/Library/Application Support/nest-graph/**)"
+    ]
+  }
+}

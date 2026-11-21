@@ -1,0 +1,231 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg: #1f1f1f; --side: #181818; --border: #2b2b2b; --text: #cccccc; --dim: #8b8b8b;
+    --accent: #0078d4; --orange: #d97757; --green: #4ec9b0; --blue: #569cd6; --yellow: #dcdcaa;
+    --mono: Menlo, Monaco, "SF Mono", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1280px; height: 760px; background: #0d0d0d; overflow: hidden; }
+  body { font-family: -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif; color: var(--text); }
+  .win { position: absolute; inset: 0; background: var(--bg); display: grid;
+         grid-template-rows: 30px 1fr 22px; }
+  .title { background: var(--side); border-bottom: 1px solid var(--border); display: flex;
+           align-items: center; justify-content: center; position: relative; font-size: 12.5px; color: var(--dim); }
+  .lights { position: absolute; left: 12px; top: 9px; display: flex; gap: 8px; }
+  .lights span { width: 12px; height: 12px; border-radius: 50%; display: block; }
+  .main { display: grid; grid-template-columns: 48px 230px 1fr; min-height: 0; }
+  .act { background: var(--side); border-right: 1px solid var(--border); display: flex; flex-direction: column;
+         align-items: center; padding-top: 10px; gap: 22px; }
+  .act svg { width: 24px; height: 24px; stroke: #858585; fill: none; stroke-width: 1.6; }
+  .act .on svg { stroke: #e7e7e7; }
+  .act .on { border-left: 2px solid #e7e7e7; width: 48px; display: flex; justify-content: center; margin-left: -2px; }
+  .side { background: var(--side); border-right: 1px solid var(--border); font-size: 13px; }
+  .side h4 { font-size: 11px; font-weight: 500; letter-spacing: .04em; color: var(--dim); padding: 10px 20px 8px; }
+  .row { height: 22px; display: flex; align-items: center; gap: 6px; padding-left: 10px; white-space: nowrap; }
+  .row.sec { font-weight: 700; font-size: 11px; letter-spacing: .03em; }
+  .row .chev { width: 12px; color: var(--dim); font-size: 10px; text-align: center; }
+  .row.sel { background: #37373d; outline: 1px solid var(--accent); outline-offset: -1px; }
+  .ico { width: 14px; text-align: center; font-size: 11px; font-family: var(--mono); }
+  .work { display: grid; grid-template-rows: 35px 205px 1fr; min-width: 0; min-height: 0; }
+  .tabs { background: var(--side); border-bottom: 1px solid var(--border); display: flex; font-size: 13px; }
+  .tab { padding: 0 14px; display: flex; align-items: center; gap: 6px; border-right: 1px solid var(--border); color: var(--dim); }
+  .tab.on { background: var(--bg); color: #fff; border-top: 1px solid var(--accent); }
+  .editor { padding: 10px 0; font-family: var(--mono); font-size: 12.5px; line-height: 18px; overflow: hidden; position: relative; }
+  .ln { display: flex; }
+  .ln b { width: 46px; text-align: right; padding-right: 18px; color: #6e7681; font-weight: 400; flex: none; }
+  .md-h { color: var(--blue); font-weight: 700; }
+  .md-hr { color: #6e7681; }
+  .welcome { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+             color: #5a5a5a; font-family: -apple-system, sans-serif; gap: 10px; }
+  .welcome .big { font-size: 22px; color: #6a6a6a; }
+  .panel { border-top: 1px solid var(--border); background: var(--side); display: grid; grid-template-rows: 32px 1fr; min-height: 0; }
+  .ptabs { display: flex; gap: 22px; padding: 0 18px; align-items: center; font-size: 11px; letter-spacing: .04em; color: var(--dim); }
+  .ptabs .on { color: #e7e7e7; border-bottom: 1px solid #e7e7e7; padding: 8px 0 7px; }
+  .term { padding: 4px 16px 0; font-family: var(--mono); font-size: 13.5px; line-height: 19px; white-space: pre; overflow: hidden;
+          display: flex; flex-direction: column; justify-content: flex-end; }
+  .p { color: var(--green); }
+  .cmd { color: #e7e7e7; }
+  .d { color: var(--dim); }
+  .o { color: var(--orange); }
+  .w { color: #e7e7e7; }
+  .bold { font-weight: 700; color: #f0f0f0; }
+  .code { color: #b4b4f0; }
+  .cursor { display: inline-block; width: 8px; height: 16px; background: #e7e7e7; vertical-align: -3px; }
+  .status { background: var(--side); border-top: 1px solid var(--border); display: flex; align-items: center;
+            font-size: 12px; color: var(--dim); gap: 14px; }
+  .status .rem { background: var(--accent); color: #fff; height: 100%; display: flex; align-items: center; padding: 0 10px; }
+  .steps { position: absolute; right: 16px; top: 46px; display: flex; flex-direction: column; gap: 8px; z-index: 5; }
+  .step { display: flex; align-items: center; gap: 10px; padding: 8px 14px 8px 8px; border-radius: 10px; font-size: 14px;
+          background: rgba(40,40,40,.92); border: 1px solid #333; color: #777; transition: none; }
+  .step .n { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+             font-size: 12px; font-weight: 700; background: #333; color: #999; }
+  .step.now { color: #fff; border-color: var(--orange); background: rgba(52,36,30,.95); }
+  .step.now .n { background: var(--orange); color: #1a1a1a; }
+  .step.done { color: #bbb; }
+  .step.done .n { background: #3a5a3a; color: #cfe8cf; }
+  .wbox { border: 1px solid var(--orange); border-radius: 6px; padding: 4px 12px; width: 430px; }
+  .inbox { border: 1px solid #555; border-radius: 6px; padding: 0 10px; }
+</style>
+</head>
+<body>
+<div class="win">
+  <div class="title">
+    <div class="lights"><span style="background:#ff5f57"></span><span style="background:#febc2e"></span><span style="background:#28c840"></span></div>
+    <span id="wtitle">Projects — Visual Studio Code</span>
+  </div>
+  <div class="main">
+    <div class="act">
+      <div class="on"><svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg></div>
+      <div><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></div>
+      <div><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="9" r="2"/><path d="M6 8v8M18 11c0 4-6 3-11 6"/></svg></div>
+      <div><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7"/><rect x="13" y="4" width="7" height="7"/><rect x="4" y="13" width="7" height="7"/><rect x="13" y="13" width="7" height="7"/></svg></div>
+    </div>
+    <div class="side">
+      <h4>EXPLORER</h4>
+      <div class="row sec"><span class="chev">⌄</span>PROJECTS</div>
+      <div id="tree"></div>
+    </div>
+    <div class="work" style="position:relative">
+      <div class="tabs" id="tabs"></div>
+      <div class="editor" id="editor"></div>
+      <div class="panel">
+        <div class="ptabs"><span>PROBLEMS</span><span>OUTPUT</span><span>DEBUG CONSOLE</span><span class="on">TERMINAL</span></div>
+        <div class="term" id="term"></div>
+      </div>
+      <div class="steps" id="steps"></div>
+    </div>
+  </div>
+  <div class="status"><span class="rem">&gt;&lt;</span><span>⊗ 0 ⚠ 0</span></div>
+</div>
+<script>
+const CLONE = "git clone https://github.com/nickyjacobs/NEST.git";
+const PROMPT_TXT = "Read SETUP.md and follow it.";
+const SETUP_HEAD = __SETUP_HEAD__;
+const SETUP_LINES = __SETUP_LINES__;
+const FILES = [["d","assets"],["d","docs"],["d","kit"],["f","CHANGELOG.md"],["f","CONTRIBUTING.md"],["f","LICENSE"],["f","README.md"],["f","SECURITY.md"],["f","SETUP.md"]];
+
+// timeline (seconds)
+const T = {
+  typeClone: 1.6, cloneDone: 1.6 + CLONE.length / 12,
+  out1: 0, out2: 0, out3: 0, out4: 0, out5: 0,
+};
+T.out1 = T.cloneDone + 0.5; T.out2 = T.out1 + 0.5; T.out3 = T.out2 + 0.5; T.out4 = T.out3 + 0.5; T.out5 = T.out4 + 0.4;
+T.typeCd = T.out5 + 1.4; T.cdDone = T.typeCd + "cd NEST".length / 9;
+T.typeClaude = T.cdDone + 0.9; T.claudeDone = T.typeClaude + "claude".length / 9;
+T.welcome = T.claudeDone + 0.8;
+T.openSetup = T.welcome + 0.9;
+T.typePrompt = T.welcome + 2.4; T.promptDone = T.typePrompt + PROMPT_TXT.length / 10;
+T.submit = T.promptDone + 0.9;
+T.read = T.submit + 0.7; T.readDone = T.read + 1.0;
+T.think = T.readDone + 0.4; T.answer = T.think + 2.0;
+T.end = T.answer + 7.5;
+window.TOTAL = T.end;
+
+const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const typed = (s, t0, t, cps) => t < t0 ? "" : s.slice(0, Math.min(s.length, Math.floor((t - t0) * cps)));
+const blink = t => Math.floor(t * 2) % 2 === 0;
+
+function render(t) {
+  const cursor = blink(t) ? '<span class="cursor"></span>' : '<span class="cursor" style="opacity:0"></span>';
+  const inNest = t >= T.cdDone + 0.1;
+  const inClaude = t >= T.welcome;
+  document.getElementById("wtitle").textContent = (t >= T.openSetup ? "SETUP.md — " : "") + "Projects — Visual Studio Code";
+
+  // explorer
+  let tree = "";
+  if (t >= T.out5) {
+    const open = t >= T.welcome;
+    tree += `<div class="row" style="padding-left:18px"><span class="chev">${open ? "⌄" : "›"}</span><span class="ico" style="color:#dcb67a">▣</span>NEST</div>`;
+    if (open) for (const [k, n] of FILES) {
+      const sel = n === "SETUP.md" && t >= T.openSetup;
+      const ico = k === "d" ? '<span class="chev">›</span><span class="ico" style="color:#dcb67a">▣</span>'
+                            : `<span class="chev"></span><span class="ico" style="color:${n.endsWith(".md") ? "#519aba" : "#cbcb41"}">${n.endsWith(".md") ? "M↓" : "≡"}</span>`;
+      tree += `<div class="row${sel ? " sel" : ""}" style="padding-left:30px">${ico}${n}</div>`;
+    }
+  }
+  document.getElementById("tree").innerHTML = tree;
+
+  // tabs + editor
+  const tabs = document.getElementById("tabs"), ed = document.getElementById("editor");
+  if (t >= T.openSetup) {
+    tabs.innerHTML = '<div class="tab">Welcome</div><div class="tab on"><span style="color:#519aba;font-family:var(--mono);font-size:11px">M↓</span>SETUP.md</div>';
+    ed.innerHTML = SETUP_HEAD.map((l, i) => {
+      let cls = l.startsWith("#") ? "md-h" : (l === "---" ? "md-hr" : "");
+      return `<div class="ln"><b>${i + 1}</b><span class="${cls}">${esc(l) || "&nbsp;"}</span></div>`;
+    }).join("");
+  } else {
+    tabs.innerHTML = '<div class="tab on">Welcome</div>';
+    ed.innerHTML = '<div class="welcome"><div class="big">Visual Studio Code</div><div>Editing evolved</div></div>';
+  }
+
+  // terminal
+  const P = (dir) => `<span class="p">you@mac</span> <span class="d">${dir} %</span> `;
+  let lines = [];
+  if (!inClaude) {
+    lines.push(P("Projects") + `<span class="cmd">${esc(typed(CLONE, T.typeClone, t, 12))}</span>` + (t < T.cloneDone + 0.3 ? cursor : ""));
+    if (t >= T.out1) lines.push("Cloning into 'NEST'...");
+    if (t >= T.out2) lines.push("remote: Enumerating objects: 214, done.");
+    if (t >= T.out3) lines.push("remote: Counting objects: 100% (214/214), done.");
+    if (t >= T.out4) lines.push("Receiving objects: 100% (214/214), 1.71 MiB | 6.4 MiB/s, done.");
+    if (t >= T.out5) lines.push("Resolving deltas: 100% (31/31), done.");
+    if (t >= T.typeCd - 0.6) {
+      const cdTxt = typed("cd NEST", T.typeCd, t, 9);
+      lines.push(P("Projects") + `<span class="cmd">${cdTxt}</span>` + (t < T.cdDone + 0.2 ? cursor : ""));
+    }
+    if (inNest) {
+      const cl = typed("claude", T.typeClaude, t, 9);
+      lines.push(P("NEST") + `<span class="cmd">${cl}</span>` + cursor);
+    }
+  } else {
+    lines.push('<div class="wbox"><div><span class="o">✻</span> <span class="w">Welcome to Claude Code</span></div><div class="d">  cwd: ~/Projects/NEST</div></div>');
+    lines.push("");
+    const submitted = t >= T.submit;
+    if (submitted) {
+      lines.push(`<span class="d">&gt; ${PROMPT_TXT}</span>`);
+      lines.push("");
+      if (t >= T.read) lines.push('<span style="color:#4ec9b0">●</span> <span class="w">Read</span>(SETUP.md)');
+      if (t >= T.readDone) lines.push(`  <span class="d">⎿  Read ${SETUP_LINES} lines</span>`);
+      if (t >= T.think && t < T.answer) {
+        const dots = ".".repeat(1 + Math.floor((t - T.think) * 3) % 3);
+        lines.push(""); lines.push(`<span class="o">✻</span> <span class="o">Reading the setup${dots}</span>`);
+      }
+      if (t >= T.answer) {
+        const ans = [
+          "",
+          '<span style="color:#e7e7e7">●</span> This is the first session: there\'s no <span class="code">_setup/STATE.md</span> yet,',
+          "  so we start from the beginning.",
+          "",
+          '  <span class="bold">Which language should we use?</span>',
+          "",
+          "  Everything after this follows that language: my questions, your",
+          "  wiki, and the assistant's tone. Scripts and settings keys stay in English.",
+          "",
+          "  For example: English, Nederlands, Deutsch, or any other language you prefer.",
+        ];
+        const shown = Math.min(ans.length, Math.floor((t - T.answer) * 7) + 1);
+        lines.push(...ans.slice(0, shown));
+      }
+      lines.push("");
+      lines.push('<div class="inbox">&gt; ' + (t >= T.answer + 1.5 ? cursor : "") + '</div>');
+    } else {
+      lines.push('<div class="inbox">&gt; ' + `<span class="w">${esc(typed(PROMPT_TXT, T.typePrompt, t, 10))}</span>` + cursor + '</div>');
+      lines.push('<span class="d">  ? for shortcuts</span>');
+    }
+  }
+  document.getElementById("term").innerHTML = lines.map(l => l.startsWith("<div") ? l : `<div>${l || "&nbsp;"}</div>`).join("");
+
+  // step badges
+  const stage = t < T.welcome ? (t < T.typeCd ? 0 : 1) : (t < T.typePrompt - 0.6 ? 1 : 2);
+  const labels = ["Clone the repo", "Start Claude Code", "Type one line"];
+  document.getElementById("steps").innerHTML = labels.map((s, i) =>
+    `<div class="step ${i < stage ? "done" : i === stage ? "now" : ""}"><span class="n">${i < stage ? "✓" : i + 1}</span>${s}</div>`).join("");
+}
+window.render = render;
+render(0);
+</script>
+</body>
+</html>

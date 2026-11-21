@@ -1,0 +1,60 @@
+# NEST knowledge base: the overview on 20-knowledge/index.md (![[_bases/knowledge.base#By kind]]).
+# customise: the knowledge folder (default 20-knowledge), the kind values (must match wiki.config.json),
+#   view names and displayName labels to the user's language (the section index embeds the view name).
+filters:
+  and:
+    - file.inFolder("20-knowledge")
+    - file.basename != "index"
+formulas:
+  title: if(title, file.asLink(title), file.asLink())
+  updated: if(updated, updated, file.mtime.date())
+properties:
+  formula.title:
+    displayName: Note
+  formula.updated:
+    displayName: Updated
+  note.kind:
+    displayName: Kind
+  note.status:
+    displayName: Status
+  note.author:
+    displayName: By
+  note.tags:
+    displayName: Tags
+views:
+  - type: table
+    name: By kind
+    groupBy:
+      property: kind
+      direction: ASC
+    order:
+      - formula.title
+      - status
+      - tags
+      - formula.updated
+    sort:
+      - property: title
+        direction: ASC
+  - type: table
+    name: Recently updated
+    order:
+      - formula.title
+      - kind
+      - author
+      - formula.updated
+    sort:
+      - property: updated
+        direction: DESC
+    limit: 15
+  - type: table
+    name: Concepts
+    filters:
+      and:
+        - kind == "concept"
+    order:
+      - formula.title
+      - status
+      - formula.updated
+    sort:
+      - property: title
+        direction: ASC

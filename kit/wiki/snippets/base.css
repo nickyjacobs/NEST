@@ -1,0 +1,428 @@
+/* NEST: base style of the vault
+ * One place for the palette, the custom callouts, the dashboard (Home.md, cssclasses: dashboard max base-plain)
+ * and the Bases embeds. idea-note.css stays separate: it only matters on the idea pages.
+ *
+ * Colours are rgb triplets ("r, g, b") so one token serves both rgb() and rgba(). Two gotchas:
+ * - Since Obsidian 1.13, --callout-color must be a valid CSS colour, so a callout gets
+ *   --callout-color: rgb(var(--x)), never the bare triplet.
+ * - The Minimal theme does not apply --callout-color to custom callout types. Every custom callout
+ *   below therefore sets border, background, title and icon colour itself, with !important.
+ * Obsidian does not reload a changed snippet: Settings -> Appearance -> CSS snippets -> base off and on.
+ * Icons are Lucide names (lucide.dev) with the lucide- prefix.
+ */
+
+/* ---------- 1. Palette ---------- */
+/* customise: palette and accent. One triplet per section; keep them identical to the folder colours in
+ * obsidian/plugins/notebook-navigator/data.json (hex there, rgb here). Rename or drop sections to match
+ * the user's folder design, and rename the matching [!panel|...] and [!tile|...] metadata below. */
+body {
+  --nest-accent-rgb: 255, 159, 28;     /* buttons, nav row, dividers, default panel and tile */
+  --nest-highlight-rgb: 212, 175, 55;  /* KPI tiles, "new" panel */
+  --nest-alert-rgb: 220, 38, 38;       /* [!cheatsheet] */
+  --nest-neutral-rgb: 243, 221, 176;   /* quiet borders, tags */
+
+  --nest-context-rgb: 79, 195, 247;
+  --nest-projects-rgb: 129, 199, 132;
+  --nest-knowledge-rgb: 255, 213, 79;
+  --nest-ideas-rgb: 255, 159, 28;
+  --nest-research-rgb: 236, 64, 122;
+  --nest-sessions-rgb: 186, 104, 200;
+  --nest-references-rgb: 126, 87, 194;
+  --nest-decisions-rgb: 255, 138, 101;
+  --nest-audits-rgb: 239, 83, 80;
+  --nest-archives-rgb: 144, 164, 174;
+  --nest-inbox-rgb: 243, 221, 176;
+  --nest-question-rgb: 100, 181, 246;
+  --nest-answers-rgb: 77, 182, 172;
+}
+
+/* Light theme: the pale tones get darker so titles stay readable on white.
+ * customise: adjust together with the palette above. */
+.theme-light {
+  --nest-highlight-rgb: 166, 131, 20;
+  --nest-neutral-rgb: 140, 112, 64;
+  --nest-knowledge-rgb: 191, 144, 0;
+  --nest-inbox-rgb: 166, 124, 58;
+  --nest-context-rgb: 2, 136, 209;
+}
+
+/* ---------- 2. Custom callouts ---------- */
+
+/* [!cheatsheet]: red with a flame, at the top of every knowledge note */
+.callout[data-callout="cheatsheet"] {
+  --callout-color: rgb(var(--nest-alert-rgb));
+  --callout-icon: lucide-flame;
+  border-left-color: rgb(var(--nest-alert-rgb)) !important;
+  background-color: rgba(var(--nest-alert-rgb), 0.1) !important;
+}
+.callout[data-callout="cheatsheet"] .callout-title,
+.callout[data-callout="cheatsheet"] .callout-title-inner,
+.callout[data-callout="cheatsheet"] .callout-icon,
+.callout[data-callout="cheatsheet"] .callout-icon svg {
+  color: rgb(var(--nest-alert-rgb)) !important;
+  stroke: rgb(var(--nest-alert-rgb)) !important;
+}
+
+/* [!panel|<section>] Title: a dashboard block in the colour of a section. Without metadata: accent. */
+.callout[data-callout="panel"] {
+  --panel: var(--nest-accent-rgb);
+  --callout-color: rgb(var(--panel));
+  --callout-icon: lucide-layout-dashboard;
+  border: 1px solid rgba(var(--panel), 0.22) !important;
+  border-top: 3px solid rgb(var(--panel)) !important;
+  border-radius: 12px !important;
+  background-color: rgba(var(--panel), 0.05) !important;
+  padding: 0.6rem 0.9rem 0.4rem !important;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.callout[data-callout="panel"]:hover { background-color: rgba(var(--panel), 0.08) !important; }
+.callout[data-callout="panel"] .callout-title,
+.callout[data-callout="panel"] .callout-title-inner,
+.callout[data-callout="panel"] .callout-icon,
+.callout[data-callout="panel"] .callout-icon svg {
+  color: rgb(var(--panel)) !important;
+  stroke: rgb(var(--panel)) !important;
+}
+.callout[data-callout="panel"] .callout-title-inner {
+  font-size: 0.8em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+/* customise: one line per section (names, icons) to match the palette */
+.callout[data-callout="panel"][data-callout-metadata~="context"]    { --panel: var(--nest-context-rgb);    --callout-icon: lucide-user-round; }
+.callout[data-callout="panel"][data-callout-metadata~="projects"]   { --panel: var(--nest-projects-rgb);   --callout-icon: lucide-folder-kanban; }
+.callout[data-callout="panel"][data-callout-metadata~="knowledge"]  { --panel: var(--nest-knowledge-rgb);  --callout-icon: lucide-brain; }
+.callout[data-callout="panel"][data-callout-metadata~="ideas"]      { --panel: var(--nest-ideas-rgb);      --callout-icon: lucide-lightbulb; }
+.callout[data-callout="panel"][data-callout-metadata~="research"]   { --panel: var(--nest-research-rgb);   --callout-icon: lucide-microscope; }
+.callout[data-callout="panel"][data-callout-metadata~="sessions"]   { --panel: var(--nest-sessions-rgb);   --callout-icon: lucide-notebook-pen; }
+.callout[data-callout="panel"][data-callout-metadata~="references"] { --panel: var(--nest-references-rgb); --callout-icon: lucide-library; }
+.callout[data-callout="panel"][data-callout-metadata~="decisions"]  { --panel: var(--nest-decisions-rgb);  --callout-icon: lucide-scale; }
+.callout[data-callout="panel"][data-callout-metadata~="audits"]     { --panel: var(--nest-audits-rgb);     --callout-icon: lucide-search-check; }
+.callout[data-callout="panel"][data-callout-metadata~="archives"]   { --panel: var(--nest-archives-rgb);   --callout-icon: lucide-archive; }
+.callout[data-callout="panel"][data-callout-metadata~="inbox"]      { --panel: var(--nest-inbox-rgb);      --callout-icon: lucide-inbox; }
+.callout[data-callout="panel"][data-callout-metadata~="question"]   { --panel: var(--nest-question-rgb);   --callout-icon: lucide-message-circle-question; }
+.callout[data-callout="panel"][data-callout-metadata~="answers"]    { --panel: var(--nest-answers-rgb);    --callout-icon: lucide-message-square-text; }
+.callout[data-callout="panel"][data-callout-metadata~="recent"]     { --panel: var(--nest-highlight-rgb);  --callout-icon: lucide-sparkles; }
+
+/* [!tiles] Title: a group of button tiles on Home. Each [!tile|<kind>] inside holds one Meta Bind
+ * button (`BUTTON[id]`) and a short line of explanation. The button fills the tile; the line sits below. */
+.callout[data-callout="tiles"] {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 1.1rem 0 0.4rem !important;
+}
+.callout[data-callout="tiles"] > .callout-title { padding: 0 0 0.45rem 0.1rem !important; }
+.callout[data-callout="tiles"] > .callout-title .callout-icon { display: none; }
+.callout[data-callout="tiles"] > .callout-title .callout-title-inner {
+  color: var(--text-muted) !important;
+  font-size: 0.78em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.callout[data-callout="tiles"] > .callout-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.55rem;
+  padding: 0 !important;
+}
+.callout[data-callout="tile"] {
+  --tile: var(--nest-accent-rgb);
+  --callout-color: rgb(var(--tile));
+  margin: 0 !important;
+  padding: 0.45rem 0.6rem !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-top: 3px solid rgba(var(--tile), 0.85) !important;
+  background-color: rgba(255, 255, 255, 0.025) !important;
+  transition: border-color 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
+}
+.theme-light .callout[data-callout="tile"] {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  border-top-color: rgba(var(--tile), 0.85) !important;
+  background-color: rgba(0, 0, 0, 0.025) !important;
+}
+.callout[data-callout="tile"]:hover {
+  border-color: rgba(var(--tile), 0.6) !important;
+  background-color: rgba(var(--tile), 0.07) !important;
+  transform: translateY(-2px);
+}
+/* [!tile|<kind>]: the colour of the section the note lands in.
+ * customise: one line per capture tile on Home */
+.callout[data-callout="tile"][data-callout-metadata~="capture"]   { --tile: var(--nest-inbox-rgb); }
+.callout[data-callout="tile"][data-callout-metadata~="question"]  { --tile: var(--nest-question-rgb); }
+.callout[data-callout="tile"][data-callout-metadata~="link"]      { --tile: var(--nest-references-rgb); }
+.callout[data-callout="tile"][data-callout-metadata~="research"]  { --tile: var(--nest-research-rgb); }
+.callout[data-callout="tile"][data-callout-metadata~="knowledge"] { --tile: var(--nest-knowledge-rgb); }
+.callout[data-callout="tile"][data-callout-metadata~="concept"]   { --tile: var(--nest-knowledge-rgb); }
+.callout[data-callout="tile"][data-callout-metadata~="project"]   { --tile: var(--nest-projects-rgb); }
+.callout[data-callout="tile"] > .callout-title { display: none; }
+.callout[data-callout="tile"] > .callout-content {
+  padding: 0 !important;
+  font-size: 0.78em;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+.callout[data-callout="tile"] > .callout-content > p { margin: 0; }
+.callout[data-callout="tile"] .mb-button,
+.callout[data-callout="tile"] .mb-button-inline {
+  display: block;
+  width: 100%;
+  margin: 0 0 0.3rem 0;
+}
+.callout[data-callout="tile"] .mb-button-inner,
+.callout[data-callout="tile"] button {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 0.5em;
+  padding: 0.3em 0.65em !important;
+  font-size: 1em;
+  font-weight: 600;
+  border-radius: 9px !important;
+  border-color: rgba(var(--tile), 0.35) !important;
+  cursor: pointer;
+}
+.callout[data-callout="tile"] button svg { width: 1.15em; height: 1.15em; color: rgb(var(--tile)); }
+
+/* [!nav]: a row of compact buttons at the top of Home (`BUTTON[a, b, c]`), without frame or title */
+.callout[data-callout="nav"] {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 0 0.6rem !important;
+}
+.callout[data-callout="nav"] > .callout-title { display: none; }
+.callout[data-callout="nav"] > .callout-content { padding: 0 !important; }
+.callout[data-callout="nav"] > .callout-content > p { margin: 0; }
+.callout[data-callout="nav"] .mb-button-group,
+.callout[data-callout="nav"] .mb-button-group-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.callout[data-callout="nav"] .mb-button,
+.callout[data-callout="nav"] .mb-button-inline { margin: 0 !important; }
+.callout[data-callout="nav"] button {
+  padding: 0.3em 0.85em !important;
+  font-size: 0.9em;
+  border-radius: 999px !important;
+  border: 1px solid rgba(var(--nest-accent-rgb), 0.3) !important;
+  background-color: rgba(var(--nest-accent-rgb), 0.07) !important;
+  color: var(--text-normal);
+  gap: 0.4em;
+  cursor: pointer;
+}
+.callout[data-callout="nav"] button:hover { background-color: rgba(var(--nest-accent-rgb), 0.2) !important; }
+.callout[data-callout="nav"] button svg { width: 1em; height: 1em; }
+
+/* [!kpis]: a row of number tiles; each [!kpi|<kind>] Title holds one Bases embed of one line. */
+.callout[data-callout="kpis"] {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.callout[data-callout="kpis"] > .callout-title { display: none; }
+.callout[data-callout="kpis"] > .callout-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.7rem;
+  padding: 0 !important;
+}
+.callout[data-callout="kpis"] > .callout-content > .callout { margin: 0 !important; }
+.callout[data-callout="kpi"] {
+  --kpi: var(--nest-highlight-rgb);
+  --callout-color: rgb(var(--kpi));
+  --callout-icon: lucide-gauge;
+  border: 1px solid rgba(var(--kpi), 0.25) !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, rgba(var(--kpi), 0.14), rgba(var(--kpi), 0.03)) !important;
+  padding: 0.45rem 0.9rem 0.5rem !important;
+}
+.callout[data-callout="kpi"] .callout-title,
+.callout[data-callout="kpi"] .callout-title-inner,
+.callout[data-callout="kpi"] .callout-icon,
+.callout[data-callout="kpi"] .callout-icon svg {
+  color: rgb(var(--kpi)) !important;
+  stroke: rgb(var(--kpi)) !important;
+}
+.callout[data-callout="kpi"] .callout-title-inner {
+  font-size: 0.72em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.callout[data-callout="kpi"] > .callout-content {
+  padding: 0 !important;
+  font-size: 1.15em;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+}
+/* Minimal gives the paragraph around an embed a large margin; in a tile that is empty space. */
+.callout[data-callout="kpi"] > .callout-content > p { margin: 0 !important; }
+.callout[data-callout="kpi"] .internal-embed,
+.callout[data-callout="kpi"] .bases-embed {
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.callout[data-callout="kpi"] .bases-toolbar,
+.callout[data-callout="kpi"] .bases-header,
+.callout[data-callout="kpi"] .list-bullet { display: none !important; }
+.callout[data-callout="kpi"] .bases-list-item { margin-inline-start: 0 !important; padding-inline-start: 0 !important; }
+.callout[data-callout="kpi"] .bases-embed,
+.callout[data-callout="kpi"] .bases-view { height: auto !important; min-height: 0 !important; }
+.callout[data-callout="kpi"] .bases-view { padding: 0.15rem 0 0 !important; }
+/* customise: KPI kinds (one per tile on Home; names, colours and icons) */
+.callout[data-callout="kpi"][data-callout-metadata~="progress"] { --kpi: var(--nest-accent-rgb);     --callout-icon: lucide-trending-up; }
+.callout[data-callout="kpi"][data-callout-metadata~="progress"] > .callout-content { font-family: var(--font-monospace); font-size: 0.95em; }
+.callout[data-callout="kpi"][data-callout-metadata~="date"]     { --kpi: var(--nest-highlight-rgb);  --callout-icon: lucide-calendar-clock; }
+.callout[data-callout="kpi"][data-callout-metadata~="next"]     { --kpi: var(--nest-knowledge-rgb);  --callout-icon: lucide-footprints; }
+
+/* [!divider] Title: a horizontal rule with the label in the middle */
+.callout[data-callout="divider"] {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 1.8rem 0 1.3rem !important;
+}
+.callout[data-callout="divider"] > .callout-content { display: none; }
+.callout[data-callout="divider"] > .callout-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 !important;
+}
+.callout[data-callout="divider"] > .callout-title .callout-icon { display: none; }
+.callout[data-callout="divider"] > .callout-title::before,
+.callout[data-callout="divider"] > .callout-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(var(--nest-accent-rgb), 0.6));
+}
+.callout[data-callout="divider"] > .callout-title::after {
+  background: linear-gradient(90deg, rgba(var(--nest-accent-rgb), 0.6), transparent);
+}
+.callout[data-callout="divider"] > .callout-title .callout-title-inner {
+  flex: 0 0 auto;
+  color: rgb(var(--nest-accent-rgb)) !important;
+  font-size: 0.75em;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* [!board]: two columns. Each [!stack] is one column with its panels straight below each other, so there
+ * are no gaps as in a grid with rows. Narrow screen: one column. */
+.callout[data-callout="board"],
+.callout[data-callout="stack"] {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.callout[data-callout="board"] > .callout-title,
+.callout[data-callout="stack"] > .callout-title { display: none; }
+.callout[data-callout="board"] { container-type: inline-size; }
+.callout[data-callout="board"] > .callout-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: start;
+  padding: 0 !important;
+}
+@container (min-width: 900px) {
+  .callout[data-callout="board"] > .callout-content {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  }
+}
+.callout[data-callout="stack"] > .callout-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 0 !important;
+}
+.callout[data-callout="stack"] > .callout-content > .callout { margin: 0 !important; }
+
+/* ---------- 3. Dashboard (Home.md, cssclasses: [dashboard, max, base-plain]) ---------- */
+/* `max` (full width) and `base-plain` (no Bases toolbars) are Minimal helper classes. */
+.dashboard .metadata-container,
+.dashboard .metadata-properties-heading,
+.dashboard .inline-title { display: none !important; }
+.dashboard h1 {
+  font-size: 1.9em;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.1em;
+}
+.dashboard h1 + p {
+  color: var(--text-muted);
+  margin-top: 0;
+}
+
+/* ---------- 4. Bases embeds ---------- */
+/* On the dashboard and in panels: no toolbar per base, only the content */
+.dashboard .bases-embed .bases-toolbar,
+.dashboard .bases-embed .bases-search-row,
+.callout[data-callout="panel"] .bases-toolbar,
+.callout[data-callout="panel"] .bases-search-row,
+.callout[data-callout="panel"] .bases-header { display: none !important; }
+/* An embed in a panel only takes the height of its content. Obsidian gives every Bases list
+ * min-height: 100px (a virtual list); in a tile or panel that is empty space. */
+.callout[data-callout="panel"] .internal-embed,
+.callout[data-callout="panel"] .bases-embed {
+  border: none !important;
+  padding: 0 !important;
+  margin: 0.2rem 0 0 !important;
+}
+.callout[data-callout="panel"] .bases-embed,
+.callout[data-callout="panel"] .bases-view {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: 420px;
+}
+.callout[data-callout="kpi"] .bases-list-container,
+.callout[data-callout="panel"] .bases-list-container { min-height: 0 !important; }
+.callout[data-callout="panel"] > .callout-content > p { margin: 0.15rem 0 0 !important; }
+.callout[data-callout="panel"] table { font-size: 0.86em; }
+.callout[data-callout="panel"] .bases-list-item { padding-block: 0.12em; }
+/* The last plain line of a panel is a hint ("Process: /wiki-inbox"): small and muted */
+.callout[data-callout="panel"] .callout-content > p:last-child {
+  margin: 0.4rem 0 0;
+  font-size: 0.82em;
+  color: var(--text-muted);
+}
+.bases-error:empty { display: none; }
+
+/* Card views anywhere in the vault */
+.bases-cards-item {
+  border-radius: 10px !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.bases-cards-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+.theme-light .bases-cards-item:hover { box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1); }
+
+/* ---------- 5. Tags ---------- */
+/* customise: colour the user's most used topic tags here, one line each, in a section colour */
+a.tag {
+  border: 1px solid rgba(var(--nest-neutral-rgb), 0.25);
+  background-color: rgba(var(--nest-neutral-rgb), 0.08);
+}
+a.tag[href="#index"] { color: var(--text-faint); }
+a.tag[href="#research"],
+a.tag[href="#query"] {
+  color: rgb(var(--nest-research-rgb));
+  border-color: rgba(var(--nest-research-rgb), 0.4);
+  background-color: rgba(var(--nest-research-rgb), 0.1);
+}
+a.tag[href="#idea"] {
+  color: rgb(var(--nest-ideas-rgb));
+  border-color: rgba(var(--nest-ideas-rgb), 0.4);
+  background-color: rgba(var(--nest-ideas-rgb), 0.1);
+}

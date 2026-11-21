@@ -1,0 +1,39 @@
+# Word list for scripts/check_style.py. Copy to .claude/style-words.txt and write it in the
+# language the user writes in; the setup translates this example.
+# Entries match case-insensitively on word boundaries; a trailing * matches any ending.
+
+[banned]
+crucial
+delve*
+seamless*
+robust
+leverag*
+game-changer
+tapestry
+testament to
+holistic approach
+cutting-edge
+
+[connectors]
+moreover
+furthermore
+additionally
+however
+
+[openers]
+in today's world
+in a world where
+it is important to note that
+in the realm of
+
+[paths]
+**/*.md
+!wiki/_templates/**
+!wiki/_inbox/**
+!wiki/40-references/sources/**
+!wiki/90-archives/**
+
+[options]
+connector_max = 3
+em_dash = true
+spaced_hyphen = true

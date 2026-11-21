@@ -1,0 +1,22 @@
+name: gitleaks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read   # gitleaks lists the commits of a pull request
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      # Verify the current major versions on the actions' release pages before use.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # full history, so every commit is scanned
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,33 @@
+name: Bug report
+description: The setup or a reference file doesn't do what it says
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: input
+    id: phase
+    attributes:
+      label: Where in the setup
+      description: The step from `_setup/STATE.md`, or the skill or script involved.
+      placeholder: "B2 wiki, or /wiki-inbox, or kit/scripts/wiki.py lint"
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: OS and Claude Code version
+      description: Output of `claude --version` and your OS.
+      placeholder: "Claude Code 2.x, Windows 11"
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Output or error
+      description: Remove anything private first (names, paths, mail content).
+      render: text

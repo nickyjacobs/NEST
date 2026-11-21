@@ -1,0 +1,10 @@
+{
+  "showInlineTitle": false,
+  "attachmentFolderPath": "./attachments",
+  "newLinkFormat": "absolute",
+  "newFileLocation": "folder",
+  "newFileFolderPath": "_inbox",
+  "alwaysUpdateLinks": true,
+  "strictLineBreaks": true,
+  "useMarkdownLinks": false
+}

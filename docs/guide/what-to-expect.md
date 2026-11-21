@@ -1,0 +1,71 @@
+<sub>[Docs](../README.md) · [What to expect](../guide/what-to-expect.md) · [Updating](../guide/updating.md) · [FAQ](../guide/faq.md) · [nest.json](../reference/nest-json.md) · [Hooks](../reference/hooks-notes.md) · [Releasing](../project/releasing.md) · [Backlog](../project/backlog.md)</sub>
+
+# What to expect from the setup
+
+NEST is a conversation, not an installer. Claude Code reads `SETUP.md`, asks you questions,
+proposes a workspace and builds it with you. Nothing is built without your yes.
+
+**On this page:** [Before you start](#before-you-start) · [The five sessions](#the-five-sessions) · [The interview](#the-interview) · [What you end up with](#what-you-end-up-with) · [Stopping and continuing](#stopping-and-continuing)
+
+## Before you start
+
+| You need | Why | If you do not have it |
+|---|---|---|
+| [Claude Code](https://code.claude.com/docs/en/overview) 2.1.295 or later | It runs the setup and your workspace | Install it first; NEST cannot do that for you |
+| [Obsidian](https://obsidian.md) | It opens your wiki | Install it first, or tell the setup you want it later |
+| git and [uv](https://docs.astral.sh/uv/) | History, backups and the scripts | The setup checks and gives you the install command for your system |
+| The GitHub CLI (optional) | A private repo and a backup for your wiki | Skip it; everything works locally |
+
+It works on macOS, Windows and Linux. You do not need to know how to code.
+
+## The five sessions
+
+The setup suggests five sessions of 30 to 60 minutes. You start each one with the same line.
+
+| Session | What happens | It ends with |
+|---|---|---|
+| 1 | The machine check, then who you are and where you get stuck | A recap of you and what bothers you |
+| 2 | Your wiki, your skills and apps, GitHub, the names | You create the workspace folder with one command |
+| 3 | The skeleton: your assistant, the rules, the guards | A restart, so the guards load |
+| 4 | The wiki, then the skills and agents | A restart, so the skills load |
+| 5 | Integrations, tests, GitHub, the wrap-up | Your first real task |
+
+```mermaid
+flowchart LR
+    A[Check your machine] --> B[Interview]
+    B --> C[You say yes to a plan]
+    C --> D[Build, step by step]
+    D --> E[Test together]
+    E --> F[First real task]
+```
+
+## The interview
+
+Six short rounds. Closed questions come with a recommendation, and "don't know yet" is always a
+valid answer: it becomes an open question you can settle later.
+
+| Round | About | It decides |
+|---|---|---|
+| A | Who you are, your week, your apps | The profile your assistant starts from |
+| B | Where you get stuck | Which parts NEST recommends at all |
+| C | Your wiki | The sections, the language, the look |
+| D | Skills, agents, integrations, guards | What your assistant can do, and how independently |
+| E | GitHub | Backups, a private repo, protections |
+| F | Names | What the folder and your assistant are called, asked last on purpose |
+
+## What you end up with
+
+A folder you open with Claude Code every day: an assistant that knows you, a wiki that files and
+indexes itself, the skills you picked, guards that stop a secret before it lands in a file, and
+a cheat sheet for daily use. The [README](../../README.md#what-you-get) has the full list.
+
+## Stopping and continuing
+
+Stop whenever you want. The setup writes its progress to a state file after every step, so the
+next session picks up exactly where you left off with the same line:
+
+```
+Read SETUP.md and follow it.
+```
+
+After the workspace folder exists, the setup tells you the new line to use from inside it.
