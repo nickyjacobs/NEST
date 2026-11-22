@@ -1,13 +1,13 @@
-<p align="center">
-  <img src="assets/roadmap.png" alt="NEST roadmap. Now: your assistant from your phone, a board on your Home page, what your assistant remembers is yours. Next: capture on the go, tried on Windows by a person. Later: upkeep that runs by itself, no plugin homework. Not planned: a voice assistant or an always-on service, NEST as a ready-made plugin." width="100%">
-</p>
-
 # Roadmap
 
 Where NEST is going, seen from your chair: what you will notice, not which file changes. No
 dates. A point moves up when it is built and tried, and into the [changelog](CHANGELOG.md) when
 it ships. Every new part stays a choice, and reaches a workspace you already have through
 `/nest-update`.
+
+<p align="center">
+  <img src="assets/roadmap.png" alt="NEST roadmap. Now: your assistant from your phone, a board on your Home page, what your assistant remembers is yours. Next: capture on the go, tried on Windows by a person. Later: upkeep that runs by itself, no plugin homework." width="100%">
+</p>
 
 ## 🟠 Now
 

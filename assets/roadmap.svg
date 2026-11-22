@@ -72,6 +72,5 @@
 <text x="1188" y="450" fill="#a9a9b6" font-size="16">The setup installs the Obsidian plugins</text>
 <text x="1188" y="472" fill="#a9a9b6" font-size="16">you chose.</text>
 <path d="M56 692 H1544" stroke="#24242c"/>
-<text x="56" y="732" fill="#8d8d9a" font-size="17"><tspan fill="#c9c9d4" font-weight="600">Not planned:</tspan>  a voice assistant or an always-on service  ·  NEST as a ready-made plugin</text>
-<text x="1544" y="732" text-anchor="end" fill="#8d8d9a" font-size="17">Every part stays a choice and reaches your workspace through <tspan fill="#ffffff" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">/nest-update</tspan></text>
+<text x="56" y="732" fill="#8d8d9a" font-size="17">Every part stays a choice and reaches your workspace through <tspan fill="#ffffff" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">/nest-update</tspan></text>
 </svg>
