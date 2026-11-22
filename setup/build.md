@@ -139,12 +139,19 @@ Do this in the new folder, in a fresh session (the hooks are now active).
    `kit/wiki/obsidian/PLUGINS.md` describes: say in one or two sentences what gets downloaded
    (the plugins they chose and the theme, each from its own project on GitHub, at a version this
    release was tried with) and that a plugin can do anything Obsidian can, ask for one yes, and
-   run `uv run --script scripts/obsidian_setup.py install --vault wiki` (check: `status` lists
-   every plugin and the theme as installed, each plugin still has its settings file, and no
-   `data.json.bak` exists). The user never installs a plugin through Obsidian's own browser: that
-   sets the settings you wrote aside. What is left for them is two clicks: open the `wiki`
-   folder as a vault, and choose "Trust author and enable plugins". Without a yes, or without a
-   connection, record it as an open item; the wiki works as plain notes until then. The user may
+   run `uv run --script scripts/obsidian_setup.py install --vault wiki`, where `wiki` is the
+   wiki folder (`wiki_dir` in `wiki.config.json`, default `wiki`) (check: it ends with 0, and
+   `status` lists every plugin and the theme as installed, each plugin with its settings file
+   and none with settings set aside). When it says the vault is open in Obsidian, or may be, ask
+   the user to quit Obsidian and run it again; never add `--assume-closed` on your own, only
+   after the user has confirmed that Obsidian is closed. The user never installs a plugin
+   through Obsidian's own browser: that sets the settings you wrote aside. What is left for
+   them is two clicks: open the wiki folder as a vault, and choose "Trust author and enable
+   plugins". Without a yes, record it as an open item. When `install` ends with anything but 0
+   (no connection, an Obsidian that is too old, a checksum that does not match, a folder it
+   refused), record that as an open item too, with the reason the script printed, and tell the
+   user that reason in plain words; do not work around a refusal. The wiki works as plain notes
+   until then. The user may
    postpone opening Obsidian and step 7: record both as open items, carry on with B3, and
    mention them at most once per session. They never block B3 or B4.
 6. `uv run scripts/wiki.py log migrate "Wiki created by NEST"`, then `reindex`, then `lint`

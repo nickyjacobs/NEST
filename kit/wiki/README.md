@@ -40,7 +40,7 @@ The setup resolves every marker and removes it; a leftover marker fails the fina
 | `section-index.md` | One `index.md` per section folder: intro, a Bases embed, the `AUTO-INDEX` marker | `wiki/<section>/index.md` |
 | `obsidian/*.json` | Vault settings: files, appearance, core and community plugins | `wiki/.obsidian/` |
 | `obsidian/plugins/*/data.json` | Settings for Templater, Meta Bind, Notebook Navigator, Minimal Theme Settings | `wiki/.obsidian/plugins/<id>/data.json` |
-| `obsidian/PLUGINS.md` | Install guide and safety settings; the setup walks the user through it | not copied; used during the build |
+| `obsidian/PLUGINS.md` | What `scripts/obsidian_setup.py` installs and how, why these plugins, and the safety settings | not copied; used during the build |
 
 ## What the setup must customise
 

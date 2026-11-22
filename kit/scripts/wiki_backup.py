@@ -87,6 +87,10 @@ def ensure_excludes(b) -> Path:
 
     Lines the user added or removed by hand stay as they are, except that a default line they
     removed comes back: the file has no way to tell "removed" from "not there yet".
+
+    An exclude line only keeps files out that the backup does not hold yet. What an earlier push
+    already put in the backup (plugin code, before these lines existed) stays there and keeps
+    being backed up: this script never takes a file out of somebody's backup.
     """
     exclude = b.git_dir / "info" / "exclude"
     exclude.parent.mkdir(parents=True, exist_ok=True)

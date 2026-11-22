@@ -61,9 +61,13 @@ for users is in the [roadmap](../../ROADMAP.md).
   user. Not yet on Windows; CI runs the script tests and the pre-commit hook on all three.
 - Not covered by the trial runs: how Home renders in Obsidian (needs a person), a real mail or
   calendar connection, and a pushed GitHub setup (B5).
-- `obsidian_setup.py` has installed the plugins and the theme into a real vault on macOS. Its
-  check for a running Obsidian on Windows (`tasklist`) and on Linux (`pgrep`) is covered by
-  tests with a stand-in, not by a run on those systems.
+- `obsidian_setup.py` has installed the plugins and the theme into a real vault on macOS only.
+  On Windows and Linux nothing of it has run for real: `obsidian_running` (`tasklist`, `pgrep`),
+  `config_dirs` and `installer_version` are tested with stand-ins for the process list, the
+  environment and the home folder, which shows the logic and not what those systems really
+  answer. The link checks are tested with symbolic links; a Windows junction is refused by the
+  same code path and has not been tried. On Linux a vault that Obsidian marks as open always
+  needs the user's word that Obsidian is closed, because the process list proves nothing there.
 - The PowerShell rules of the read-only guard and the Windows code paths of the session guards
   are tested by simulation, not on a Windows machine.
 - The session guard, the lesson hook, the plan hook and the blind seat guard are tested as

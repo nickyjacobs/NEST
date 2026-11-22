@@ -197,13 +197,21 @@ is written again for them (`backup <path>`, write, `mark <path>=<kit path>`).
    one file back, and say which.
    <!-- customise: Obsidian check (remove when the workspace has no wiki) -->
    When `scripts/obsidian_setup.py` is there (it came with this update or an earlier one), run
-   `uv run --script scripts/obsidian_setup.py status --vault wiki` once. It names plugins or a
-   theme the vault asks for that are not installed, and settings Obsidian set aside as
-   `data.json.bak` (that happened when a plugin was installed from inside Obsidian after the
-   setup wrote its settings: the Home buttons or the sidebar colours are then missing). Offer
-   what applies in plain words, and after a yes, with Obsidian closed: `install --vault wiki`
-   for what is missing, `restore --vault wiki` for the settings. Both are outside the update's
-   restore point: `restore` keeps the file it replaces as `data.json.before-restore`.
+   `uv run --script scripts/obsidian_setup.py status --vault wiki` once (`wiki` is the wiki
+   folder: `wiki_dir` in `wiki.config.json`, default `wiki`). It names plugins or a theme the
+   vault asks for that are not installed (it then ends with 1, which is an answer and not a
+   broken check), and settings Obsidian set aside as `data.json.bak` (that happened when a
+   plugin was installed from inside Obsidian after the setup wrote its settings: the Home
+   buttons or the sidebar colours are then missing). Offer what applies in plain words, and
+   after a yes, with Obsidian closed: `install --vault wiki` for what is missing, `restore
+   --vault wiki` for the settings. Before the yes for `restore`, tell the user what it does: it
+   puts back the settings the setup wrote, over whatever they set in those plugins since; their
+   current file is kept next to it as `data.json.before-restore`; and it is offered once,
+   because the backup is used up by it. When either command says the vault is open in Obsidian,
+   or may be, ask the user to quit Obsidian and run it again: never add `--assume-closed` on
+   your own, only after the user has confirmed that Obsidian is closed. When `install` ends with
+   1, tell the user the reason it printed and leave it at that; do not work around a refusal.
+   Both commands are outside the update's restore point.
 3. `uv run --script scripts/nest_update.py finish` closes the update. It moves the workspace
    to the new version only when nothing is open. Items left for later keep it on the old
    version; that is fine, say so. When the user wants no part of this release and no reminder:

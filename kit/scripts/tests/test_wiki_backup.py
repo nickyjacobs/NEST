@@ -381,6 +381,28 @@ def test_push_adds_new_default_excludes_to_an_older_backup(backup, remote, capsy
     assert exclude.read_text(encoding="utf-8") == before
 
 
+def test_push_keeps_what_an_older_backup_already_tracks(backup, remote, capsys):
+    """The exclude lines keep new files out. They never take a file out of a backup: plugin code
+    an earlier version backed up stays in it, and its changes are still backed up."""
+    exclude = backup.git_dir / "info" / "exclude"
+    exclude.write_text("# Written by wiki_backup.py. An older version.\n.trash/\n", encoding="utf-8")
+    plugin = backup.wiki / ".obsidian/plugins/some-plugin"
+    write(plugin / "main.js", "version 1")
+    write(plugin / "manifest.json", "{}")
+    backup.git("add", "-A")
+    backup.git("commit", "-q", "-m", "Backup by an older version")
+    backup.git("push", "-q", "origin", "HEAD:main")
+    tracked = [".obsidian/plugins/some-plugin/main.js", ".obsidian/plugins/some-plugin/manifest.json", "notes/a.md"]
+    assert remote_files(remote) == tracked
+
+    write(plugin / "main.js", "version 2")
+    write(backup.wiki / ".obsidian/plugins/new-plugin/main.js", "new code")
+    assert wb.main(["push"]) == 0
+    assert ".obsidian/plugins/*/main.js" in exclude.read_text(encoding="utf-8")
+    assert remote_files(remote) == tracked  # the new plugin's code stays out, the old one's stays in
+    assert git(f"--git-dir={remote}", "show", "main:.obsidian/plugins/some-plugin/main.js") == "version 2"
+
+
 def test_push_sends_a_commit_that_stayed_local(backup, remote, capsys):
     write(backup.wiki / "b.md")
     backup.git("add", "-A")

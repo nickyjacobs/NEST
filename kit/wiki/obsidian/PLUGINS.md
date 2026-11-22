@@ -11,20 +11,30 @@ does not click through a list, and never installs one of these from inside Obsid
    vault is not open in Obsidian. Obsidian rewrites `appearance.json` and
    `community-plugins.json` from memory, so a change made under an open vault is lost.
 2. After one yes from the user, `uv run --script scripts/obsidian_setup.py install --vault wiki`
-   downloads each plugin in `community-plugins.json` and the theme in `appearance.json` from its
+   (`wiki` is the wiki folder: `wiki_dir` in `wiki.config.json`, default `wiki`) downloads each plugin in `community-plugins.json` and the theme in `appearance.json` from its
    own project on GitHub, at the version in `scripts/obsidian.lock.json`, checks every file
    against the checksum in that lock file, and puts it next to the settings. A plugin the user
    declined is not in `community-plugins.json`, so it is not downloaded.
 3. The user opens the folder in Obsidian (*Open folder as vault*) and chooses **Trust author and
    enable plugins**. That is the one step no file can take: Obsidian keeps the choice in the
-   app, per vault and per device. If they close the question instead, Obsidian asks again the
-   next time, and until then the theme and the snippets are off too.
+   app, per vault and per device. If they close the question without an answer, Obsidian asks
+   again the next time.
 4. `uv run --script scripts/obsidian_setup.py status --vault wiki` shows what is installed.
+
+`install` ends with 0 when everything the vault asks for is in place and with 1 when something
+was skipped, refused or failed; it says what and why per plugin, and one that fails does not
+stop the others. It refuses a folder that already holds another plugin, and anything under
+`.obsidian` that is a link to another place: tell the user what it printed, do not work around
+it. It also refuses while the vault is open in Obsidian, or may be: ask the user to quit
+Obsidian and run it again. `--assume-closed` skips that check. Never add it on your own: only
+after the user has confirmed that Obsidian is closed.
 
 Why not let the user install them in Obsidian: when a plugin folder holds a `data.json` but no
 `manifest.json`, Obsidian's installer sets the settings aside as `data.json.bak` and the plugin
 starts with its defaults. If that happened in a vault (an older setup, or a plugin installed by
 hand), `obsidian_setup.py restore --vault wiki` puts the settings back, with Obsidian closed.
+It puts back the settings the setup wrote, over whatever the user set since; their current file
+is kept next to it as `data.json.before-restore`. It works once: the backup is used up.
 
 What to tell the user before the yes, in their language and at their level: these are five
 widely used open source plugins and one theme; a plugin can do anything Obsidian itself can, so
@@ -32,8 +42,9 @@ they are downloaded from their makers at a fixed version and checked, never from
 Obsidian updates them from then on, like any plugin.
 
 On a second computer or a phone the vault arrives through the user's sync or backup. Plugin code
-is left out of the git backup on purpose (it is other people's code): run `install` again on a
-computer, or let the sync service carry `.obsidian/plugins`. "Trust author and enable plugins"
+is kept out of the git backup on purpose (it is other people's code): run `install` again on a
+computer, or let the sync service carry `.obsidian/plugins`. A backup made before this existed
+already holds the plugin code and keeps it; nothing is taken out of an existing backup. "Trust author and enable plugins"
 is asked again on every device.
 
 ## Theme: Minimal
@@ -88,7 +99,7 @@ not colour headings, and with it on Minimal paints each heading level in another
 
 ## After the user opened the vault, check
 
-- `status` lists every plugin with its settings, and no `data.json.bak`.
+- `status` lists every plugin as installed with its settings, and none with settings set aside.
 - Home opens as the start page and shows tiles, panels and (when configured) the KPI row.
 - A tile creates a note in the right folder with a kebab-case name.
 - The sidebar shows an icon and colour per section, and hides `_bases` and `_templates`.
