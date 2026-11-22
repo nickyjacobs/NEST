@@ -12,7 +12,7 @@ open question.
 
 | IDs | Lands in |
 |---|---|
-| language, level, OS | `_setup/STATE.md`; the language and level lines in `CLAUDE.md` |
+| language, level, OS, surface | `_setup/STATE.md`; the language and level lines in `CLAUDE.md`; `surface` decides the form of every instruction to open a folder or start a session, and the line in `CLAUDE.md` that says how this workspace is opened |
 | A1 local formats | profile page; the formats line in `CLAUDE.md`; currency in the idea skill; units and time format in the calendar and briefing skills |
 | A1, A3, A5, A6 | wiki context pages (profile, goals, priorities), the card in `CLAUDE.md` (at most 10 lines) |
 | A2 | profile page (role, without employer name unless the user wants it); employer, school and AI rules in `CLAUDE.local.md`; a "work content" line in `.claude/rules/privacy.md` |
@@ -23,9 +23,9 @@ open question.
 | C1, C3 | `wiki.config.json` (sections, kinds, status words), the folder tree, section indexes |
 | C2 | `wiki.config.json` labels, templates, `how-this-wiki-works` page |
 | C4 | `wiki/Home.md`, `_bases/dashboard.base`, Meta Bind button templates |
-| C5 | `wiki/.obsidian/snippets/base.css` tokens, `appearance.json`, Notebook Navigator colours |
+| C5 | the palette, with its colour codes, in `_setup/interview/C.md` (the user chose it from `_setup/preview/palette.html`); then `wiki/.obsidian/snippets/base.css` tokens, `appearance.json`, Notebook Navigator colours |
 | C6 | `wiki/.obsidian/` settings (`community-plugins.json`, the enabled snippets in `appearance.json`); what `obsidian_setup.py install` downloads in B2 |
-| C7 | `CLAUDE.local.md` (where the old notes are); first tasks. The old vault itself is never touched |
+| C7 | `CLAUDE.local.md` (where the old notes are, as paths); the first of the first tasks in the wrap-up. The old vault itself is never opened or touched during the setup |
 | D1 to D3 | `.claude/skills/`, `.claude/agents/`, the skills list in `CLAUDE.md`, `docs/skills.md`; the course list in the study-inbox skill |
 | D4 | the integration skill files, `tool-map.md`, `.claude/settings.json` permissions, `mail-folders.md` in the workspace root (gitignored), the blocks in the morning-briefing skill; failed or postponed routes in STATE.md "Open" |
 | D5 | `disable-model-invocation` per skill; the "When you act on your own" section of `CLAUDE.md` |

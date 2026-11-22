@@ -43,12 +43,16 @@ did not run yet. Tick each only when it is done; the wrap-up is not done while o
 2. Write `wiki/how-this-wiki-works.md` for real: how the workspace works, in plain words, on one
    page, in the user's language.
 3. Give the user an overview in the chat itself, not as a pointer to a file: the folder tree two
-   levels deep, one line per skill and agent with how to start it,
-   the three commands they will use most, and what they maintain themselves (the context pages,
-   the sensitive terms list, the open questions).
+   levels deep, one line per skill and agent with how to start it (and which ones only they can
+   start, by typing the command),
+   the three commands they will use most, what they maintain themselves (the context pages,
+   the sensitive terms list, the open questions), and how they open the workspace tomorrow, in
+   the form for where they work (section 3).
 4. A cheat sheet: capture (drop it in the inbox), file (the inbox skill), find (the query skill),
    end of session, maintenance once a week.
-5. Propose three or four **first tasks** that answer the top pain points from B3, for example:
+5. Propose three or four **first tasks** with the choice dialog. When C7 found notes the user
+   wants to bring in, that move is the first one on the list: an empty wiki next to a full old
+   vault does not get used. The others answer the top pain points from B3, for example:
    - "Notes pile up": put ten old notes in the inbox and run the inbox skill together.
    - "Ideas never get decided": run the idea skill on the idea they mentioned in block B.
    - "Mail chaos": a first organizer run on the inbox, board only, no moves.

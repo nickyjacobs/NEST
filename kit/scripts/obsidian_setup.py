@@ -25,6 +25,8 @@ Usage:
   obsidian_setup.py status --vault <wiki>    what is listed, installed, missing or set aside
   obsidian_setup.py restore --vault <wiki>   put a `data.json.bak` that Obsidian set aside back
   obsidian_setup.py vaults                   the vaults Obsidian knows on this computer
+       --count                               also count the notes in each (walks every vault:
+                                             slow for a large one)
 Every command takes --json for machine-readable output: always one JSON document, also for an
 error. install and restore take --assume-closed, only for when the user has confirmed that
 Obsidian is closed and the check below still refuses.
@@ -828,8 +830,9 @@ def cmd_vaults(args) -> tuple[dict, int]:
             exists = path.is_dir()
         except (OSError, ValueError):  # a path this system cannot even ask about
             exists = False
-        notes = 0
-        if exists:
+        notes = None
+        if exists and args.count:
+            notes = 0
             try:
                 for index, _note in enumerate(path.rglob("*.md"), start=1):
                     notes = index
@@ -898,7 +901,12 @@ def print_report(command: str, report: dict) -> None:
         if not report["obsidian_found"]:
             print("Obsidian has no settings on this computer (not installed, or never opened).")
         for v in report["vaults"]:
-            state = "missing" if not v["exists"] else f"{v['notes']}{'+' if v['notes'] >= 5000 else ''} notes"
+            if not v["exists"]:
+                state = "missing"
+            elif v["notes"] is None:
+                state = "there"
+            else:
+                state = f"{v['notes']}{'+' if v['notes'] >= 5000 else ''} notes"
             print(f"  {v['path']}  ({state}{', open' if v['open'] else ''})")
 
 
@@ -928,6 +936,8 @@ def build_parser() -> argparse.ArgumentParser:
     for name in ("install", "status", "restore", "vaults"):
         p = sub.add_parser(name)
         p.add_argument("--json", action="store_true", help="machine-readable output")
+        if name == "vaults":
+            p.add_argument("--count", action="store_true", help="count the notes in each vault (slow for a large one)")
         if name != "vaults":
             p.add_argument("--vault", required=True, help="the vault folder (the wiki)")
             p.add_argument("--lock", help=f"another lock file than {LOCK_NAME} next to this script")

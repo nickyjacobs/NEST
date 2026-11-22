@@ -421,12 +421,28 @@ def test_vaults_lists_what_obsidian_knows(tmp_path, isolated, capsys):
     data = {"vaults": {"1": {"path": str(real), "ts": 1, "open": True}, "2": {"path": str(tmp_path / "gone"), "ts": 2}}}
     (isolated / "obsidian.json").write_text(json.dumps(data), encoding="utf-8")
 
-    assert run("vaults", "--json") == 0
+    assert run("vaults", "--count", "--json") == 0
     report = out_json(capsys)
     assert report["obsidian_found"] is True
     by_path = {v["path"]: v for v in report["vaults"]}
     assert by_path[str(real)] == {"path": str(real), "exists": True, "open": True, "notes": 2}
     assert by_path[str(tmp_path / "gone")]["exists"] is False
+
+
+def test_vaults_does_not_walk_the_vaults_unless_asked(tmp_path, isolated, capsys, monkeypatch):
+    real = tmp_path / "notes"
+    real.mkdir()
+    (real / "a.md").write_text("x", encoding="utf-8")
+    (isolated / "obsidian.json").write_text(json.dumps({"vaults": {"1": {"path": str(real), "ts": 1}}}), encoding="utf-8")
+
+    def no_walk(self, pattern):
+        raise AssertionError("vaults walked a folder without --count")
+
+    monkeypatch.setattr(Path, "rglob", no_walk)
+    assert run("vaults", "--json") == 0
+    assert out_json(capsys)["vaults"] == [{"path": str(real), "exists": True, "open": False, "notes": None}]
+    assert run("vaults") == 0
+    assert "(there)" in capsys.readouterr().out
 
 
 def test_vaults_without_obsidian(capsys):

@@ -11,7 +11,7 @@ created in their workspace.
 | `agents/full/`, `agents/light/` | The Council and The Architects in two sizes, plus `researcher` and `security-reviewer` | Only the chosen team and size; names and output language adjusted |
 | `skills/` | One reference `SKILL.md` per recommended skill, with "customise from the interview" points | Rewritten per user: paths, labels, apps, language |
 | `integrations/` | Decision guide per app category (mail, calendar, tasks, weather, smart home) and one proven route (Microsoft Graph) | Used in interview block D and build step B3b; every route is verified before use |
-| `wiki/` | Templates, base CSS with colour tokens, Bases views, Home and how-to skeletons, Obsidian plugin settings | Translated and restructured to the user's folder design |
+| `wiki/` | Templates, base CSS with colour tokens, a colour preview for the browser (`palette-preview.html`), Bases views, Home and how-to skeletons, Obsidian plugin settings | Translated and restructured to the user's folder design |
 | `github/` | Workspace README skeleton, `.gitignore`, `.gitattributes`, pre-commit hook, workflows | The ignore file always; the pre-commit hook when the user wants it; the README and the workflows only with GitHub |
 
 Always part of a workspace, whatever the user chose: the scripts `validate.py`,

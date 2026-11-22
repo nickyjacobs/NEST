@@ -13,7 +13,8 @@ API access; the free Claude plan does not include it
 the two agent teams use more than a normal chat; the light size exists for that reason.
 
 **How long does it take?**
-About five sessions of 30 to 60 minutes. You can spread them over days:
+About four sessions: an hour and a half of questions and about an hour of building. You can
+spread them over days:
 [what to expect](what-to-expect.md).
 
 **Do I need to be technical?**

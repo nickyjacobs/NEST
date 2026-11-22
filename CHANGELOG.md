@@ -39,6 +39,11 @@ section in plain words: what it means if you already built a workspace with an e
   the backup `nest.json` names cannot be used (missing, not a repository, a wiki folder outside
   the workspace): each is named and the exit status is 3.
 
+- `kit/wiki/palette-preview.html`: the setup fills it with two or three palettes and opens it in
+  the browser, so the user picks colours by eye and never from colour codes.
+- `obsidian_setup.py vaults --count` counts the notes per vault. Without the flag the command
+  only lists the vaults, and no longer walks through every folder Obsidian knows.
+
 ### 🔧 Changed
 
 - Build step B2.5 installs the plugins and the theme after one yes, where the user used to
@@ -70,6 +75,35 @@ section in plain words: what it means if you already built a workspace with an e
 - `validate.py --file` and `--changed` follow no symbolic link and read nothing outside the
   workspace. No file name is printed as it is: a line end or a control character in a name is
   shown as its escape, so a name cannot pose as a line of the scanner's report.
+
+- The interview asks by click where it can. Every question with a known set of answers goes
+  through the choice dialog, also in the build; long lists are multi-select questions grouped by
+  theme; an open question stands alone in its message. Question IDs (A1, F3) are no longer shown
+  to the user. For a beginner a block opens with a proposal, and choices that need knowledge
+  they do not have take a default. In the first run by a real user 40 answers were typed
+  against 14 clicked.
+- The setup follows where the user works. Phase 0 records it as `surface` in `STATE.md`
+  (the Claude Code panel in VS Code, a terminal, the desktop app), and every instruction to
+  open a folder or start a session takes that form. The `!` prefix is no longer suggested in
+  the VS Code panel, where it does not exist.
+- The setup creates the workspace folder itself at the handover. It used to tell the user it
+  could not, and gave a command for a terminal.
+- The build runs B1, B2 and B3 in one session: hooks and skills are active in the session that
+  writes them. Two of the three restarts are gone, and the commit question comes once per
+  session.
+- A tool installed during the machine check is used by its full path for the rest of that
+  session, and the app is restarted once at the next moment the user reopens something.
+- B4: the setup runs the tests itself, with a sample note and a test idea of its own, and takes
+  them out again. The user is asked once, at the start, whether a team run is included.
+- Existing notes: with a yes the setup lists the vaults Obsidian knows on the computer, and
+  bringing the chosen ones in becomes the first task after the build.
+- The session plan is four sessions, and the docs say what a run really takes.
+- Files for `.claude/` are built in a staging folder under `_setup/` and copied in once per
+  phase. In a trial every write into `.claude/` raised a permission question: about
+  thirty-seven during one build.
+- Labels stay out of sight: phase names (B2, block C) and working files (`STATE.md`) are no
+  longer shown to the user, a proposal is always in a visible message before the dialog that
+  asks about it, and a later session reads the user's language before its first word.
 
 ### 🐛 Fixed
 
