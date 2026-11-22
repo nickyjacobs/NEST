@@ -18,6 +18,24 @@ section in plain words: what it means if you already built a workspace with an e
 
 ### 🏠 For your workspace
 
+- **The secret scan catches more, and blocks less by mistake.** It now sees a secret behind a
+  longer name (`DB_PASSWORD=`, `JWT_SECRET=`), `token:`, `Wachtwoord:` and `**Password:**`,
+  so a write or a commit that passed before can be refused. Code such as
+  `password = hashlib.sha256(x)` and example values such as `replace-me` are let through.
+- **New guard: after a shell command, the files it wrote, copied or unpacked are scanned
+  too**, also in a wiki with its own backup. It needs two new entries in
+  `.claude/settings.json`; `/nest-update` adds them after your yes.
+- **A secret you paste into the chat is no longer kept on disk.** The file with your own
+  messages shows `[secret removed]` in its place, and that folder is readable by you alone.
+  Files from before this update are not cleaned; they go after 14 days.
+- After a long conversation is summarised, the summary gets your first message plus your
+  newest ones, and lessons are shown again.
+- **The read-only reviewer is really read-only now.** Its agent file gets new hook lines. It
+  works from a list of allowed commands and options, so now and then it has to rephrase a
+  search (`./*.md` for `*.md`, quotes around a name with `#`).
+- Editing `CLAUDE.local.md`, your sensitive terms or an ignored `.env` no longer makes the
+  assistant try to "fix" the file. A typing mistake in `nest.json` is named at the start of a
+  session. A commit with a submodule is no longer blocked.
 - **Undo is safer.** `/nest-update undo` now tells you first which update it puts back and
   which files that concerns. It always means the last update: asking twice no longer reaches
   back to an earlier one.
@@ -56,6 +74,18 @@ section in plain words: what it means if you already built a workspace with an e
 
 ### ✨ Added
 
+- `validate.py --hook shell`: after a shell command the files it wrote, copied, moved,
+  unpacked or committed are scanned, also in the wiki's own backup repository; at most 50
+  files, 8 MB, 20 commits and 15 seconds per run, and it says what it left out.
+- Secret shapes: Azure storage keys, Telegram, Stripe, DigitalOcean, PyPI, Docker, Vault,
+  Slack app, Twilio, age, Tavily, Notion, Google OAuth, Discord webhooks, PuTTY keys, GitLab
+  deploy tokens, Linear, Figma, Shopify, Atlassian and Square keys, basic auth headers,
+  `curl -u`, `--password value`, `sshpass -p`, XML and Markdown table forms, and the Dutch and
+  German words for password.
+- The reviewer may use `2>/dev/null`, `2>&1`, a pipe into `head`, `tail`, `wc`, `sort` or
+  `uniq`, `git show <commit>`, `git log -5`, `git blame`, `git grep`, `git check-ignore`,
+  `git rev-parse` and `diff`.
+- `SECURITY.md` describes what the secret scan and the guards cover, and what they do not.
 - `wiki_backup.py`: refuses a git directory that belongs to another wiki (`init --rebind`
   after a move), `init --set-remote`, `push --allow-empty`, a secret scan before each commit
   (`--no-scan`) and a warning for a folder in the wiki that is a git repository itself.
@@ -68,6 +98,17 @@ section in plain words: what it means if you already built a workspace with an e
 
 ### 🔧 Changed
 
+- `agent_git_readonly.py` works from an allow list of commands and of options per command.
+  `sort`, `uniq`, `file` and `tree` on their own, `git -C`, `--git-dir`, a path starting with
+  `~`, a word starting with a wildcard and a network path are refused; a name or pattern
+  that starts with `-` is written `./-name` or `--regexp=-x`.
+- `validate.py --hook pre` refuses a write when it cannot read the hook input. A private key
+  block counts only when key material follows the header. `pass:` and `pw:` on their own no
+  longer count as a secret name. A file over 2 MB is named as skipped.
+- The compaction summary gets the first message and the newest ones, at most 9,500
+  characters, between two marker lines.
+- The agent templates ship real hooks where they had a placeholder; the blind seats pass
+  `--seat`.
 - `ROADMAP.md` says where NEST is going, and the README links to it. Questions and ideas now
   go to Discussions: the README, the FAQ, `CONTRIBUTING.md` and the issue chooser point there.
 - `wiki_backup.py` leaves nested git repositories out of the backup and never waits for a
@@ -84,6 +125,34 @@ section in plain words: what it means if you already built a workspace with an e
 
 ### 🐛 Fixed
 
+- **The read-only reviewer's guard could be passed.** zsh `=( )` and glob qualifiers,
+  PowerShell parentheses, `sort -o`, `file -C`, git pointed at another repository,
+  `find -rm` (which deletes inside Claude Code), an option behind `--` or behind an option
+  that takes a value (`rg -e -- --pre=sh`), and a wildcard that turns into an option after the
+  check. Found by three rounds of independent review, the last with 18,000 generated commands
+  held against the real shells.
+- **The secret scan missed the common `.env` form** (`DB_PASSWORD=`, `SECRET_KEY=`,
+  `MY_API_KEY=`), a bare `token`, a password in any URL, and Markdown emphasis before a
+  value; a placeholder word in the name hid a real value. Files written through a shell
+  command were never scanned.
+- Code and example values were mistaken for secrets (`password = hashlib.sha256(x)`,
+  `postgres://postgres:postgres@localhost`, a sentence that quotes a private key header).
+- A secret pasted into the chat was kept in the session's words file and handed to the
+  compaction summary. The files under `.claude/.session/` were readable by other users on a
+  shared Linux machine.
+- On Windows a message with an accent or a curly quote was lost or garbled, and a workspace
+  path with an accent locked the blind seats out.
+- A sensitive terms file saved as UTF-16, with a byte order mark or in a Windows code page
+  stopped every write. `"skip": "vendor/**"` written as text, not as a list, switched the
+  whole scan off. A `nest.json` with a byte order mark was read as empty by the session line.
+- Editing `CLAUDE.local.md`, the terms file or an ignored `.env` told the assistant to "fix"
+  it. A staged submodule blocked every commit.
+- A session that works for a long time without a new prompt was invisible to the
+  second-session line. A lesson was not shown again after a compaction, and lesson hooks
+  that run side by side lost each other's record. A plan was saved before it was approved.
+- The blind seat guard stepped aside when a seat was renamed, its name differed in case,
+  `--seat` was mistyped, or a link named after its file pointed at another seat's report.
+- Two patterns took minutes on a long hostile line.
 - `idea_page.py` took the first list item under "Assumptions and risks" as the load-bearing
   assumption, also when the blueprint names it in a sentence above the list; and it pointed
   at The Council in a workspace that only has The Architects.

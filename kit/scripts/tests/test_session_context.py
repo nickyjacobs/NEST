@@ -89,7 +89,8 @@ def test_broken_config_never_fails(ws):
     (ws / "wiki.config.json").write_text("{broken", encoding="utf-8")
     (ws / "nest.json").write_text("[1, 2]", encoding="utf-8")
     note(ws / "wiki/_inbox/a.md")
-    assert sc.build_line(ws) == "Workspace: wiki inbox 1 note"
+    assert sc.build_line(ws) == ("Workspace: wiki inbox 1 note, nest.json cannot be read (not a JSON object), "
+                                 "so its settings are off")
 
 
 def test_main_reads_hook_json_and_exits_zero(ws, monkeypatch, capsysbinary):
@@ -205,3 +206,29 @@ def test_a_run_by_hand_with_stdin_left_open_does_not_hang(ws):
         for stream in (proc.stdin, proc.stdout, proc.stderr):
             stream.close()
     assert time.time() - started < 15
+
+
+# --- nest.json with a byte order mark, and a broken one --------------------------------------
+
+def test_nest_json_with_a_byte_order_mark_is_read(ws):
+    (ws / "CLAUDE.md").write_text("line\n" * 30, encoding="utf-8")
+    (ws / "nest.json").write_bytes(b"\xef\xbb\xbf" + json.dumps({"size_ceiling": {"lines": 10}}).encode("utf-8"))
+    line = sc.build_line(ws)
+    assert "always-loaded files 30 lines (ceiling 10" in line and "cannot be read" not in line
+
+
+@pytest.mark.parametrize("content", ['{"size_ceiling": {"lines": 10},}', "[1, 2]", ""])
+def test_broken_nest_json_is_said_once(ws, monkeypatch, content):
+    (ws / "nest.json").write_text(content, encoding="utf-8")
+    line = sc.build_line(ws)
+    assert line.count("nest.json cannot be read") == 1 and "so its settings are off" in line
+    # An updater that reports the broken file itself does not make the line say it twice.
+    import types
+    fake = types.ModuleType("nest_update")
+    fake.notice = lambda root, timeout=2.0: "nest.json cannot be read, so NEST cannot check for updates"
+    monkeypatch.setitem(sys.modules, "nest_update", fake)
+    assert sc.build_line(ws).count("nest.json cannot be read") == 1
+
+
+def test_missing_nest_json_says_nothing(ws):
+    assert "nest.json" not in sc.build_line(ws)

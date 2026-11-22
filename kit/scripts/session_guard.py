@@ -12,16 +12,26 @@ One script, one job per `--event`. Wire only the ones the user wants (see
               same files. After a compaction it names the file with the user's own words.
   prompt      UserPromptSubmit. Appends the user's message, word for word, to a file for this
               session, and repeats the second-session line once when another session turns up.
+              One thing is taken out first: a secret the user pasted (a key, a token, a
+              password, a private key block), as validate.py next to this script recognises
+              it. In its place stands "[secret removed]", so the file and the compaction
+              summary never hold it. Without validate.py the message is stored as it is.
   precompact  PreCompact. Prints the user's messages as instructions for the compaction summary,
-              so their own wording survives it.
+              so their own wording survives it: the first message of the session (where the
+              goal usually is) and the newest ones, up to `words_chars`. All of them stay in
+              the words file, which the start line after a compaction points to.
   end         SessionEnd. Removes the session's registration.
-  lesson      PreToolUse. Shows a recorded lesson at the moment it applies, once per session.
+  lesson      PreToolUse. Shows a recorded lesson at the moment it applies, once per session
+              and once more after each compaction.
   plan        PostToolUse on ExitPlanMode. Copies the approved plan into the wiki inbox.
 
 Files, all under `.claude/.session/` (gitignored, local to this machine):
-  <session>.json       when the session started and was last seen, what it was already told
+  <session>.json       when the session started and was last seen, where its transcript is,
+                       what it was already told
   <session>.words.md   the user's messages of that session
-Both are removed after `keep_days`.
+Both are removed after `keep_days`. The folder is made for the user alone (mode 0700, the files
+0600), because the words file holds everything the user typed; on Windows the folder keeps the
+permissions of the user's profile.
 
 Lessons live in `.claude/lessons.json`, a list the assistant keeps when something went wrong:
   [{"id": "no-force-push", "on": "command", "match": "git push .*--force",
@@ -34,11 +44,18 @@ Configuration (optional), in nest.json at the workspace root:
       "live_minutes": 30,    how long after its last activity a session still counts as active
       "keep_days": 14,       how long the session files stay
       "words_chars": 8000,   how much of the user's words goes into the compaction instructions
+                             (at most 9500: Claude Code cuts a hook's output at 10,000 characters)
       "plan_author": "claude"   author value for a plan note; "" leaves the field out
   }}
 
+A session counts as active for `live_minutes` after the newer of two moments: its last prompt, and
+the last write to its transcript file. The second one keeps a session visible while it works for
+a long time without a new prompt. A session that crashed cannot say goodbye, so it still counts
+until that time has passed.
+
 The workspace root is $CLAUDE_PROJECT_DIR, else the hook's cwd, else the current directory.
-It never fails a session: every error is swallowed and the exit code is always 0.
+The hook input is read as UTF-8 bytes, whatever the console code page is. Input without a
+session id is ignored. It never fails a session: every error is swallowed and the exit code is always 0.
 """
 
 from __future__ import annotations
@@ -58,6 +75,12 @@ STATE_DIR = Path(".claude/.session")
 LESSONS_FILE = Path(".claude/lessons.json")
 DEFAULTS = {"live_minutes": 30, "keep_days": 14, "words_chars": 8000, "plan_author": "claude"}
 PROMPT_CHARS = 4000
+WORDS_CEILING = 9500  # Claude Code cuts a hook's stdout at 10,000 characters; the intro needs room
+STAMP = re.compile(r"(?m)^## \d{4}-\d{2}-\d{2} \d{2}:\d{2}$")
+WORDS_OPEN, WORDS_CLOSE = "<<< the user's messages", ">>> end of the user's messages"
+# A line in a message that looks like one of the guard's own lines gets a backslash in front, so
+# pasted text cannot pose as a separate message or close the block early.
+LOOKS_LIKE_OURS = re.compile(r"(?m)^(?=## \d{4}-\d{2}-\d{2} \d{2}:\d{2}[ \t]*$|<<< the user's messages|>>> end of the user's messages)")
 SAFE_ID = re.compile(r"[^A-Za-z0-9_-]")
 
 
@@ -70,7 +93,7 @@ def workspace_root(hook_cwd: str | None) -> Path:
 
 def read_json(path: Path):
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return json.loads(path.read_text(encoding="utf-8-sig"))
     except (OSError, ValueError):
         return None
 
@@ -90,7 +113,9 @@ def config(root: Path) -> dict:
 
 
 def session_id(data: dict) -> str:
-    return SAFE_ID.sub("", str(data.get("session_id") or ""))[:80] or "unknown"
+    """The session's id as a safe file name, or "" when the input names none."""
+    raw = data.get("session_id")
+    return SAFE_ID.sub("", raw)[:80] if isinstance(raw, str) else ""
 
 
 def state_path(root: Path, sid: str) -> Path:
@@ -106,18 +131,52 @@ def load_state(root: Path, sid: str) -> dict:
     return data if isinstance(data, dict) else {}
 
 
+def private_folder(folder: Path) -> None:
+    """The session folder, readable by the user alone: it holds every message the user typed."""
+    folder.mkdir(parents=True, exist_ok=True)
+    try:
+        if os.name != "nt" and (folder.stat().st_mode & 0o077):
+            folder.chmod(0o700)
+    except OSError:
+        pass
+
+
+def private_file(path: Path, append: bool = False):
+    """Open a file for writing with mode 0600, whatever the umask is, also when it already exists."""
+    flags = os.O_WRONLY | os.O_CREAT | (os.O_APPEND if append else os.O_TRUNC)
+    fd = os.open(path, flags, 0o600)
+    try:
+        if os.name != "nt":
+            os.fchmod(fd, 0o600)
+    except OSError:
+        pass
+    return os.fdopen(fd, "a" if append else "w", encoding="utf-8")
+
+
 def save_state(root: Path, sid: str, state: dict) -> None:
     path = state_path(root, sid)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(state), encoding="utf-8")
-    tmp.replace(path)
+    private_folder(path.parent)
+    # One name per process: hooks for calls that run side by side would otherwise share one
+    # temporary file, and one of them would lose its write.
+    tmp = path.with_name(f"{path.stem}.{os.getpid()}.tmp")
+    try:
+        with private_file(tmp) as fh:
+            fh.write(json.dumps(state))
+        tmp.replace(path)
+    finally:
+        try:
+            tmp.unlink()
+        except OSError:
+            pass
 
 
-def touch(root: Path, sid: str, now: float) -> dict:
+def touch(root: Path, sid: str, now: float, data: dict | None = None) -> dict:
     state = load_state(root, sid)
     state.setdefault("started", now)
     state["seen"] = now
+    transcript = (data or {}).get("transcript_path")
+    if isinstance(transcript, str) and transcript:
+        state["transcript"] = transcript
     save_state(root, sid, state)
     return state
 
@@ -134,6 +193,21 @@ def cleanup(root: Path, keep_days: float, now: float) -> None:
             pass
 
 
+def last_active(state: dict) -> float | None:
+    """The newer of the last prompt and the last write to the transcript: a session that works
+    for a long time without a new prompt keeps writing its transcript."""
+    seen = state.get("seen")
+    seen = float(seen) if isinstance(seen, (int, float)) and not isinstance(seen, bool) else None
+    transcript = state.get("transcript")
+    if isinstance(transcript, str) and transcript:
+        try:
+            written = Path(transcript).stat().st_mtime
+            seen = written if seen is None else max(seen, written)
+        except (OSError, ValueError):
+            pass
+    return seen
+
+
 def other_sessions(root: Path, sid: str, live_minutes: float, now: float) -> list[tuple[str, float]]:
     """Other sessions seen within `live_minutes`: (id, minutes since their last activity)."""
     folder = root / STATE_DIR
@@ -143,8 +217,8 @@ def other_sessions(root: Path, sid: str, live_minutes: float, now: float) -> lis
             if path.stem == sid:
                 continue
             data = read_json(path)
-            seen = data.get("seen") if isinstance(data, dict) else None
-            if isinstance(seen, (int, float)) and 0 <= now - seen <= live_minutes * 60:
+            seen = last_active(data) if isinstance(data, dict) else None
+            if seen is not None and 0 <= now - seen <= live_minutes * 60:
                 found.append((path.stem, (now - seen) / 60))
     return found
 
@@ -162,20 +236,88 @@ def second_session_line(root: Path, sid: str, conf: dict, now: float) -> str:
     minutes = min(m for _, m in fresh)
     ago = "less than a minute ago" if minutes < 1 else f"{int(minutes)} minute{'s' if int(minutes) != 1 else ''} ago"
     return ("Another Claude Code session is open in this workspace (last active " + ago + "). "
-            "Two sessions that write the same files can overwrite each other's work: tell the user once, "
-            "and check which session should edit before writing.")
+            "Two sessions that write the same files can overwrite each other's work. "
+            "The user has not been told about it in this session yet.")
+
+
+SECRET_MARK = "[secret removed]"
+VALUE_GROUPS = ("v", "dq", "sq", "bq", "raw")
+_rules: list | None = None
+_key_blocks = None
+
+
+def secret_rules() -> list:
+    """The hard rules of validate.py, when it sits next to this script; else none. What a private
+    key block is comes from the same place, so the scan and this file cannot disagree about it."""
+    global _rules, _key_blocks
+    if _rules is None:
+        try:
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            import validate
+            _rules, _key_blocks = list(validate.HARD_RULES), validate.key_blocks
+        except Exception:
+            _rules = []
+    return _rules
+
+
+def without_secrets(text: str) -> str:
+    """The text with every secret replaced by a marker: the value alone where a rule knows which
+    part is the value (so `DB_PASSWORD=` stays readable), the whole match otherwise."""
+    rules = secret_rules()
+    if not rules:
+        return text
+    if _key_blocks is not None:
+        for start, end in reversed(_key_blocks(text)):
+            text = text[:start] + SECRET_MARK + text[end:]
+    lines = []
+    for line in text.split("\n"):
+        spans: list[tuple[int, int]] = []
+        for rule in rules:
+            for m in rule.regex.finditer(line):
+                if not rule.accepts(m):
+                    continue
+                span = m.span()
+                for name in VALUE_GROUPS:
+                    if name in m.re.groupindex and m.group(name) is not None:
+                        span = m.span(name)
+                        break
+                spans.append(span)
+        for start, end in sorted(spans, reverse=True):
+            if not any(start >= a and end <= b for a, b in spans if (a, b) != (start, end) and (b - a) > (end - start)):
+                line = line[:start] + SECRET_MARK + line[end:]
+        lines.append(line)
+    return "\n".join(lines)
 
 
 def user_words(root: Path, sid: str, limit: int) -> str:
+    """The user's messages for the compaction summary: all of them when they fit, else the first
+    one (a session's goal is usually there) and as many of the newest as fit."""
     try:
         text = words_path(root, sid).read_text(encoding="utf-8", errors="replace").strip()
     except OSError:
         return ""
     if len(text) <= limit:
         return text
-    tail = text[-limit:]
-    cut = tail.find("\n## ")
-    return "(earlier messages left out)\n" + (tail[cut + 1:] if cut != -1 else tail)
+    starts = [m.start() for m in STAMP.finditer(text)]
+    if not starts or starts[0] != 0:
+        starts.insert(0, 0)
+    blocks = [text[a:b].strip() for a, b in zip(starts, [*starts[1:], len(text)])]
+    marker = "(messages in between left out)"
+    first = blocks[0]
+    room = max(limit // 3, 1)
+    if len(first) > room:
+        first = first[:room].rstrip() + "\n(message cut here)"
+    budget = limit - len(first) - len(marker) - 4
+    newest: list[str] = []
+    for block in reversed(blocks[1:]):
+        if len(block) + 2 > budget:
+            if not newest and budget > 40:
+                newest.append(block[:budget - 22].rstrip() + "\n(message cut here)")
+            break
+        newest.append(block)
+        budget -= len(block) + 2
+    left_out = len(newest) < len(blocks) - 1
+    return "\n\n".join([first, *([marker] if left_out else []), *reversed(newest)])
 
 
 # --- events ------------------------------------------------------------------------------------
@@ -183,7 +325,13 @@ def user_words(root: Path, sid: str, limit: int) -> str:
 def on_start(root: Path, data: dict, conf: dict, now: float) -> str:
     sid = session_id(data)
     cleanup(root, conf["keep_days"], now)
-    touch(root, sid, now)
+    if not sid:
+        return ""
+    state = touch(root, sid, now, data)
+    if data.get("source") == "compact" and state.get("lessons"):
+        # The lessons shown so far went out with the old context: show each again when it applies.
+        state.pop("lessons")
+        save_state(root, sid, state)
     lines = []
     line = second_session_line(root, sid, conf, now)
     if line:
@@ -196,30 +344,43 @@ def on_start(root: Path, data: dict, conf: dict, now: float) -> str:
 
 def on_prompt(root: Path, data: dict, conf: dict, now: float) -> str:
     sid = session_id(data)
-    touch(root, sid, now)
-    prompt = str(data.get("prompt") or "").strip()
+    if not sid:
+        return ""
+    touch(root, sid, now, data)
+    prompt = data.get("prompt")
+    prompt = prompt.strip() if isinstance(prompt, str) else ""
     if prompt:
+        try:
+            # A little past the cut, so a secret that straddles it is still seen whole.
+            prompt = without_secrets(prompt[:PROMPT_CHARS + 2000])
+        except Exception:
+            prompt = ""  # rather no words than a secret on disk
         if len(prompt) > PROMPT_CHARS:
             prompt = prompt[:PROMPT_CHARS].rstrip() + "\n(message cut here)"
+        prompt = LOOKS_LIKE_OURS.sub(r"\\\g<0>", prompt)
         path = words_path(root, sid)
-        path.parent.mkdir(parents=True, exist_ok=True)
+        private_folder(path.parent)
         stamp = datetime.fromtimestamp(now).strftime("%Y-%m-%d %H:%M")
-        with path.open("a", encoding="utf-8") as fh:
+        with private_file(path, append=True) as fh:
             fh.write(f"## {stamp}\n\n{prompt}\n\n")
     return second_session_line(root, sid, conf, now)
 
 
 def on_precompact(root: Path, data: dict, conf: dict, now: float) -> str:
-    words = user_words(root, session_id(data), int(conf["words_chars"]))
+    sid = session_id(data)
+    words = user_words(root, sid, min(int(conf["words_chars"]), WORDS_CEILING)) if sid else ""
     if not words:
         return ""
     return ("Keep the user's own messages in the summary word for word where they state a goal, a decision, "
-            "a preference or a correction. These are their messages in this session, oldest first:\n\n" + words)
+            "a preference or a correction. These are their messages in this session, oldest first, between the "
+            f"two marker lines; each starts with a line of the form '## date time':\n\n{WORDS_OPEN}\n{words}\n{WORDS_CLOSE}")
 
 
 def on_end(root: Path, data: dict, conf: dict, now: float) -> str:
+    sid = session_id(data)
     try:
-        state_path(root, session_id(data)).unlink()
+        if sid:
+            state_path(root, sid).unlink()
     except OSError:
         pass
     return ""
@@ -266,6 +427,8 @@ def on_lesson(root: Path, data: dict, conf: dict, now: float) -> str:
     if not lessons:
         return ""
     sid = session_id(data)
+    if not sid:
+        return ""
     state = load_state(root, sid)
     shown = set(state.get("lessons") or [])
     fresh = [item for item in lessons if item["id"] not in shown]
@@ -274,7 +437,10 @@ def on_lesson(root: Path, data: dict, conf: dict, now: float) -> str:
     state.setdefault("started", now)
     state["seen"] = now
     state["lessons"] = sorted(shown | {item["id"] for item in fresh})
-    save_state(root, sid, state)
+    try:
+        save_state(root, sid, state)
+    except OSError:
+        pass  # a lesson shown twice is better than a lesson not shown
     text = "A lesson recorded in this workspace applies to this step: " + " ".join(item["lesson"] for item in fresh)
     return json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "additionalContext": text}})
 
@@ -327,9 +493,11 @@ def plan_title(plan: str) -> str:
 def on_plan(root: Path, data: dict, conf: dict, now: float) -> str:
     if data.get("tool_name") != "ExitPlanMode":
         return ""
+    # Only the tool response holds the approved plan. After a call that failed the response is
+    # an error text, and the plan in the tool input is then one nobody approved.
     response = data.get("tool_response") if isinstance(data.get("tool_response"), dict) else {}
-    tool_input = data.get("tool_input") if isinstance(data.get("tool_input"), dict) else {}
-    plan = str(response.get("plan") or tool_input.get("plan") or "").strip()
+    plan = response.get("plan")
+    plan = plan.strip() if isinstance(plan, str) else ""
     found = find_wiki(root)
     if not plan or not found:
         return ""
@@ -364,15 +532,28 @@ EVENTS = {"start": on_start, "prompt": on_prompt, "precompact": on_precompact, "
 
 
 def read_stdin(seconds: float = 3.0) -> str:
-    """The hook input. Claude Code writes it at once; a run by hand with stdin left open must not
-    hang, so the read gives up after a moment."""
+    """The hook input, decoded as UTF-8 whatever the console code page is (on Windows a text read
+    would use the code page and garble or lose a message with an accent or a curly quote).
+    Claude Code writes it at once; a run by hand with stdin left open must not hang, so the read
+    gives up after a moment."""
     if sys.stdin is None or sys.stdin.isatty():
         return ""
     box: list[str] = []
 
     def read() -> None:
         try:
-            box.append(sys.stdin.read())
+            # Straight from the file descriptor: a read through sys.stdin.buffer would hold its
+            # lock in this thread and abort the interpreter when the wait below gives up.
+            try:
+                fd = sys.stdin.fileno()
+            except (OSError, ValueError, AttributeError):
+                raw = sys.stdin.buffer.read()  # a stand-in stream without a descriptor cannot hang
+            else:
+                chunks: list[bytes] = []
+                while chunk := os.read(fd, 65536):
+                    chunks.append(chunk)
+                raw = b"".join(chunks)
+            box.append(raw.decode("utf-8", errors="replace"))
         except Exception:
             pass
 

@@ -65,8 +65,23 @@ login flow and keep their tokens outside the workspace.
 No. Replies are drafts. Sending mail is not part of NEST.
 
 **What stops a secret from ending up on GitHub?**
-A scan before and after every write, a scan before every commit, your own list of sensitive
-terms, and a read-only reviewer agent. Private context lives in a file that git ignores.
+A scan for secrets at these moments:
+
+- before and after every file your assistant writes with its edit tools;
+- after every shell command it runs. A command can write a file too, and that is only visible
+  afterwards. The scan then reads the files git reports as changed or new, in the workspace and
+  in the wiki's own backup repository when you have one, plus the files of a commit the command
+  made;
+- before every commit in the workspace repository, when you chose the pre-commit hook;
+- before every wiki backup commit.
+
+Next to that: your own list of sensitive terms, and a read-only reviewer agent. Private context
+lives in a file that git ignores. The scan knows the shapes of common keys, tokens and passwords;
+it cannot recognise a password that looks like an ordinary word, so the reviewer and your own
+eyes still count. Now and then it stops a harmless line that has the shape of a password, such
+as one that gives `minimaal12tekens` as the value of `wachtwoord`: write the value with spaces, or
+put it between `<` and `>`.
+[SECURITY.md](../../SECURITY.md) lists what is covered and what is not.
 
 ## Living with it
 

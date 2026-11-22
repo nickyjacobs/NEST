@@ -10,7 +10,10 @@ hooks:
     - matcher: "Read|Grep|Glob"
       hooks:
         - type: command
-          command: "<fill in: hook command for scripts/blind_seat_guard.py, same format as the other hooks in .claude/settings.json, with onFailure: block>"
+          command: uv
+          args: ["run", "--quiet", "--script", "${CLAUDE_PROJECT_DIR}/scripts/blind_seat_guard.py", "--seat", "council-verifier"]
+          onFailure: block
+          timeout: 30
 metadata:
   does: "Checks the facts The Council leans on before the judges weigh them: each claim on a page it reads, confirmed, contradicted or unclear, without seeing the reports, on Claude Sonnet."
   try:
