@@ -30,7 +30,8 @@ Rules that always hold:
    passwords from a mail. Say "there's a code in it" and stop.
 4. **Read-then-act.** Once a mail body was read in this turn (`mail.read`), every action for the
    rest of the turn is announced in one line and waits for the yes, even a move. Only exception:
-   up to five one-off calendar appointments from that mail (the calendar skill's `invites.md`).
+   up to five one-off calendar appointments from that mail (the calendar skill's `invites.md`;
+   without the calendar skill, name the appointments and leave adding them to the user).
    Do the actions before the reading where a request allows it.
 5. **Deleting** goes to Deleted Items, where mail can come back; it asks first. Never empty
    Deleted Items, never a permanent delete.
@@ -79,5 +80,6 @@ when it looks right." Never put a code, link or account number from the original
 
 A yes to something you offered is a go: do it, don't ask again.
 
-Not signed in or not set up: the tool says so; give the sign-in command from the tool map notes
-as a `!` command for the user to run.
+Not signed in or not set up: the tool says so; give the "Sign in again" command from
+`tool-map.md` as a `!` command for the user to run. No `tool-map.md` at all, or the row says
+`none`: mail is not connected in this workspace; say so in one line and stop.

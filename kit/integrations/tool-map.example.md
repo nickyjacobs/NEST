@@ -9,6 +9,8 @@ first call. `none` means the route can't do it: say so in one line, don't improv
 
 Routes in use: <fill in: per app, the route name, its source URL and the date it was verified>
 
+Sign in again: <fill in: per route, the command the user runs when a sign-in expired, for the Microsoft Graph route `! uv run scripts/graph.py login`; "in the app" for a connector>
+
 ## Mail
 
 | Operation | Tool | Ask first | Notes |
@@ -35,6 +37,7 @@ Routes in use: <fill in: per app, the route name, its source URL and the date it
 |---|---|---|---|
 | organizer.scan | `uv run scripts/graph.py organize scan` | no | Groups g1, g2... by sender |
 | organizer.check | `uv run scripts/graph.py organize check --plan .runs/organizer/plan.json` | no | Offline; validates the board, gives the counts |
+| organizer.status | `uv run scripts/graph.py organize status` | no | Offline; whether a run can still be undone |
 | organizer.apply | `uv run scripts/graph.py organize apply --plan .runs/organizer/plan.json` | yes | Journal kept 24 hours |
 | organizer.undo | `uv run scripts/graph.py organize undo` | yes | Newest run only |
 
@@ -49,8 +52,8 @@ and keeps its own journal in `.runs/organizer/`.
 | calendar.invites | `uv run scripts/graph.py calendar invites` | no | Unanswered, next 60 days |
 | calendar.add | `uv run scripts/graph.py calendar add --title "<t>" --start <iso>` | no | `--end`; no time = all day |
 | calendar.add_repeating | `uv run scripts/graph.py calendar add ... --rrule "<rule>"` | yes | DAILY or WEEKLY, COUNT or UNTIL, max a year |
-| calendar.update | `uv run scripts/graph.py calendar update <ref> --start <iso>` | yes | `--title`, `--end` |
-| calendar.delete | `uv run scripts/graph.py calendar delete <ref>` | yes | `--series` for the whole series |
+| calendar.update | `uv run scripts/graph.py calendar update <ref> --start <iso>` | yes | `--title`, `--end`; attendees of a meeting the user organises are notified |
+| calendar.delete | `uv run scripts/graph.py calendar delete <ref>` | yes | `--series` for the whole series; attendees of a meeting the user organises get a cancellation |
 | calendar.respond | `uv run scripts/graph.py calendar respond <ref> accept` | yes | accept, decline, maybe; the organiser is told |
 
 Read-only calendars: <fill in: other calendars and their read route, or "none">

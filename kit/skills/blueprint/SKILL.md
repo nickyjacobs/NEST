@@ -144,7 +144,8 @@ section 11. Short version:
 - "go through the open points" and the answers: on the saved `idea.md`; they become the
   user's answers for the next version and for The Council.
 - "send it to the council": save first, then the idea skill (Skill tool) with the Council
-  brief and `idea_slug: <slug>`; it reads the saved blueprint, and the user can save its
+  brief and `idea_slug: <slug>` (when the idea skill is set to run on the user's command only,
+  the Skill tool refuses: give the user the line to type, `/idea` with that slug); it reads the saved blueprint, and the user can save its
   verdict there (The Council never saves by itself).
 - "rework it with the council's verdict": a new version with the verdict as feedback, The
   Foreman first.

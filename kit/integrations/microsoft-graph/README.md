@@ -8,8 +8,13 @@ What it will never do, by design:
 
 - **Send mail.** The sign-in requests `Mail.ReadWrite`, `MailboxSettings.ReadWrite` and
   `Calendars.ReadWrite`, never `Mail.Send`, and the code has no send call. Graph's
-  `POST /me/messages/{id}/send` requires `Mail.Send`, so the token itself cannot send. A reply is
-  `createReply`: a draft in Drafts.
+  `POST /me/messages/{id}/send` requires `Mail.Send`, so the token cannot send a message. A reply
+  is `createReply`: a draft in Drafts. Two things do reach other people, and the skills ask
+  first for both: answering an invitation tells the organiser, and cancelling or moving a
+  meeting the user organises makes Outlook notify its attendees. `MailboxSettings.ReadWrite`
+  also covers inbox rules. This script only ever writes rules that move mail to a folder or
+  mark it read; it has no forward or redirect action. Keep the token cache out of reach of
+  other tools all the same (the deny rule in `../permissions.example.json`).
 - **Move mail into Deleted Items** or point a rule at it. That is checked by folder id, so a
   translated display name cannot slip through. `mail delete` is the only way there (recoverable).
 - **Write a broad rule.** The organizer builds rule strings only from senders its own scan saw;

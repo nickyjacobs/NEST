@@ -24,6 +24,7 @@ Upsides:
 - one or two more
 Ceiling: how far it could go if it works, one sentence
 First step: one thing the user can do within a week that tells them whether it's worth more, one sentence
+Assumptions: what you assumed, under 15 words, or none
 Load-bearing:
 - the one claim your report rests on most that a page can settle, under 25 words | its source number, or unchecked
 Sources: only pages you opened and read, one line each, in the source-line form, or none
@@ -42,6 +43,7 @@ First version: hours until a first working version, as a range, nothing else
 Upkeep: hours per month to keep it running, nothing else
 Competes with: what those hours come out of, and whether that hurts, one sentence
 Ruin risk: none, possible or likely
+Assumptions: what you assumed, under 15 words, or none
 Load-bearing:
 - the one claim your report rests on most that a page can settle, under 25 words | its source number, or unchecked
 Sources: only pages you opened and read, one line each, in the source-line form, or none
@@ -60,6 +62,7 @@ Costs:
 Free route: how to do it for 0 in one sentence, or none
 Earns or saves: one sentence with its basis, or nothing claimed
 Break-even: how many customers cover the first year, one sentence, or not for sale
+Assumptions: what you assumed, under 15 words, or none
 Load-bearing:
 - the one claim your report rests on most that a page can settle, under 25 words | its source number, or unchecked
 Sources: only pages you opened and read, one line each, in the source-line form, or none
@@ -76,6 +79,7 @@ Unclear:
 - one more, or a single "- nothing"
 Who else: who else would want this, or nobody, one sentence
 Plainer way: the simplest way to get the same result, one sentence
+Assumptions: what you assumed, under 15 words, or none
 ```
 
 ## judge

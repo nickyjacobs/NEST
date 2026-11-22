@@ -45,6 +45,7 @@ from typing import Any
 
 SCOPES = ["Mail.ReadWrite", "MailboxSettings.ReadWrite", "Calendars.ReadWrite"]
 GRAPH = "https://graph.microsoft.com/v1.0"
+LOGIN = "uv run scripts/graph.py login"  # what the user types; the script lives in scripts/ of a workspace
 LIST_SELECT = "id,subject,from,receivedDateTime,isRead,bodyPreview,hasAttachments"
 EVENT_SELECT = "id,subject,start,end,isAllDay,isOrganizer,responseStatus,type,seriesMasterId,isCancelled,organizer"
 MAX_LIST = 50  # messages one list or search returns
@@ -107,12 +108,58 @@ def home() -> Path:
 
 
 def _write_private(path: Path, text: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text, encoding="utf-8")
+    """Write a file only its owner can read, private from the first byte (never a moment at 0644)."""
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     try:
-        path.chmod(0o600)
+        path.parent.chmod(0o700)
     except OSError:
         pass  # Windows: the user profile folder is already private
+    tmp = path.with_name(path.name + ".tmp")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        fh.write(text)
+    try:
+        tmp.chmod(0o600)
+    except OSError:
+        pass
+    tmp.replace(path)
+
+
+class _Lock:
+    """One graph.py at a time between loading and saving the refs: two runs side by side (a
+    briefing that gathers its blocks at once) would otherwise hand out the same short name, m3,
+    for two different mails. Waits up to a minute, then carries on rather than hang forever."""
+
+    def __init__(self, path: Path, wait: float = 60.0, stale: float = 180.0):
+        self.path, self.wait, self.stale, self.held = path, wait, stale, False
+
+    def __enter__(self):
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        deadline = time.monotonic() + self.wait
+        while True:
+            try:
+                os.close(os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600))
+                self.held = True
+                return self
+            except FileExistsError:
+                try:
+                    if time.time() - self.path.stat().st_mtime > self.stale:
+                        self.path.unlink()  # left behind by a run that was killed
+                        continue
+                except OSError:
+                    continue
+                if time.monotonic() > deadline:
+                    return self
+                time.sleep(0.2)
+            except OSError:
+                return self  # a folder that cannot hold a lock file: carry on without
+
+    def __exit__(self, *exc) -> None:
+        if self.held:
+            try:
+                self.path.unlink()
+            except OSError:
+                pass
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -164,10 +211,10 @@ class Refs:
 
 
 def _msal_app(cfg: dict):
+    if not cfg.get("client_id"):
+        raise GraphError(f"Not set up: the user runs `{LOGIN} --client-id <Application (client) ID>` in a terminal first.")
     import msal
 
-    if not cfg.get("client_id"):
-        raise GraphError("Not set up: run `graph.py login --client-id <Application (client) ID>` first.")
     cache = msal.SerializableTokenCache()
     path = home() / "token-cache.json"
     if path.exists():
@@ -207,11 +254,11 @@ def access_token() -> str:
     app, cache, path = _msal_app(config())
     accounts = app.get_accounts()
     if not accounts:
-        raise GraphError("Not signed in: run `graph.py login` in a terminal.")
+        raise GraphError(f"Not signed in: the user runs `{LOGIN}` in a terminal.")
     result = app.acquire_token_silent(SCOPES, account=accounts[0])
     _save_cache(cache, path)
     if not result or "access_token" not in result:
-        raise GraphError("The sign-in expired: run `graph.py login` again.")
+        raise GraphError(f"The sign-in expired: the user runs `{LOGIN}` in a terminal again.")
     return result["access_token"]
 
 
@@ -754,7 +801,9 @@ def cmd_mail(a, g: Graph, refs: Refs) -> Any:
     if a.cmd == "list":
         params = {"$top": min(a.limit, MAX_LIST), "$select": LIST_SELECT, "$orderby": "receivedDateTime desc"}
         if a.unread:
-            params["$filter"] = "isRead eq false"
+            # Graph wants every $orderby property in $filter too, and first; without it some
+            # mailboxes answer InefficientFilter.
+            params["$filter"] = "receivedDateTime ge 1970-01-01T00:00:00Z and isRead eq false"
         return [mail_row(m, refs) for m in g.call("GET", f"/me/mailFolders/{g.find_id(a.folder)}/messages", params=params).get("value", [])]
     if a.cmd == "search":
         q = a.query.replace('"', "'")
@@ -851,14 +900,17 @@ def cmd_calendar(a, g: Graph, refs: Refs) -> Any:
     if a.cmd == "update":
         cur = g.call("GET", f"/me/events/{eid}", params={"$select": EVENT_SELECT})
         body = {"subject": a.title.strip()[:120]} if a.title else {}
-        if a.start:
+        if a.start or a.end:
             all_day = bool(cur.get("isAllDay"))
-            length = datetime.fromisoformat(cur["end"]["dateTime"][:19]) - datetime.fromisoformat(cur["start"]["dateTime"][:19])
-            new_start = datetime.fromisoformat(a.start[:19])
+            old_start = datetime.fromisoformat(cur["start"]["dateTime"][:19])
+            length = datetime.fromisoformat(cur["end"]["dateTime"][:19]) - old_start
+            new_start = datetime.fromisoformat(a.start[:19]) if a.start else old_start
             new_end = datetime.fromisoformat(a.end[:19]) if a.end else new_start + length
+            if new_end <= new_start:
+                raise GraphError("The end is not after the start.")
             body.update(start=_gtime(new_start.isoformat(timespec="seconds"), all_day, tz), end=_gtime(new_end.isoformat(timespec="seconds"), all_day, tz))
         if not body:
-            raise GraphError("Nothing to change: give --title or --start.")
+            raise GraphError("Nothing to change: give --title, --start or --end.")
         return event_row(g.call("PATCH", f"/me/events/{eid}", body=body), refs)
     if a.cmd == "delete":
         if a.series:
@@ -984,16 +1036,38 @@ def main(argv: list[str] | None = None) -> int:
                 except GraphError as e:
                     out["signed_in"], out["why"] = False, str(e)
         else:
-            refs = Refs(home() / "refs.json")
-            offline = a.area == "organize" and a.cmd in ("status", "check")
-            g = None if offline else Graph(access_token(), local_tz_name())
-            out = {"mail": cmd_mail, "calendar": cmd_calendar, "organize": cmd_organize}[a.area](a, g, refs)
-            refs.save()
+            with _Lock(home() / "refs.lock"):
+                refs = Refs(home() / "refs.json")
+                offline = a.area == "organize" and a.cmd in ("status", "check")
+                try:
+                    g = None if offline else Graph(access_token(), local_tz_name())
+                    out = {"mail": cmd_mail, "calendar": cmd_calendar, "organize": cmd_organize}[a.area](a, g, refs)
+                finally:
+                    refs.save()  # also after a failure: a ref that was shown must keep meaning the same mail
     except (GraphError, PlanError) as e:
         print(json.dumps({"error": str(e)}, ensure_ascii=False))
         return 1
+    except Exception as e:  # every command prints JSON, also when the network or the input fails
+        print(json.dumps({"error": _plain_error(e)}, ensure_ascii=False))
+        return 1
     print(json.dumps(out, indent=1, ensure_ascii=False))
     return 0
+
+
+def _plain_error(e: Exception) -> str:
+    """What went wrong, in one line the skill can pass on."""
+    kind = type(e)
+    if kind.__module__.split(".")[0] in ("requests", "urllib3") or isinstance(e, (ConnectionError, TimeoutError)):
+        return f"Could not reach Microsoft (no internet, or the service did not answer): {kind.__name__}."
+    if kind.__name__ == "ZoneInfoNotFoundError":
+        return f"Unknown time zone {e}: set an IANA name such as Europe/Berlin with `login --timezone`."
+    if isinstance(e, FileNotFoundError):
+        return f"File not found: {e.filename or e}."
+    if isinstance(e, ValueError):
+        return f"Could not read that value: {e}. Dates and times are ISO, such as 2026-03-14 or 2026-03-14T09:30."
+    if isinstance(e, OSError):
+        return f"Could not read or write a file: {e.strerror or e}."
+    return f"{kind.__name__}: {e}"
 
 
 if __name__ == "__main__":

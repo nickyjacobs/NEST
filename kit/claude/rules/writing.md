@@ -1,5 +1,5 @@
 ---
-paths: ["wiki/**"]
+paths: ["wiki/**", "README.md", "docs/**"]
 ---
 
 # Writing
