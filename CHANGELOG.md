@@ -28,11 +28,29 @@ section in plain words: what it means if you already built a workspace with an e
   day instead of a week later.
 - When NEST changes an example that something of yours was made from, such as your wiki
   settings, the update now tells you.
+- **Mail and calendar through Microsoft:** "any new mail?" no longer fails on some mailboxes,
+  and when there is no internet or a sign-in expired you get one plain sentence with the
+  command to type, not a wall of code.
+- Before your assistant moves or cancels a meeting you organise, it now tells you that the
+  people in it get a message.
+- The Council no longer stops halfway for a permission prompt once the update adds three
+  allow rules to your settings; you are asked before that happens.
+
+### ✨ Added
+
+- `kit/wiki/decisions-log.md`: the decisions log with its format block, which the session-end,
+  inbox and career skills write to.
 
 ### 🔧 Changed
 
 - `nest_update.py restore` has `--list` and `--dry-run`. The plan has a new status,
   `reference`, for a changed example file without a fixed place in a workspace.
+- The idea skill no longer carries `allowed-tools`: that grant ends at the user's next
+  message, before the scoring and saving scripts run. The setup writes allow rules instead.
+- `kit/github/gitignore.template` ignores `.mcp.json` and `mail-folders.md`.
+  `kit/claude/rules/writing.md` also loads for the README and `docs/`.
+- `calendar update` takes `--end` on its own. The tool map has a "Sign in again" line and a
+  row for `organize status`; the deny rule for the token folder is a placeholder per system.
 
 ### 🐛 Fixed
 
@@ -54,6 +72,17 @@ section in plain words: what it means if you already built a workspace with an e
   wait). The whole process group is stopped now.
 - A workspace built from a version newer than the newest release got "up to date" from
   `check` and an error from `plan`. Both now say it is ahead.
+- `graph.py` printed a Python traceback when the network, a date, a time zone or a file
+  failed. Every command now prints one JSON line, and the short names for mails (m1, m2) stay
+  true when two commands run at the same time.
+- `graph.py mail list --unread` combined a filter and a sort order in a way Microsoft Graph
+  documents as an error (`InefficientFilter`).
+- The token cache of the Microsoft route was readable by other users for a moment while it
+  was written. The README of that route no longer says the token cannot reach other people:
+  answering an invitation and cancelling a meeting do.
+- The mail, calendar and organizer skills pointed at a sign-in command the tool map did not
+  have; the light Council formats lacked the `Assumptions` line the run files refer to; the
+  session-end skill named a field its template does not have.
 - Smaller: a missing `git` is named as such, a file of the other team size is no longer
   offered as new, a path spelled with other capitals in `backup` no longer blocks `mark`, an
   undo leaves no empty folders, and the fetched copy of a release follows a changed `source`.

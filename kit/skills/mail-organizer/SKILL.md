@@ -78,5 +78,5 @@ Every tool comes from `tool-map.md`. Read `reference.md` next to this file befor
 - A failed apply moved part of it: the journal has it, so "undo that" still works. Say what
   failed in one line.
 - An answer you can't place: ask once, short ("A or B?").
-- Not signed in: the tool says so; give the sign-in command from the tool map notes as a `!`
+- Not signed in: the tool says so; give the "Sign in again" command from `tool-map.md` as a `!`
   command.

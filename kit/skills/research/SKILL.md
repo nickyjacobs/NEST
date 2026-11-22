@@ -36,7 +36,7 @@ Answer in the user's language and write the saved page in it; follow `.claude/ru
    vulnerability or a question about the user's own setup, add the verdict from `stack.md` (see
    Own setup). Close with a one-line gist and the offer: "Dig into one, or save it?"
 3. **Deep dive, only on request** ("dig deeper into 3", "the second one", "more on the price").
-   Run the `researcher` agent (`subagent_type: researcher`, in the foreground) with: today's
+   Run the `researcher` agent (`subagent_type: researcher`) and wait for its report, with: today's
    date, the question, the finding's text, the URLs already used, what the user wants to know,
    and the relevant `stack.md` lines when their setup matters. Show its report with its source
    list (its [n] point at that list), then a two-line gist and the offer to save it.

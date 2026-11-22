@@ -35,7 +35,7 @@
     "deny": [
       "mcp__<mail-server>__<send-tool>",
       "mcp__<mail-server>__<permanent-delete-tool>",
-      "Read(~/Library/Application Support/nest-graph/**)"
+      "Read(<fill in: the token folder of the route, for the Microsoft Graph route the data_dir that `graph.py status` prints: ~/Library/Application Support/nest-graph on macOS, ~/.local/share/nest-graph on Linux, ~/AppData/Local/nest-graph on Windows>/**)"
     ]
   }
 }

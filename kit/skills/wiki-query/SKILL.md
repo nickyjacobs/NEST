@@ -73,5 +73,5 @@ From [[20-knowledge/index]] and [[10-projects/summer-party/README]]: the chili, 
 the lentil salad, with one line per recipe and its link.
 Save this in the wiki?
 > save
-Saved: wiki/26-research/2026-01-08-1430-backup-tools-in-my-notes.md (3 sources). Log: query. Lint: 0.
+Saved: wiki/26-research/2026-01-08-1430-recipes-for-a-crowd.md (3 sources). Log: query. Lint: 0.
 ```

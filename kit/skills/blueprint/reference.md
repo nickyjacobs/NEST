@@ -21,7 +21,7 @@ wins where the two differ.
 Light: Foreman, then Surveyor (idea and what they named), then Engineer (as above, with the
 Surveyor's report), then Draftsman (as above, with both reports). One after the other.
 
-Isolation is by content, not by a gate: every architect agent has `omitClaudeMd: true`, so
+Isolation is by content first: every architect agent has `omitClaudeMd: true`, so
 the workspace's CLAUDE.md (which knows the user) never reaches it, and each run file holds
 only what its desk may know. The Dreamer's run file is the narrowest on purpose; its agent
 file tells it to read no other file. A `CLAUDE.md` inside a folder a desk reads from (the
@@ -206,6 +206,8 @@ After round one (light: after The Surveyor):
    wc -lc "<run dir>/rival/raw.txt"
    ```
 
+   On Windows without `curl.exe`, `wc` or `split`, do the same with the Read and Write tools:
+   WebFetch the raw URL, write the text to `rival/raw.txt`, and count its lines when you read it.
    An empty file or a 404 page: try `readme.md`, then `README.rst`. Any other page: WebFetch it
    with "Give this page's text as plain text, as complete as you can: every feature, mode,
    option, plan, price and output it lists, in the page's own words, and the page's date."

@@ -302,3 +302,89 @@ def test_refs_survive_between_runs(graph, tmp_path):
     assert graph.Refs(tmp_path / "refs.json").resolve("m1") == "LONG-ID-1"
     with pytest.raises(graph.GraphError):
         refs.resolve("m99")
+
+
+# --- what the audit of 1.0.0 found -----------------------------------------------------------
+
+class FakeGraph:
+    """Records the calls a command makes; answers a stored event for GET."""
+
+    def __init__(self, event=None):
+        self.calls, self.event = [], event or {}
+        self.tz = "Europe/Berlin"
+
+    def find_id(self, name):
+        return "f-inbox"
+
+    def call(self, method, path, params=None, body=None, prefer=""):
+        self.calls.append((method, path, params, body))
+        if method == "GET" and "/events/" in path:
+            return self.event
+        return {"value": []} if method == "GET" else {**self.event, **(body or {}), "id": "e1"}
+
+
+def args(**kw):
+    import argparse
+    return argparse.Namespace(**kw)
+
+
+def test_unread_filter_names_the_order_property_first(graph, tmp_path):
+    g = FakeGraph()
+    graph.cmd_mail(args(cmd="list", limit=10, unread=True, folder="inbox"), g, graph.Refs(tmp_path / "refs.json"))
+    params = g.calls[0][2]
+    assert params["$orderby"] == "receivedDateTime desc"
+    assert params["$filter"].startswith("receivedDateTime ge ") and "isRead eq false" in params["$filter"]
+
+
+def test_update_with_only_a_new_end(graph, tmp_path):
+    event = {"id": "e1", "subject": "Dentist", "isAllDay": False, "start": {"dateTime": "2026-12-03T14:30:00"},
+             "end": {"dateTime": "2026-12-03T15:00:00"}}
+    refs = graph.Refs(tmp_path / "refs.json")
+    ref = refs.ref("c", "e1")
+    g = FakeGraph(event)
+    graph.cmd_calendar(args(cmd="update", ref=ref, title=None, start=None, end="2026-12-03T16:00"), g, refs)
+    body = [c for c in g.calls if c[0] == "PATCH"][0][3]
+    assert body["start"]["dateTime"] == "2026-12-03T14:30:00" and body["end"]["dateTime"] == "2026-12-03T16:00:00"
+    with pytest.raises(graph.GraphError):
+        graph.cmd_calendar(args(cmd="update", ref=ref, title=None, start=None, end="2026-12-03T14:00"), FakeGraph(event), refs)
+
+
+def test_every_failure_is_one_json_line(graph, monkeypatch, capsys):
+    def offline(*a, **k):
+        raise ConnectionError("no route")
+
+    monkeypatch.setattr(graph, "access_token", offline)
+    assert graph.main(["mail", "list"]) == 1
+    out = json.loads(capsys.readouterr().out)
+    assert "Could not reach Microsoft" in out["error"]
+    monkeypatch.setattr(graph, "access_token", lambda: (_ for _ in ()).throw(ValueError("Invalid isoformat string: 'tomorrow'")))
+    assert graph.main(["mail", "list"]) == 1
+    assert "ISO" in json.loads(capsys.readouterr().out)["error"]
+
+
+def test_the_sign_in_message_is_the_command_to_type(graph, capsys):
+    assert graph.main(["mail", "list"]) == 1
+    assert "uv run scripts/graph.py login" in json.loads(capsys.readouterr().out)["error"]
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX file modes")
+def test_private_files_are_never_world_readable(graph, tmp_path):
+    target = tmp_path / "deep" / "token-cache.json"
+    graph._write_private(target, "{}")
+    assert target.stat().st_mode & 0o077 == 0 and target.parent.stat().st_mode & 0o077 == 0
+    assert not target.with_name("token-cache.json.tmp").exists()
+
+
+def test_the_lock_is_taken_released_and_never_hangs(graph, tmp_path):
+    path = tmp_path / "refs.lock"
+    with graph._Lock(path) as lock:
+        assert lock.held and path.exists()
+        with graph._Lock(path, wait=0.3) as second:      # busy: carries on without, after the wait
+            assert not second.held
+        assert path.exists()                              # the second one did not take the first one's lock away
+    assert not path.exists()
+    path.write_text("", encoding="utf-8")
+    import os
+    os.utime(path, (1, 1))                                # left behind long ago by a run that was killed
+    with graph._Lock(path) as lock:
+        assert lock.held

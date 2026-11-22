@@ -40,7 +40,7 @@ frontmatter yourself. Write only what really happened; leave an empty section ou
 writing "n/a".
 
 - Frontmatter, exactly the template's fields: `title` ("Session YYYY-MM-DD: <focus>"), `date`,
-  `type: session`, `status: done`, `focus` (the slug), `tags`, `category`, `author: claude`.
+  `status: done`, `focus` (the slug), `tags`, `category`, `author: claude`.
 <!-- customise: session section headings in the user's language -->
 - Sections: Goal, Before, What was done (per logical block), Decisions (summary), Insights, Open,
   Next steps.
@@ -49,8 +49,9 @@ writing "n/a".
 ## 3. Decisions
 
 Every real decision (a choice between alternatives, not "built X") gets an entry in
-`50-decisions/log.md`. The log has a format block at its head with the allowed area values;
-follow it to the letter: a heading `## YYYY-MM-DD: <short title>`, then Area, Decision,
+`50-decisions/log.md`. The log has a format block at its head with the allowed area values
+(a log without one: add the block from the kit's `decisions-log.md` first, with the areas the
+user's sections suggest, after a yes); follow it to the letter: a heading `## YYYY-MM-DD: <short title>`, then Area, Decision,
 Rationale, Impact, Reference. Newest first, right under the format block. A decision that
 replaces an older one says so, and the old entry gets a `**Status:** superseded by ...` line;
 the old text itself is never rewritten.
