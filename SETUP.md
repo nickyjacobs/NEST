@@ -396,7 +396,8 @@ deleted.
 - **C1** **Sections.** Propose a folder tree derived from A and B, with every folder name
   written exactly as it will be on disk (lowercase, hyphens, no spaces, for example
   `30-weiterbildung`) and the readable label next to it; what the user confirms is what you
-  build. Keep the generic backbone:
+  build, letter for letter. Letters of the user's language are fine in a folder name
+  (`70-privé`); never drop an accent on your own. Keep the generic backbone:
   numbered sections with gaps (00, 10, 20 ...) so new ones fit between, plus `_inbox`,
   `_templates`, `_bases` and an archive section (90). Typical sections: context (who you are,
   goals, priorities), projects, knowledge, research, sessions, references, decisions, archive. Add
@@ -577,7 +578,7 @@ Recap of the whole interview in at most ten lines. Yes, then the handover.
 **The handover.** The workspace folder lies outside the folder this session was started in, and
 Claude Code may not write there. So the user creates it with one command:
 
-1. Update STATE.md first: `workspace:` the absolute path, `assistant:` the name,
+1. After the yes to the recap, update STATE.md first: `workspace:` the absolute path, `assistant:` the name,
    `next: handover (the user creates the workspace folder; then B1 there)`,
    `read: section 8 (B1)`, `trigger: Read _setup/nest/SETUP.md and follow it.`
 2. Give the user one command for their OS that creates the folder and copies `_setup/` into it
@@ -593,7 +594,8 @@ A session that starts while `next:` still says `handover`: if the current folder
 workspace path from STATE.md and `_setup/nest/SETUP.md` exists, the copy worked: set
 `next: B1` and go on with B1. If you are still in the NEST folder: check whether the workspace
 folder exists. If it does, tell the user to open Claude Code there and type the new trigger
-line; if it does not, give the copy command again. Never start B1 from the NEST folder.
+line; if it does not, give the copy command again. If you cannot look there, ask the user
+whether they ran the command; never assume they did not. Never start B1 from the NEST folder.
 
 ---
 
@@ -647,8 +649,9 @@ cause; never tick around it. Commits stay separate questions.
    nothing here). Writes into `.claude/` ask for permission in Claude Code; tell
    the user before B1 starts so they expect those prompts and approve them. If a write there is
    refused anyway, build the files under `_setup/build/dot-claude/` and give the user one copy
-   command for their OS. A refusal counts for that moment only: at the start of each later
-   phase try one write into `.claude/` again before you fall back.
+   command for their OS; after they say it ran, run the stamp of step 11 again, so the files
+   under `.claude/` are in it. A refusal counts for that moment only: at the start of each
+   later phase try one write into `.claude/` again before you fall back.
 2. `git init -b main` (some systems still start on `master`; the rules and the workflows expect
    `main`), the commit identity from E5 set for this repo (`git config user.name` and
    `user.email` without `--global`), and a `.gitignore` from `kit/github/gitignore.template`:
@@ -764,7 +767,8 @@ Do this in the new folder, in a fresh session (the hooks are now active).
    and step 7: then record both as open items, carry on with B3, and mention them at most once per
    session. They never block B3 or B4.
 6. `uv run scripts/wiki.py log migrate "Wiki created by NEST"`, then `reindex`, then `lint`
-   (check: lint reports zero errors).
+   (check: lint reports zero errors; a search of `wiki/` for `customise:` and `<fill in` finds
+   nothing).
 7. Ask the user to open Home in Obsidian and say what looks wrong. Fix, lint again.
 
 ### B3. Skills and agents
