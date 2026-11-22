@@ -24,6 +24,9 @@ done, and say what failed or was skipped.
    "Approved to keep here" list in `CLAUDE.local.md`; a finding that is on that list, or a cost
    estimate inside an idea review, is not a reason to fail.
 9. `git status` is clean after the last commit, or what is left is explained.
+10. The build permissions are still in `.claude/settings.local.json` only until the wrap-up:
+    note here that step 1 of section 10 takes them out, and never report "done" while the line
+    in STATE.md is unticked.
 
 Say what this check does not cover: whether the answers describe the user well (that shows in the
 first weeks), whether the Council's scores are well calibrated (that shows after about ten real
@@ -36,7 +39,12 @@ ideas), and whether an integration keeps working after its token expires.
 When you start the wrap-up, add its five points to STATE.md as checkboxes, plus every B4 test that
 did not run yet. Tick each only when it is done; the wrap-up is not done while one is open.
 
-1. Remove the "Setup in progress" line from `CLAUDE.md`. Something the user postponed (opening
+1. Take the build permissions out again, when the user said yes to the short list: remove from
+   `.claude/settings.local.json` exactly the rules `_setup/log.md` says you added, and nothing
+   else; when nothing is left in the file and you created it, remove the file (check: none of
+   the rules in `kit/claude/setup-permissions.example.json` is in it any more, unless the user
+   had that rule before). Tick the line in STATE.md and tell the user in one line that Claude
+   Code asks again from now on. Then remove the "Setup in progress" line from `CLAUDE.md`. Something the user postponed (opening
    Obsidian, the sensitive terms list, a connection) is an open item in `docs/next-session.md`,
    never a reason to keep the setup open: finish the wrap-up in this session. Keep `_setup/` as it is, with
    `_setup/nest/` in it: it is the history of how this workspace was made, it is gitignored, and

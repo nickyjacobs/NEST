@@ -29,7 +29,7 @@ open question.
 | D1 to D3 | `.claude/skills/`, `.claude/agents/`, the skills list in `CLAUDE.md`, `docs/skills.md`; the course list in the study-inbox skill |
 | D4 | the integration skill files, `tool-map.md`, `.claude/settings.json` permissions, `mail-folders.md` in the workspace root (gitignored), the blocks in the morning-briefing skill; failed or postponed routes in STATE.md "Open" |
 | D5 | `disable-model-invocation` per skill; the "When you act on your own" section of `CLAUDE.md` |
-| D6 | `.claude/settings.json` (`permissions`) |
+| D6 | `.claude/settings.json` (`permissions`). The short list for the build is something else: it lives in `.claude/settings.local.json` from before B1 until the wrap-up, after its own yes |
 | D7 | `_setup/interview/C.md`, then `wiki.config.json` and the tree in B2 |
 | D8 | the `lesson` and `plan` hooks in `.claude/settings.json`; `morning_nudge` and `nest.update_check` in `nest.json`; a line in `CLAUDE.md` that lessons go into `.claude/lessons.json` |
 | team names and sizes (D2) | `teams:` in STATE.md; every skill, agent and wiki page that names the teams |

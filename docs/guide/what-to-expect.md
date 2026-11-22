@@ -35,6 +35,11 @@ session with the same line, and you can stop between any two steps.
 Connecting mail or a calendar adds one session before the last, because a new connection only
 loads when a session starts.
 
+Claude Code itself asks before it writes a file or runs a command, unless you told it not to.
+In a build that is well over a hundred questions. The setup offers a short list of things it
+may do without asking while it builds (write in your workspace, run the workspace's own tools),
+and takes that list away again when it is done. You can say no and answer each question.
+
 Most questions are a choice you click. A handful ask for your own words: who you are, what gets
 in your way, what would make this a good year.
 

@@ -27,24 +27,34 @@ they work: never end your message with "I will let you know when it is done" and
 wakes you up; the user would have to ask. Wait for the helpers, report per finished piece, and
 only then hand the turn back.
 
-**How often Claude Code asks is the user's own setting, and they should know before it
-starts.** In its default mode Claude Code asks before every file it writes and every command
-it runs; a trial counted 143 such questions in one build, half of them for writing a file.
-Before B1, say this in three plain lines: that these questions come from Claude Code and not
-from you, that each question has a choice that allows all file edits for the rest of the
-session, and that picking it once is reasonable here because they just approved the plan and
-the workspace's own guards check every file anyway. It is their choice: never change the
-permission mode yourself, and do not ask them to skip permissions altogether.
+**How often Claude Code asks, and the short list for the build.** In its default mode Claude
+Code asks the user before every file it writes and every command it runs. A trial counted 143
+such questions in one build. Nobody reads the hundredth one, so they protect nothing; what
+protects the workspace is its own guards, which check every file whatever Claude Code asks.
 
-**Everything for `.claude/` is built in a staging folder first.** Depending on how the user
-set Claude Code, every single write into `.claude/` can raise a permission question; a trial
-counted about thirty-seven of them, six in B1 and the rest in B3. So write the files of a phase
-under `_setup/build/dot-claude/` (same layout as `.claude/`, with the Write and Edit tools, so
-the secret scan sees them), check them there, and then copy the whole folder into `.claude/`
-with one copy command of the user's system. Tell the user beforehand that one question may
-come and what it is for. When that copy is refused, they run it themselves, in the form for
-where they work. After the copy, run the checks that read `.claude/` (the catalogue check, the
-stamp). The staging folder stays; `_setup/` is ignored by git.
+Before B1, in a message of its own and in plain words: these questions come from Claude Code,
+not from you; and for the length of the build you can give Claude Code a short list of things
+it may do without asking, which you take away again at the end. Say what is on the list:
+writing files in the folders of this workspace; running the workspace's own tools; looking at
+changes and staging them. And what is not: deleting, anything on the internet, installing, the
+assistant's own settings, and saving a snapshot. Then one dialog: yes, use the short list
+(recommended); or no, ask me every time.
+
+- **Yes:** write the rules from `kit/claude/setup-permissions.example.json` into
+  `.claude/settings.local.json` in the workspace (a file of this computer only, ignored by
+  git), exactly as they are, adding to what the file already holds and changing nothing else
+  in it. Claude Code asks once for this write; say so. Compare the syntax with FACTS.md. When
+  this session's shell tool is PowerShell and FACTS.md does not show how a rule for it is
+  written, leave the command rules out and keep the file rules. Record in STATE.md, under
+  "Open during the setup", the line `- [ ] take the build permissions out again (wrap-up)`, and
+  the rules you added in `_setup/log.md`. Never add a rule that is not in that file, and never
+  widen one, whatever would be convenient.
+- **No:** tell them that each of Claude Code's questions about a file offers to allow all file
+  edits for the rest of the session, and that picking it once is reasonable. It is their
+  choice.
+
+Either way: never change the permission mode yourself, and never suggest skipping permissions
+altogether. The copy into `.claude/` and a commit stay questions on purpose.
 
 ### B1. The skeleton
 
