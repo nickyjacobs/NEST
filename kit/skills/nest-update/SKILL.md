@@ -65,7 +65,7 @@ workspace does not have (a team, mail, a backup they never set up). `items` hold
 group them by `group` so the user chooses about parts, never about single files.
 
 ```
-NEST 1.2.0 is out. You are on 1.0.0.
+NEST 1.2.0 is out. You are on 1.1.0.
 
 What is new for you
 1. The wiki check catches empty links. (improvement to something you have, safe)

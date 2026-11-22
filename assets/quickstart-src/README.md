@@ -30,4 +30,4 @@ To look at a few moments first, pass the seconds as the third argument:
 `node capture.mjs "$PWD" 12 "3,12,24" scene-update` writes `frames/still-3.png` and so on.
 
 The answer text in the quick start is the setup's real first reply from a trial run. The update
-scene shows a fictional workspace and a fictional release 1.1.0.
+scene shows a fictional workspace and a fictional release 1.2.0.

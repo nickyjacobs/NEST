@@ -22,8 +22,9 @@ when something needs installing. The one file you fill in yourself is a plain li
 that must stay private, and the setup gives you the command that opens it.
 
 **Does it work on Windows and Linux?**
-Yes. The scripts are tested on macOS, Windows and Linux on every change. A complete setup run by
-a person has so far only been done on macOS, so tell us what you hit: an issue is welcome.
+Yes. The scripts are tested on macOS, Windows and Linux on every change. A complete setup has been
+run from start to finish on macOS and on Linux, not yet on Windows, so tell us what you hit
+there: an issue is welcome.
 
 **Can I use my own language?**
 Yes. The first question is which language you want. Your wiki, your assistant's instructions

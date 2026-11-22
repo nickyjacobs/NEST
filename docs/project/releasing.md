@@ -9,14 +9,14 @@ Branch, commit and pull request conventions are in [CONTRIBUTING.md](../../CONTR
 
 ```mermaid
 gitGraph
-    commit id: "v1.0.0" tag: "v1.0.0"
+    commit id: "v1.1.0" tag: "v1.1.0"
     branch develop
     commit id: "Add: a skill"
     commit id: "Fix: a script"
-    branch release/1.1.0
+    branch release/1.2.0
     commit id: "Docs: changelog and version"
     checkout main
-    merge release/1.1.0 id: "Release: v1.1.0" tag: "v1.1.0"
+    merge release/1.2.0 id: "Release: v1.2.0" tag: "v1.2.0"
     checkout develop
     merge main id: "merge back"
 ```
@@ -28,7 +28,7 @@ who already has a workspace:
 
 | Part | Goes up when | Example |
 |---|---|---|
-| Patch, `1.0.x` | Fixes only. Nothing new to choose. | A script bug, a typo in a skill |
+| Patch, `1.1.x` | Fixes only. Nothing new to choose. | A script bug, a typo in a skill |
 | Minor, `1.x.0` | Something new, and everything that exists keeps working | A new skill, a new guard, a new setup question |
 | Major, `x.0.0` | An existing workspace has to change to keep working | A script that needs a new config shape |
 
@@ -41,8 +41,8 @@ the STATE template in `SETUP.md`, and the newest heading in `CHANGELOG.md`.
 ```markdown
 | Release | Date | In short |
 |---|---|---|
-| [1.1.0](#110---2026-03-01) | 2026-03-01 | One sentence a newcomer understands. |
-| [1.0.0](#100---2026-11-22) | 2026-11-22 | ... |
+| [1.2.0](#120---2026-03-01) | 2026-03-01 | One sentence a newcomer understands. |
+| [1.1.0](#110---2026-11-22) | 2026-11-22 | ... |
 
 ## [Unreleased]
 
@@ -56,7 +56,7 @@ the STATE template in `SETUP.md`, and the newest heading in `CHANGELOG.md`.
 
 ---
 
-## [1.1.0] - 2026-03-01
+## [1.2.0] - 2026-03-01
 
 > **In short:** One sentence a newcomer understands.
 
@@ -87,13 +87,13 @@ the STATE template in `SETUP.md`, and the newest heading in `CHANGELOG.md`.
 
 ---
 
-## [1.0.0] - 2026-11-22
+## [1.1.0] - 2026-11-22
 
 ...
 
-[Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.1.0...HEAD
-[1.1.0]: https://github.com/nickyjacobs/NEST/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/nickyjacobs/NEST/releases/tag/v1.0.0
+[Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/nickyjacobs/NEST/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/nickyjacobs/NEST/releases/tag/v1.1.0
 ```
 
 Rules:
