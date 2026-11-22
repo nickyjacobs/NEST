@@ -458,3 +458,19 @@ def test_first_sentence_in_other_scripts() -> None:
     assert idea_page.first_sentences("Ça marche. Écrire vient après.") == "Ça marche."
     assert idea_page.first_sentences("Это работает. Потом пишем.") == "Это работает."
     assert idea_page.first_sentences("Costs e.g. five euros. Then more.") == "Costs e.g. five euros."
+
+
+def test_the_load_bearing_assumption_may_be_a_sentence_above_the_list():
+    block = "\nThe group keeps logging after the first month [assumed].\n\n- The sheet stays fast [assumed]\n"
+    assert idea_page.lead_item(block) == "The group keeps logging after the first month [assumed]."
+    assert idea_page.lead_item("- First bullet\n- Second") == "First bullet"
+    assert idea_page.lead_item("") == ""
+
+
+def test_a_workspace_without_the_council_does_not_point_at_it(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    assert idea_page.council_installed()                      # no workspace here: unknown counts as yes
+    (tmp_path / ".claude/skills/blueprint").mkdir(parents=True)
+    assert not idea_page.council_installed()
+    (tmp_path / ".claude/skills/idea").mkdir()
+    assert idea_page.council_installed()

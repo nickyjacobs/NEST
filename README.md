@@ -56,8 +56,8 @@ setup remembers where you were and tells you the line that starts the next sessi
 <details>
 <summary>No git yet?</summary>
 
-Download the [ZIP](https://github.com/nickyjacobs/NEST/archive/refs/heads/main.zip), unpack it,
-open a terminal in that folder and run `claude`. The setup helps you install git along the way.
+Open the [latest release](https://github.com/nickyjacobs/NEST/releases/latest), download
+"Source code (zip)" under Assets, unpack it, open a terminal in that folder and run `claude`. The setup helps you install git along the way.
 
 </details>
 

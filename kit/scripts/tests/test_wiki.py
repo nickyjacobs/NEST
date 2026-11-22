@@ -447,3 +447,16 @@ def test_section_index_page_uses_the_top_level_status_words(vault: Path) -> None
 def test_stats_counts_active_and_draft_only(vault: Path) -> None:
     write(vault, "20-knowledge/q.md", page("Q", category="20-knowledge", status="question", extra="kind: tool\n"))
     assert wiki.stats(cfg_for(vault))["active"] == 2
+
+
+def test_the_ingest_log_of_a_sourced_section_needs_no_sources(vault: Path) -> None:
+    cfg = json.loads((vault.parent / "wiki.config.json").read_text(encoding="utf-8"))
+    cfg["unsourced_authors"] = ["claude"]
+    cfg["sections"]["40-references"] = {**cfg["sections"].get("40-references", {}), "sourced": True}
+    (vault.parent / "wiki.config.json").write_text(json.dumps(cfg), encoding="utf-8")
+    write(vault, "40-references/index.md", index_head("References", "40-references") + "<!-- AUTO-INDEX -->\n")
+    write(vault, "40-references/log.md", page("Ingest log", category="40-references"))
+    write(vault, "40-references/claim.md", page("A claim", category="40-references"))
+    res = wiki.lint(cfg_for(vault), all_pages=True)
+    flagged = [w for w in res.warnings if "without sources" in w and "40-references/" in w]
+    assert len(flagged) == 1 and "40-references/claim.md" in flagged[0], res.warnings

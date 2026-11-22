@@ -40,6 +40,10 @@ section in plain words: what it means if you already built a workspace with an e
 - By hand, once, in Obsidian: open the settings of Meta Bind and add your inbox, your raw
   sources folder and your archive to "Excluded folders", so a button inside text that came
   from outside cannot run anything. `/nest-update` shows the exact names.
+- A blueprint page in a workspace without The Council no longer tells you to "put it to the
+  council", and its summary shows the assumption the plan really rests on.
+- The first time you read a web page into your references, the wiki check no longer warns
+  about its own log page.
 - **Mail and calendar through Microsoft:** "any new mail?" no longer fails on some mailboxes,
   and when there is no internet or a sign-in expired you get one plain sentence with the
   command to type, not a wall of code.
@@ -78,6 +82,14 @@ section in plain words: what it means if you already built a workspace with an e
 
 ### 🐛 Fixed
 
+- `idea_page.py` took the first list item under "Assumptions and risks" as the load-bearing
+  assumption, also when the blueprint names it in a sentence above the list; and it pointed
+  at The Council in a workspace that only has The Architects.
+- `wiki.py lint` warned that a sourced section's own ingest log and index have no sources.
+- The research skill installed its job profile and device inventory for everyone; both are
+  now a choice. The skill builder adds a new skill to the list in `CLAUDE.md` too.
+- The README's download link pointed at the newest state of the main branch, while the
+  workspace is stamped with the release in `SETUP.md`. It points at the latest release now.
 - `wiki.py lint` accepted a link whose folder does not exist when a file of the same name
   lived elsewhere. It also stopped on an `author` written as a list and on `---` inside a
   value, and counted links inside comments, tilde fences and double-backtick code. Notes made
