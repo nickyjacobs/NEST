@@ -59,7 +59,7 @@ valid answer: it becomes an open question you can settle later.
 ## What you end up with
 
 A folder you open with Claude Code every day: an assistant that knows you, a wiki that files and
-indexes itself, the skills you picked, guards that stop a secret before it lands in a file, and
+indexes itself, the skills you picked, guards that scan for secrets when a file is written and before a commit, and
 a cheat sheet for daily use. The [README](../../README.md#what-you-get) has the full list.
 
 ## Stopping and continuing

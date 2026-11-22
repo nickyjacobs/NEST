@@ -54,7 +54,7 @@ A folder the user opens with Claude Code every day. When it is done it holds:
 |---|---|---|
 | The assistant: name, tone, a short card about the user, how the workspace works | `CLAUDE.md` (under 150 lines), `CLAUDE.local.md` (gitignored, private context) | built from the interview |
 | Rules that load by path | `.claude/rules/*.md` (at most five, one topic each) | `kit/claude/rules/` |
-| Guards that always run | `.claude/settings.json` hooks: secret scan before and after every write, one session-start line, the user's own words kept across a compaction, a warning when two sessions share the folder | `kit/claude/settings.reference.json`, `kit/scripts/validate.py`, `kit/scripts/session_context.py`, `kit/scripts/session_guard.py` |
+| Guards that run by themselves | `.claude/settings.json` hooks: secret scan before and after every write with the edit tools and after every shell command, one session-start line, the user's own words kept across a compaction, a warning when two sessions share the folder | `kit/claude/settings.reference.json`, `kit/scripts/validate.py`, `kit/scripts/session_context.py`, `kit/scripts/session_guard.py` |
 | Staying up to date | `nest.json` records which NEST release the workspace was built from; the nest-update skill brings over newer releases, only what the user picks | `kit/scripts/nest_update.py`, `kit/skills/nest-update/` |
 | The wiki | `wiki/` (Obsidian vault) in the user's structure and language | `kit/wiki/`, `kit/scripts/wiki.py` |
 | Skills the user chose, one by one | `.claude/skills/<name>/SKILL.md` | `kit/skills/` |
@@ -654,7 +654,12 @@ cause; never tick around it. Commits stay separate questions.
    `idea_page.py` and `blind_seat_guard.py` (idea or blueprint), `check_style.py`
    (writing-style). Then run `uv run --script scripts/validate.py --self-test` once:
    it proves the scanner works and makes uv fetch Python now, so the first hook does not time out
-   (check: the self-test passes; `uv run --script scripts/wiki.py --help` runs).
+   (check: the self-test passes; `uv run --script scripts/wiki.py --help` runs). Tell the user
+   once what it looks like when uv cannot be found later (a new terminal without it on the
+   PATH, an app started from the dock): every write is refused with a line such as
+   `PreToolUse:Write hook error: ... failed; blocking because onFailure is "block"`. That is the
+   guard failing safe, not a broken workspace: start Claude Code from a terminal where
+   `uv --version` works.
 7. `.claude/settings.json` from `kit/claude/settings.reference.json`: the hooks, permissions from
    D6, with idea or blueprint the three allow rules their scripts need
    (`Bash(uv run scripts/council_score.py *)`, `Bash(uv run --script scripts/idea_page.py *)`,
@@ -950,10 +955,10 @@ runs it after a yes; **A** = the assistant may just do it.
 | wiki-maint | Reindex, lint, stats and signals (stale pages, big inbox, backups) | wiki | C | how often (weekly is recommended) |
 | obsidian-markdown, obsidian-bases | Correct Obsidian syntax for notes and Bases views | wiki | A | none |
 | idea (The Council) | Judges an idea: four perspectives, a fact check, a jury, a verdict with a score and a next step | agents; web | P | full or light; which context pages hold their goals, time and money; currency; the ideas section name; whether The Architects are installed too |
-| blueprint (The Architects) | Works a rough idea out into a blueprint: what exists, variants, the first user, the smallest version, risks | agents; web | P | full or light; same context pages; the ideas section name |
+| blueprint (The Architects) | Works a rough idea out into a blueprint: what exists, variants, the first user, the smallest version, risks | agents; web | P | full or light; same context pages; the ideas section name; whether The Council is installed too |
 | career | Tracks applications and career moves, prepares for a vacancy | wiki | A for status, C for writing | which tracks (jobs, study, promotion, freelance); where their CV or experience lives |
 | study-inbox | Turns raw course material into a module note, a file with their own answers kept verbatim, and a checklist per module | wiki | C | which courses or certifications, with exam dates; where course folders live if not under projects |
-| research | Quick web research with numbered findings, deeper on request via the researcher agent, saved to the wiki | web | A | the domains they research most; source rules for their field |
+| research | Quick web research with numbered findings, deeper on request via the researcher agent, saved to the wiki | web | A | the domains they research most; source rules for their field; whether they want vacancies followed (`profile.md`) and news checked against their own devices (`stack.md`): each file is installed only on a yes |
 | session-end | Closes a work session: session note, decisions, project status, next steps | wiki | C | which pages to update at the end of a session |
 | writing-style | Rewrites text in their voice and checks a word list | none | C | the words, phrases and openers they dislike; their language; whether texts for others must be checked |
 | release | Commits per topic, runs the checks, pushes after a yes | git | C | commit prefixes; whether to push to GitHub |
