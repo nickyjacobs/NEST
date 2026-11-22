@@ -191,6 +191,9 @@
     }
   ],
   "excludedFolders": [
-    "_templates"
+    "_templates",
+    "_inbox",
+    "40-references/sources",
+    "90-archives"
   ]
 }

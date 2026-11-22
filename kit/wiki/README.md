@@ -25,7 +25,7 @@ The setup resolves every marker and removes it; a leftover marker fails the fina
 | `_templates/knowledge-note.md`, `knowledge-tool.md` | Knowledge notes (`kind` concept; tool, technique, procedure, skill with a cheat sheet) | `wiki/_templates/` |
 | `_templates/project-readme.md`, `reference-page.md` | A project folder with its README; an outside source with a review date | `wiki/_templates/` |
 | `_templates/session.md`, `audit.md` | A session log (`/session-end`), an audit (`author: claude`) | `wiki/_templates/` |
-| `_templates/_scripts/slug.js` | Templater user script `tp.user.slug` for kebab-case file names; copy as is | `wiki/_templates/_scripts/` |
+| `_templates/_scripts/slug.js` | Templater user script `tp.user.slug` for file names: lower case with hyphens, Latin accents dropped, every other script kept, a date-time name when nothing is left; copy as is | `wiki/_templates/_scripts/` |
 | `_templates/code/*.md` | Mirrors of what the skills write (`query`, `knowledge`, `reference`, `idea`); nothing reads them | `wiki/_templates/code/` |
 | `_templates/README.md` | The template catalogue the user sees | `wiki/_templates/README.md` |
 | `snippets/base.css` | Palette tokens, the dashboard callouts, `[!cheatsheet]`, Bases embed styling, light and dark | `wiki/.obsidian/snippets/base.css` |
@@ -62,6 +62,7 @@ without an audits section; `<assistant-name>` lines with Claude Code only.
 | `templater-obsidian/data.json` | `templates_folder`, `user_scripts_folder` | When the templates folder is renamed |
 | `obsidian-meta-bind-plugin/data.json` | `buttonTemplates` | One `mk-*` per capture tile (label, icon, tooltip, `templateFile`, `folderPath`) and one `ga-*` per nav button (`link` as a vault path); labels and tooltips in the user's language; ids stay stable because Home uses them |
 | `obsidian-meta-bind-plugin/data.json` | `firstWeekday`, `preferredDateFormat` | The user's locale |
+| `obsidian-meta-bind-plugin/data.json` | `excludedFolders` | The templates folder plus every folder that holds raw outside text, as paths from the vault root, renamed with the folder design: the inbox, the references' raw-copy folder, the archive, and one line per extra raw folder (a project's own inbox, a scanner folder). Never drop a line: a Meta Bind button in outside text can run a Templater file |
 | `notebook-navigator/data.json` | `folderIcons`, `folderColors` | One entry per section; colours identical to the `--nest-<section>-rgb` tokens in `base.css` |
 | `notebook-navigator/data.json` | `fileIcons`, `fileColors`, `pinnedNotes` | Paths of Home, the how-to page, the inbox index, the priorities page and the logs, after renaming |
 | `notebook-navigator/data.json` | `vaultProfiles[0].hiddenFolders` | `/_bases`, `/_templates`, `attachments`, renamed if needed |

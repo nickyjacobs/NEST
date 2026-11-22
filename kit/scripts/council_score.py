@@ -20,6 +20,10 @@ Keys are lowercase snake_case; any other key is ignored here.
   verdict     required: "GO", "GO WITH CONDITIONS", "RESHAPE", "PARK" or "DROP"
   score       required: the judge's stated score, 0 to 10, one decimal
 
+The criteria keys are the five English words, in any language of the report: a judge whose
+criteria this script cannot read (a key missing, or translated) cannot be checked, and its own
+score and verdict are not taken on trust. A score outside 0 to 10 is refused.
+
 USAGE
 
   council_score.py check <judge.json>                     recompute one judge
@@ -47,7 +51,8 @@ THE RUBRIC
 
 THE JURY
 
-Each judge is checked first. Of three, the median judge by score gives the verdict. Of two, the
+Each judge is checked first. A judge that could not be checked (criteria missing) counts as absent,
+whatever score and verdict it states. Of three, the median judge by score gives the verdict. Of two, the
 score is the mean of the two; the verdict is theirs when they agree, else the band of the mean;
 the result is always borderline and carries "jury_incomplete": true. "split" is true when judges
 land on different verdicts; "borderline" is true on a split, on a jury of two, or when the score
@@ -59,6 +64,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import sys
 from fractions import Fraction
 from pathlib import Path
@@ -83,7 +89,7 @@ def round_half_up(x: Fraction) -> float:
 
 
 def band(score: float) -> str:
-    return next(label for floor, label in BANDS if score >= floor)
+    return next((label for floor, label in BANDS if score >= floor), BANDS[-1][1])
 
 
 def normalise_verdict(raw: object) -> str:
@@ -94,10 +100,21 @@ def normalise_verdict(raw: object) -> str:
 def as_number(raw: object) -> float | None:
     if raw is None or raw == "":
         return None
+    text = str(raw).split("/")[0].strip()
+    if re.fullmatch(r"\d+,\d+", text):  # a decimal comma, as many languages write it
+        text = text.replace(",", ".")
     try:
-        return float(str(raw).split("/")[0].strip())
+        return float(text)
     except ValueError:
         return None
+
+
+def stated_number(judge: dict, key: str) -> float | None:
+    """A score the judge states, refused when it is not a number from 0 to 10."""
+    value = as_number(judge.get(key))
+    if value is not None and not (math.isfinite(value) and 0 <= value <= 10):
+        raise InvalidJudge(f"{key} must be a number from 0 to 10, got {judge.get(key)!r}")
+    return value
 
 
 def read_criteria(raw: object) -> tuple[dict[str, int], list[str]]:
@@ -113,7 +130,8 @@ def read_criteria(raw: object) -> tuple[dict[str, int], list[str]]:
         key = next((k for k in WEIGHTS if name.strip().lower().startswith(k)), None)
         if key is None or key in scores:
             continue
-        if isinstance(value, bool) or not isinstance(value, (int, float)) or value != int(value) or not 1 <= value <= 5:
+        if (isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value)
+                or value != int(value) or not 1 <= value <= 5):
             problems.append(f"{key} must be a whole number from 1 to 5, got {value!r}")
             continue
         scores[key] = int(value)
@@ -128,8 +146,8 @@ def check_judge(judge: dict) -> dict:
     scores, problems = read_criteria(judge.get("criteria"))
     if problems:
         raise InvalidJudge("; ".join(problems))
-    stated_score = as_number(judge.get("score"))
-    stated_alone = as_number(judge.get("idea_alone"))
+    stated_score = stated_number(judge, "score")
+    stated_alone = stated_number(judge, "idea_alone")
     stated_verdict = normalise_verdict(judge.get("verdict"))
     out: dict = {
         "criteria": scores,
@@ -140,7 +158,13 @@ def check_judge(judge: dict) -> dict:
         out["mismatches"].append(f"verdict {judge.get('verdict')!r} is not one of {', '.join(VERDICTS)}")
     if len(scores) < len(WEIGHTS):
         missing = [k for k in WEIGHTS if k not in scores]
-        out["mismatches"].append(f"criteria missing ({', '.join(missing)}), so the score could not be checked")
+        raw = judge.get("criteria")
+        names = list(raw) if isinstance(raw, dict) else [c.get("name", "") for c in raw or [] if isinstance(c, dict)]
+        unknown = [str(n) for n in names if not any(str(n).strip().lower().startswith(k) for k in WEIGHTS)]
+        hint = (f"; not recognised: {', '.join(unknown)} (the keys are {', '.join(WEIGHTS)}, in English "
+                "whatever the language of the report)") if unknown else ""
+        out["mismatches"].append(f"criteria missing ({', '.join(missing)}), so the score could not be checked "
+                                 f"and this judge counts as absent{hint}")
         out.update(score=stated_score, idea_alone=stated_alone, verdict=stated_verdict or None,
                    expected_verdict=None, checked=False)
         return out
@@ -183,7 +207,7 @@ def neighbour(score: float | None, verdict: str | None) -> str:
 
 def decide(judges: list[dict], light: bool = False) -> dict:
     checked = [check_judge(j) for j in judges]
-    usable = [c for c in checked if c["score"] is not None]
+    usable = [c for c in checked if c["checked"]]  # an unchecked judge's own figures are not taken on trust
     incomplete = not light and len(usable) < JURORS
     result: dict = {"judges": checked, "jury_incomplete": incomplete,
                     "mismatches": [{"judge": i + 1, "notes": c["mismatches"]} for i, c in enumerate(checked) if c["mismatches"]]}
@@ -257,6 +281,9 @@ def main(argv: list[str] | None = None) -> int:
             result = decide([load(p) for p in args.judges], light=args.light)
     except InvalidJudge as e:
         print(json.dumps({"error": str(e)}), file=sys.stderr)
+        return 1
+    except (ValueError, TypeError, OverflowError, AttributeError) as e:  # a shape no judge should have
+        print(json.dumps({"error": f"a judge file is not in the judge JSON shape ({e})"}), file=sys.stderr)
         return 1
     print(json.dumps(result, indent=2, ensure_ascii=False))
     return 0

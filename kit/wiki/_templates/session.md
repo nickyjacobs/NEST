@@ -4,7 +4,7 @@ const focus = await tp.system.prompt("Focus of the session?", "", true);
 await tp.file.move("/30-sessions/" + tp.date.now("YYYY-MM-DD") + "-" + tp.user.slug(focus));
 -%>
 ---
-title: "Session <% tp.date.now("YYYY-MM-DD") %>: <% focus.replace(/"/g, "'") %>"
+title: "Session <% tp.date.now("YYYY-MM-DD") %>: <% focus.replace(/\\/g, "\\\\").replace(/"/g, "'") %>"
 date: <% tp.date.now("YYYY-MM-DD") %>
 status: done
 focus: <% tp.user.slug(focus) %>

@@ -17,7 +17,8 @@ The config is found by --config, else the NEST_WIKI_CONFIG environment variable,
 first wiki.config.json walking up from the current directory. WIKI-CONFIG.md documents it.
 
 Errors (exit code 1): broken or ambiguous links, broken embeds, missing frontmatter or fields,
-invalid YAML, an unknown status. Warnings (listed, exit code 0): a bare link in a content
+invalid YAML, an unknown status. Links in code and in comments are not links; a link with a folder
+must be that path and never falls back to the file name alone. Warnings (listed, exit code 0): a bare link in a content
 section, a missing or unknown author, a stale active page, an unsourced page by an assistant,
 repeated links in running text, the same title in several sections, an unknown kind.
 Exit code 2: a usage or config problem.
@@ -32,6 +33,7 @@ import os
 import posixpath
 import re
 import sys
+import unicodedata
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
@@ -160,6 +162,11 @@ def _check_list(name: str, value: Any) -> None:
         raise ConfigError(f"'{name}' must be a list of strings")
 
 
+def _check_text(name: str, value: Any) -> None:
+    if not isinstance(value, str) or not value.strip():
+        raise ConfigError(f"'{name}' must be a non-empty text")
+
+
 def load_config(path: Path | str) -> Config:
     path = Path(path).expanduser().resolve()
     try:
@@ -169,7 +176,15 @@ def load_config(path: Path | str) -> Config:
     if not isinstance(raw, dict):
         raise ConfigError(f"{path}: the config must be a JSON object")
     data = {**DEFAULTS, **{k: v for k, v in raw.items() if not k.startswith("_")}}
+    if not isinstance(raw.get("log") or {}, dict):
+        raise ConfigError("'log' must be an object with file, marker, title and ops")
     data["log"] = {**DEFAULTS["log"], **(raw.get("log") or {})}
+    for key in ("file", "marker", "title"):
+        _check_text(f"log.{key}", data["log"][key])
+    _check_text("index_marker", data["index_marker"])
+    _check_text("index_empty", data["index_empty"])
+    if not isinstance(data["wiki_dir"], str) or not data["wiki_dir"].strip():
+        raise ConfigError("'wiki_dir' must be a folder path")
     roles = raw.get("status_roles") or {}
     if not isinstance(roles, dict) or not all(isinstance(v, str) for v in roles.values()):
         raise ConfigError("'status_roles' must be an object of role to status word")
@@ -192,7 +207,7 @@ def load_config(path: Path | str) -> Config:
             date.fromisoformat(str(data["author_required_from"]))
         except ValueError as e:
             raise ConfigError("'author_required_from' must be an ISO date (YYYY-MM-DD) or null") from e
-    if not isinstance(data["stale_days"], int):
+    if not isinstance(data["stale_days"], int) or isinstance(data["stale_days"], bool):
         raise ConfigError("'stale_days' must be a whole number")
     if not isinstance(data["sections"], dict):
         raise ConfigError("'sections' must be an object of folder name to settings")
@@ -203,8 +218,16 @@ def load_config(path: Path | str) -> Config:
         s = {**SECTION_DEFAULTS, **sec}
         if s["index"] not in INDEX_TYPES:
             raise ConfigError(f"section '{name}': unknown index type '{s['index']}'; one of {', '.join(INDEX_TYPES)}")
-        if not isinstance(s["kinds"], dict):
+        if not isinstance(s["kinds"], dict) or not all(isinstance(v, str) for v in s["kinds"].values()):
             raise ConfigError(f"section '{name}': 'kinds' must be an object of kind to label")
+        if not isinstance(s["labels"], dict) or not all(isinstance(v, str) for v in s["labels"].values()):
+            raise ConfigError(f"section '{name}': 'labels' must be an object of key to text")
+        for key in ("lint", "lint_active", "frontmatter", "raw", "archive", "dated", "stale", "sourced"):
+            if not isinstance(s[key], bool):
+                raise ConfigError(f"section '{name}': '{key}' must be true or false")
+        for key in ("readme", "page", "other_label", "heading", "ingest_log"):
+            if not isinstance(s[key], str):
+                raise ConfigError(f"section '{name}': '{key}' must be text")
         for key in ("raw_subdirs", "fields"):
             _check_list(f"sections.{name}.{key}", s[key])
         if s["status_words"] is not None:
@@ -242,15 +265,34 @@ def write_text(path: Path, text: str) -> None:
 
 # Frontmatter, titles and summaries
 
+def frontmatter_block(text: str) -> str | None:
+    """The raw text between the opening --- line and the closing one, or None when there is none."""
+    if not text.startswith("---\n"):
+        return None
+    m = re.search(r"(?m)^---[ \t]*$", text[4:])
+    return text[4:4 + m.start()] if m else None
+
+
 def parse_frontmatter(text: str) -> dict | None:
     """The YAML between the opening --- lines, or None when there is none or it does not parse."""
-    if not text.startswith("---\n") or "\n---" not in text[4:]:
+    block = frontmatter_block(text)
+    if block is None:
         return None
     try:
-        data = yaml.safe_load(text[4:].split("\n---", 1)[0])
+        data = yaml.safe_load(block)
     except yaml.YAMLError:
         return None
     return data if isinstance(data, dict) else None
+
+
+def raw_scalar(text: str, key: str) -> str:
+    """The value of a top-level key as it is written, quotes dropped: YAML reads `title: Yes` as true
+    and `title: Null` as nothing, a person means the word."""
+    m = re.search(r"(?m)^" + re.escape(key) + r":[ \t]*(.*?)[ \t]*$", frontmatter_block(text) or "")
+    value = m.group(1) if m else ""
+    if len(value) > 1 and value[0] == value[-1] and value[0] in "\"'":
+        value = value[1:-1]
+    return value
 
 
 def read_frontmatter(path: Path) -> dict:
@@ -263,7 +305,19 @@ def read_frontmatter(path: Path) -> dict:
 
 
 def title_of(path: Path) -> str:
-    return str(read_frontmatter(path).get("title") or path.stem)
+    try:
+        text = read_text(path)
+    except OSError:
+        return path.stem
+    title = (parse_frontmatter(text) or {}).get("title")
+    if title is None or isinstance(title, bool):
+        title = raw_scalar(text, "title")
+    return " ".join(str(title).split()) or path.stem
+
+
+def alias(text: str) -> str:
+    """Text that cannot end a [[link|alias]] early."""
+    return text.replace("[", "(").replace("]", ")")
 
 
 SUMMARY_CHARS = 120
@@ -282,8 +336,10 @@ def summary_of(path: Path) -> str:
     fm = parse_frontmatter(text) or {}
     line = str(fm.get("summary") or "").strip()
     if not line:
-        body = text[4:].split("\n---", 1)[1] if text.startswith("---\n") and "\n---" in text[4:] else text
-        for pattern in (r"%%.*?%%", r"<!--.*?-->", r"<%.*?%>", r"```.*?```"):
+        block = frontmatter_block(text)
+        body = text[4 + len(block):].split("\n", 1)[-1] if block is not None else text
+        body = FENCE.sub("", body)
+        for pattern in (r"%%.*?%%", r"<!--.*?-->", r"<%.*?%>"):
             body = re.sub(pattern, "", body, flags=re.DOTALL)
         for block in (b.strip() for b in re.split(r"\n\s*\n", body) if b.strip()):
             first = block.splitlines()[0].strip()
@@ -309,7 +365,7 @@ def summary_of(path: Path) -> str:
 def page_line(vault_path: str, page: Path) -> str:
     """`- [[path|title]]: summary`, the line every index writes for a page."""
     s = summary_of(page)
-    return f"- [[{vault_path}|{title_of(page)}]]" + (f": {s}" if s else "")
+    return f"- [[{vault_path}|{alias(title_of(page))}]]" + (f": {s}" if s else "")
 
 
 def field_line(link: str, page: Path, fields: list[str]) -> str:
@@ -360,7 +416,7 @@ def index_projects(cfg: Config, name: str, sec: dict, d: Path) -> str:
     for sub in _dirs(d):
         rm = sub / readme
         if rm.exists():
-            rows.append(field_line(f"[[{name}/{sub.name}/{stem}|{title_of(rm)}]]", rm, sec["fields"]))
+            rows.append(field_line(f"[[{name}/{sub.name}/{stem}|{alias(title_of(rm))}]]", rm, sec["fields"]))
     if not rows:
         return ""
     heading = sec["heading"] or "Projects"
@@ -377,6 +433,8 @@ def index_references(cfg: Config, name: str, sec: dict, d: Path) -> str:
         if item.name.startswith("."):
             continue
         if item.is_dir() and item.name not in raw_subdirs:
+            if next(item.rglob("*.md"), None) is None:
+                continue  # an attachments folder is not a collection
             idx = next((c for c in COLLECTION_INDEXES if (item / f"{c}.md").exists()), None)
             cnt = len(list(item.glob("*.md")))
             body += (f"- [[{name}/{item.name}/{idx}|{item.name}]] ({cnt} {labels['pages']})\n" if idx
@@ -387,7 +445,7 @@ def index_references(cfg: Config, name: str, sec: dict, d: Path) -> str:
         raw = sorted((d / sub).glob("*.md")) if (d / sub).is_dir() else []
         if raw:
             body += f"\n## {labels['raw']} (`{sub}/`)\n\n" + "".join(
-                f"- [[{name}/{sub}/{p.stem}|{title_of(p)}]]\n" for p in raw)
+                f"- [[{name}/{sub}/{p.stem}|{alias(title_of(p))}]]\n" for p in raw)
     if log_name and (d / log_name).exists():
         body += f"\n- [[{name}/{Path(log_name).stem}|{labels['ingest_log']}]]\n"
     return body
@@ -401,7 +459,7 @@ def index_folders(cfg: Config, name: str, sec: dict, d: Path) -> str:
     folders = sorted((f for f in _dirs(d) if (f / page).exists()),
                      key=lambda f: (str(read_frontmatter(f / page).get("updated") or ""), f.name), reverse=True)
     loose = sorted(_pages(d), key=lambda p: p.name, reverse=True)
-    return "\n".join([field_line(f"[[{name}/{f.name}/{stem}|{title_of(f / page)}]]", f / page, sec["fields"])
+    return "\n".join([field_line(f"[[{name}/{f.name}/{stem}|{alias(title_of(f / page))}]]", f / page, sec["fields"])
                       for f in folders] + [page_line(f"{name}/{p.stem}", p) for p in loose])
 
 
@@ -409,8 +467,19 @@ INDEXERS = {"flat": index_flat, "by_kind": index_by_kind, "projects": index_proj
             "references": index_references, "folders": index_folders}
 
 
+def marker_line(text: str, marker: str, last: bool = False) -> tuple[int, int] | None:
+    """Where the marker stands on a line of its own (start, end), the first such line or the last.
+    A marker quoted inside a sentence is text, not the marker."""
+    found = list(re.finditer(r"(?m)^[ \t]*" + re.escape(marker) + r"[ \t]*$", text))
+    if not found:
+        return None
+    m = found[-1] if last else found[0]
+    return m.start(), m.end()
+
+
 def update_index(cfg: Config, name: str) -> bool:
-    """Rebuild the block under the marker in <section>/index.md; the text above it stays.
+    """Rebuild the block under the marker line in <section>/index.md (the last one when the intro
+    shows the marker too); the text above it stays.
     Left alone (False): a manual or none section, a section without index.md, and a
     hand-written index (links, no marker)."""
     sec = cfg.sections.get(name)
@@ -422,10 +491,11 @@ def update_index(cfg: Config, name: str) -> bool:
         return False
     cur = read_text(idx)
     marker = cfg.marker
-    if marker not in cur and "[[" in cur:
+    at = marker_line(cur, marker, last=True)
+    if at is None and "[[" in cur:
         return False
     body = INDEXERS[sec["index"]](cfg, name, sec, d) or cfg["index_empty"]
-    header = cur.split(marker)[0].rstrip()
+    header = (cur if at is None else cur[:at[0]]).rstrip()
     new = (header + "\n\n" if header else "") + marker + "\n\n" + body.rstrip() + "\n"
     if new != cur:
         write_text(idx, new)
@@ -453,33 +523,53 @@ def append_log(cfg: Config, op: str, title: str, lines: list[str] | tuple[str, .
         text = read_text(log)
     else:
         log.parent.mkdir(parents=True, exist_ok=True)
-        text = (f"---\ntitle: {json.dumps(lc['title'], ensure_ascii=False)}\ncategory: log\nstatus: active\ntags: []\n---\n\n"
+        text = (f"---\ntitle: {json.dumps(lc['title'], ensure_ascii=False)}\ncategory: log\n"
+                f"status: {cfg['status_roles']['active']}\ntags: []\n---\n\n"
                 f"# {lc['title']}\n\nAppend-only, newest first.\n\n{mark}\n")
-    if mark not in text:
-        m = re.match(r"---\n.*?\n---\n", text, re.DOTALL)
-        cut = m.end() if m else 0
-        text = text[:cut] + "\n" + mark + "\n" + text[cut:]
+    at = marker_line(text, mark)
+    if at is None:  # no marker line: it goes above the first block, else at the end, never above the heading
+        m = re.search(r"(?m)^## ", text)
+        cut = m.start() if m else len(text)
+        head = text[:cut].rstrip("\n")
+        text = (head + "\n\n" if head else "") + mark + "\n\n" + text[cut:]
+        at = marker_line(text, mark)
     title = " ".join(str(title).split())
     block = f"## {when:%Y-%m-%d %H:%M} · {op} · {title}\n" + "".join(
         f"- {' '.join(str(ln).split())}\n" for ln in lines if str(ln).strip())
-    head, _, tail = text.partition(mark)
+    head, tail = text[:at[0]], text[at[1]:]
     write_text(log, head + mark + "\n\n" + block + "\n" + tail.lstrip("\n"))
     return log
 
 
 # The vault catalogue and links
 
-CF = re.compile(r"```.*?```", re.DOTALL)
-IC = re.compile(r"`[^`\n]*`")  # inline code: a `[[link]]` quoted there is not one
+# What is not running text: fenced code (``` or ~~~, also inside a > callout; an unclosed fence runs to
+# the end), inline code (a run of backticks closed by a run of the same length) and comments.
+_FENCE = r"^[ \t>]*(?P<{g}>`{{3,}}|~{{3,}})[^\n]*$.*?(?:^[ \t>]*(?P={g})[`~]*[ \t]*$|\Z)"
+_INLINE = r"(?<!`)(?P<{g}>`+)(?!`)[^\n]*?(?<!`)(?P={g})(?!`)"
+_COMMENT = r"%%.*?%%|<!--.*?-->"
+FENCE = re.compile(_FENCE.format(g="f"), re.DOTALL | re.MULTILINE)
+QUIET = re.compile("|".join((_FENCE.format(g="f"), _INLINE.format(g="i"), _COMMENT)), re.DOTALL | re.MULTILINE)
 WL = re.compile(r"(?<!\!)\[\[([^\]]+?)\]\]")
 EM = re.compile(r"\!\[\[([^\]]+?)\]\]")
-TOKEN = re.compile(r"```.*?```|`[^`\n]*`|(?<!\!)\[\[([^\]]+?)\]\]", re.DOTALL)
+TOKEN = re.compile("|".join((_FENCE.format(g="f"), _INLINE.format(g="i"), _COMMENT,
+                             r"(?<!\!)\[\[(?P<link>[^\]]+?)\]\]")), re.DOTALL | re.MULTILINE)
+
+
+def running_text(text: str) -> str:
+    """The page without code and comments: a [[link]] quoted there is not a link."""
+    return QUIET.sub("", text)
+
+
+def nfc(text: str) -> str:
+    """One Unicode form for names: a file system may store é as two code points, a link as one."""
+    return unicodedata.normalize("NFC", text)
 
 
 @dataclass
 class Catalog:
     files: list[str]
-    by_rel: set[str]
+    by_rel: set[str]  # vault paths with and without .md, lower case, NFC
     by_base: dict[str, list[str]]
     roots: set[str]
 
@@ -499,35 +589,41 @@ def catalog(cfg: Config) -> Catalog:
     by_rel: set[str] = set()
     by_base: dict[str, list[str]] = {}
     for rel in files:
-        by_rel.add(rel)
-        if rel.endswith(".md"):
-            by_rel.add(rel[:-3])
-        base = posixpath.basename(rel)
-        key = (base.removesuffix(".md")).lower()
-        by_base.setdefault(key, []).append(rel)
-    roots = {p.stem.lower() for p in cfg.vault.glob("*.md")}
+        low = nfc(rel).lower()
+        by_rel.add(low)
+        if low.endswith(".md"):
+            by_rel.add(low[:-3])
+        by_base.setdefault(posixpath.basename(low).removesuffix(".md"), []).append(rel)
+    roots = {nfc(p.stem).lower() for p in cfg.vault.glob("*.md")}
     return Catalog(files, by_rel, by_base, roots)
 
 
 def is_short(target: str, roots: set[str]) -> bool:
     """A bare [[name]]: no folder in it, and not a page in the vault root (its vault path is its name)."""
-    name = target.split("|")[0].split("#")[0].strip()
+    name = link_name(target)
     return bool(name) and "/" not in name and not name.startswith(".") and name.lower() not in roots
 
 
+def link_name(target: str) -> str:
+    """The page a link points at: no alias, no #heading, and no backslash of a table's escaped pipe."""
+    return nfc(target.split("|")[0].rstrip("\\").split("#")[0].strip())
+
+
 def resolve(cat: Catalog, target: str, src: str = "") -> str:
-    """'ok', 'ambiguous' or 'broken'. A link with a path is tried as a vault path and relative to
-    the linking file; a bare name resolves when exactly one file carries it."""
-    t = target.strip().rstrip("\\").split("#")[0].strip()  # [[page\|alias]] in a table: the pipe is escaped
+    """'ok', 'ambiguous' or 'broken'. A link with a folder must be that path, from the vault root or
+    relative to the linking file (upper and lower case are the same); it never falls back to the
+    file name alone, so a link to a folder that was renamed is broken. A bare name resolves when
+    exactly one file carries it."""
+    t = link_name(target).lower()
     if not t:
         return "ok"
-    here = posixpath.normpath(posixpath.join(posixpath.dirname(src), t)) if src and "/" in t else ""
-    for c in (t, t + ".md", t.lstrip("./"), here, here + ".md" if here else ""):
-        if c and c in cat.by_rel:
-            return "ok"
-    base = posixpath.basename(t)
-    base = (base.removesuffix(".md")).lower()
-    n = len(cat.by_base.get(base, []))
+    if "/" in t:
+        here = posixpath.normpath(posixpath.join(posixpath.dirname(nfc(src).lower()), t)) if src else ""
+        plain = posixpath.normpath(t.lstrip("/"))
+        return "ok" if any(c and c in cat.by_rel for c in (plain, here)) else "broken"
+    if t in cat.by_rel:
+        return "ok"
+    n = len(cat.by_base.get(t.removesuffix(".md"), []))
     return "ok" if n == 1 else ("ambiguous" if n > 1 else "broken")
 
 
@@ -556,7 +652,8 @@ def is_raw(cfg: Config, rel: str) -> bool:
 def fix(cfg: Config, verbose: bool = False) -> int:
     """Rewrite what needs no judgement: a bare [[name]] in a content section becomes the vault path
     when exactly one page carries the name, and `category` becomes the section folder. Code spans,
-    embeds and raw material are left alone. Returns the number of files changed."""
+    comments, embeds and raw material are left alone; inside a table the pipe is written as \\|.
+    Returns the number of files changed."""
     cat = catalog(cfg)
     changed = 0
     for rel in cat.files:
@@ -568,16 +665,19 @@ def fix(cfg: Config, verbose: bool = False) -> int:
         new = text
         if name in cfg.content:
             def swap(m: re.Match) -> str:
-                target = m.group(1)
+                target = m.group("link")
                 if target is None or not is_short(target, cat.roots):
                     return m.group(0)
-                link, _, alias = target.partition("|")
-                base, _, anchor = link.partition("#")
-                hits = [h for h in cat.by_base.get(base.strip().lower(), []) if h.endswith(".md")]
+                link, _, shown = target.partition("|")
+                escaped = link.endswith("\\")  # [[page\|alias]]: the form a table needs
+                base, _, anchor = link.rstrip("\\").partition("#")
+                hits = [h for h in cat.by_base.get(nfc(base.strip()).lower(), []) if h.endswith(".md")]
                 if len(hits) != 1:
                     return m.group(0)
+                line = m.string[m.string.rfind("\n", 0, m.start()) + 1:m.start()]
+                pipe = "\\|" if escaped or line.lstrip(" \t>").startswith("|") else "|"
                 return ("[[" + hits[0][:-3] + ("#" + anchor if anchor else "")
-                        + ("|" + alias if alias else "|" + base.strip()) + "]]")
+                        + pipe + (shown or base.strip()) + "]]")
             new = TOKEN.sub(swap, new)
         if sec["frontmatter"] and new.startswith("---"):
             fm = parse_frontmatter(new)
@@ -640,6 +740,18 @@ def _prose_only(body: str, nav: re.Pattern | None) -> str:
     return "\n".join(out)
 
 
+def status_of(fm: dict) -> str:
+    """The status as a word: YAML reads a bare `on`, `no` or `yes` as true or false."""
+    return str(fm.get("status"))
+
+
+def authors_of(fm: dict) -> list[str]:
+    """The author field as a list of names: Obsidian writes a property as a list once its type is List."""
+    value = fm.get("author")
+    items = value if isinstance(value, list) else [value]
+    return [str(v).strip() for v in items if v is not None and str(v).strip()]
+
+
 def lint(cfg: Config, all_pages: bool = False) -> LintResult:
     cat = catalog(cfg)
     res = LintResult("whole vault" if all_pages else "active content")
@@ -659,37 +771,41 @@ def lint(cfg: Config, all_pages: bool = False) -> LintResult:
         if not all_pages and ((sec is not None and not sec["lint_active"]) or in_raw_folder(cfg, rel)):
             continue
         t = read_text(cfg.vault / rel)
-        body = IC.sub("", CF.sub("", t))
+        body = running_text(t)
         fname = rel.rsplit("/", 1)[-1]
         checked = sec is not None and sec["frontmatter"]
         if checked and not t.startswith("---"):
             res.error("no-frontmatter", f"no frontmatter: {rel}")
         elif checked:
-            block = t.split("---", 2)[1]
-            missing = [k for k in cfg["required_fields"] if not re.search(r"(?m)^" + re.escape(k) + r":", block)]
+            fm = parse_frontmatter(t)
+            block = frontmatter_block(t) or t[3:]
+            missing = [k for k in cfg["required_fields"]
+                       if (k not in fm if fm is not None else not re.search(r"(?m)^" + re.escape(k) + r":", block))]
             if missing:
                 res.error("missing-fields", f"missing fields ({', '.join(missing)}): {rel}")
-            fm = parse_frontmatter(t)
-            allowed = set(sec["status_words"]) if sec["status_words"] is not None else statuses
+            # A section's own index page is a catalogue page: it keeps the top-level words.
+            own_index = rel == f"{name}/{INDEX}"
+            allowed = set(sec["status_words"]) if sec["status_words"] is not None and not own_index else statuses
             if fm is None:
                 res.error("invalid-yaml", f"invalid YAML (Obsidian shows no properties): {rel}")
-            elif str(fm.get("status")) not in allowed:
-                res.error("unknown-status", f"unknown status '{fm.get('status')}': {rel}")
+            elif "status" in fm and status_of(fm) not in allowed:
+                res.error("unknown-status", f"unknown status '{status_of(fm)}': {rel}")
             if fm is not None and fname != INDEX:
-                author = fm.get("author")
+                named = authors_of(fm)
+                author = ", ".join(named)
                 created = next((str(fm[k]) for k in cfg["created_fields"] if fm.get(k)), "")
-                if authors and (since is None or created >= str(since)) and author not in authors:
-                    res.warn("no-author", f"no author: {rel}" if not author else f"unknown author '{author}': {rel}")
+                if authors and (since is None or created >= str(since)) and not (named and set(named) <= authors):
+                    res.warn("no-author", f"no author: {rel}" if not named else f"unknown author '{author}': {rel}")
                 if not sec["raw"] and not sec["archive"] and fname not in (sec["readme"], cfg["log"]["file"], "log.md"):
                     titles.setdefault(str(fm.get("title") or "").strip().lower(), []).append(rel)
-                if sec["stale"] and str(fm.get("status")) == cfg["status_roles"]["active"]:
+                if sec["stale"] and status_of(fm) == cfg["status_roles"]["active"]:
                     try:
                         age = (today - date.fromisoformat(str(fm.get("updated"))[:10])).days
                     except (TypeError, ValueError):
                         age = -1
                     if age > stale_days:
                         res.warn("stale-active", f"{cfg['status_roles']['active']} but not updated for {age} days: {rel}")
-                if (sec["sourced"] and author in cfg["unsourced_authors"]
+                if (sec["sourced"] and set(named) & set(cfg["unsourced_authors"])
                         and not any(fm.get(k) for k in cfg["source_fields"])):
                     res.warn("unsourced", f"by {author} without sources: {rel}")
                 kind = fm.get("kind")
@@ -698,13 +814,13 @@ def lint(cfg: Config, all_pages: bool = False) -> LintResult:
         if name in content and not any(fnmatch.fnmatchcase(rel, p) for p in exempt):
             seen: dict[str, int] = {}
             for m in WL.finditer(_prose_only(body, nav)):
-                key = m.group(1).split("|")[0].split("#")[0].strip().lower()
+                key = link_name(m.group(1)).lower()
                 seen[key] = seen.get(key, 0) + 1
             for key, n in seen.items():
                 if n > 1:
                     res.warn("repeated-links", f"{n}x linked to [[{key}]] (the first mention is enough): {rel}")
         for m in WL.finditer(body):
-            target = m.group(1).split("|")[0]
+            target = m.group(1).split("|")[0].rstrip("\\")
             if name in content and is_short(m.group(1), cat.roots):
                 res.warn("short-links", f"short link [[{target}]]: {rel}")
             r = resolve(cat, target, rel)
@@ -744,9 +860,10 @@ def stats(cfg: Config) -> dict:
         fm = parse_frontmatter(text) or {}
         status = str(fm.get("status"))
         row["pages"] += 1
-        if name in cfg.content and status in set(cfg["status_roles"].values()):
+        if name in cfg.content and status in (cfg["status_roles"]["active"], cfg["status_roles"]["draft"]):
             active += 1
-        if fm.get("author") not in authors:
+        named = authors_of(fm)
+        if not (named and set(named) <= authors):
             row["no_author"] += 1
         if sec["raw"] and (status == cfg["status_roles"]["question"]
                            or str(fm.get("kind")) == cfg["question_kind"]):
@@ -757,7 +874,7 @@ def stats(cfg: Config) -> dict:
                 row["tags"].add(tag)
                 tags[tag] = tags.get(tag, 0) + 1
         if name in cfg.content:
-            body = IC.sub("", CF.sub("", text))
+            body = running_text(text)
             row["short_links"] += sum(1 for m in WL.finditer(body) if is_short(m.group(1), cat.roots))
     once = sorted(t for t, n in tags.items() if n == 1)
     return {"sections": {c: {**r, "tags": len(r["tags"])} for c, r in rows.items()}, "tags": tags,

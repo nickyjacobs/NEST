@@ -59,6 +59,9 @@ short links and tags that occur once. Per finding:
 <!-- customise: backup check (wiki backup repo from the interview, or remove this bullet) -->
 - **Backup:** `uv run scripts/wiki_backup.py status` (uncommitted files, commits not pushed).
   Changes waiting: ask whether `uv run scripts/wiki_backup.py push` may run. Push only after a yes.
+  When the push stops (something that looks like a real key in a note, an emptied wiki folder,
+  a backup folder that belongs to another wiki), pass on what it says and what it proposes;
+  use `--no-scan`, `--allow-empty` or `--rebind` only after the user said so for this case.
 - **Skills catalogue:** `uv run scripts/skills_catalog.py --check`; stale: regenerate it and say so.
 
 ## 3. Close

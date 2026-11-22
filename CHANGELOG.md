@@ -28,6 +28,18 @@ section in plain words: what it means if you already built a workspace with an e
   day instead of a week later.
 - When NEST changes an example that something of yours was made from, such as your wiki
   settings, the update now tells you.
+- **The wiki check is stricter, and right.** A link to a folder that no longer exists used to
+  pass when a note with the same name lived somewhere else. The first check after this update
+  may show a few broken links: they were broken all along.
+- **New notes keep their name in every language.** A title in Greek, Arabic, Japanese or
+  Cyrillic gave a note without a name; ß, ø and ł were lost. Existing notes do not change.
+- **The wiki backup protects you from three mistakes:** it stops when a note holds what looks
+  like a real key, when the wiki folder is suddenly empty, and when the backup folder belongs
+  to another wiki (two workspaces with the same folder name). It says what to do in each case.
+  After moving your workspace, run the backup's `init` once with `--rebind`.
+- By hand, once, in Obsidian: open the settings of Meta Bind and add your inbox, your raw
+  sources folder and your archive to "Excluded folders", so a button inside text that came
+  from outside cannot run anything. `/nest-update` shows the exact names.
 - **Mail and calendar through Microsoft:** "any new mail?" no longer fails on some mailboxes,
   and when there is no internet or a sign-in expired you get one plain sentence with the
   command to type, not a wall of code.
@@ -40,11 +52,21 @@ section in plain words: what it means if you already built a workspace with an e
 
 ### ✨ Added
 
+- `wiki_backup.py`: refuses a git directory that belongs to another wiki (`init --rebind`
+  after a move), `init --set-remote`, `push --allow-empty`, a secret scan before each commit
+  (`--no-scan`) and a warning for a folder in the wiki that is a git repository itself.
+- `skills_catalog.py --installed`: fails on a leftover `customise:` or `<fill in:` marker in
+  a built workspace.
+- Meta Bind leaves the folders with raw outside text alone, and the ingest and inbox skills
+  make Meta Bind code blocks and Templater tags in outside text inert.
 - `kit/wiki/decisions-log.md`: the decisions log with its format block, which the session-end,
   inbox and career skills write to.
 
 ### 🔧 Changed
 
+- `wiki_backup.py` leaves nested git repositories out of the backup and never waits for a
+  password. `check_style.py --strict` exits 2 when the check could not run. `dashboard.base`
+  uses `file.hasTag("query")`, which also works for a note without tags.
 - `nest_update.py restore` has `--list` and `--dry-run`. The plan has a new status,
   `reference`, for a changed example file without a fixed place in a workspace.
 - The idea skill no longer carries `allowed-tools`: that grant ends at the user's next
@@ -56,6 +78,22 @@ section in plain words: what it means if you already built a workspace with an e
 
 ### 🐛 Fixed
 
+- `wiki.py lint` accepted a link whose folder does not exist when a file of the same name
+  lived elsewhere. It also stopped on an `author` written as a list and on `---` inside a
+  value, and counted links inside comments, tilde fences and double-backtick code. Notes made
+  from the kit templates, and Home, now pass the lint.
+- `wiki.py lint --fix` broke table rows by writing an unescaped `|`; `reindex` threw away intro
+  text that mentioned the index marker. A section's own `index.md` keeps the top-level status
+  words when the section has its own list, so saving an idea no longer ends in a lint error.
+- `slug.js` gave an empty file name for titles in a non-Latin script.
+- `council_score.py` took the score and verdict of a judge whose criteria it could not check,
+  and crashed on a negative or non-finite score.
+- `idea_page.py`: status words without a section list, a heading inside a desk report that
+  cut the page short, ticks lost after a renamed heading, pages written with mode 0600, titles
+  YAML misreads, a malformed `verdict.json`.
+- `check_style.py` missed entries in scripts without spaces between words and read `[sic]` as
+  a section; `skills_catalog.py --check` said "ok" for a folder that does not exist.
+- Template titles with a backslash and source URLs with a colon broke the frontmatter.
 - `nest_update.py restore --force` after a `restore` put back an older update and wrote over
   the user's own changes. It now puts back only the files the first `restore` left alone.
 - `restore` took an older update when the last one changed no files. An update that only

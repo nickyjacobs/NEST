@@ -4,7 +4,7 @@ const question = await tp.system.prompt("What are you looking into? (becomes the
 await tp.file.move("/26-research/" + tp.date.now("YYYY-MM-DD") + "-" + tp.user.slug(question));
 -%>
 ---
-title: "<% question.replace(/"/g, "'") %>"
+title: "<% question.replace(/\\/g, "\\\\").replace(/"/g, "'") %>"
 created: <% tp.date.now("YYYY-MM-DD") %>
 updated: <% tp.date.now("YYYY-MM-DD") %>
 tags: []
