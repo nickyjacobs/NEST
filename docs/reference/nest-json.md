@@ -29,7 +29,7 @@ change only `update_check`. Read by `scripts/nest_update.py`.
 | `source` | the NEST repository | Where releases come from: a git URL or a folder |
 | `update_check` | `true` | `false` silences the session-start line about new releases |
 | `skipped_version` | none | A release you chose to skip; the line stays quiet until the next one |
-| `files` | set by the setup | Per installed file: its kit file, whether it is a `copy` or `adapted`, and the hash of the kit original |
+| `files` | set by the setup | Per installed file: its kit file, whether it is a `copy` or `adapted`, the hash of the kit original, and the release that original came from |
 | `declined` | `{}` | Changes you said no to, so they are not offered again |
 
 ## session_guard

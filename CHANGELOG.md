@@ -16,6 +16,48 @@ section in plain words: what it means if you already built a workspace with an e
 
 ## [Unreleased]
 
+### 🏠 For your workspace
+
+- **Undo is safer.** `/nest-update undo` now tells you first which update it puts back and
+  which files that concerns. It always means the last update: asking twice no longer reaches
+  back to an earlier one.
+- **A typing mistake in `nest.json` no longer costs you your settings.** The update stops and
+  names the line instead of starting over with an empty file.
+- An update you brought over in parts no longer shows you changes you already have.
+- When your workspace could not look for a new release (no internet), it tries again the next
+  day instead of a week later.
+- When NEST changes an example that something of yours was made from, such as your wiki
+  settings, the update now tells you.
+
+### 🔧 Changed
+
+- `nest_update.py restore` has `--list` and `--dry-run`. The plan has a new status,
+  `reference`, for a changed example file without a fixed place in a workspace.
+
+### 🐛 Fixed
+
+- `nest_update.py restore --force` after a `restore` put back an older update and wrote over
+  the user's own changes. It now puts back only the files the first `restore` left alone.
+- `restore` took an older update when the last one changed no files. An update that only
+  declined parts or set the version now has its own history folder.
+- `restore` that failed halfway (a read-only file, a file open in another program) could not be
+  run again and overwrote the copies in `undone/`. It now reports the file, keeps the first
+  copy, and picks up where it stopped.
+- A `nest.json` that is not valid JSON was read as empty, after which `stamp` wrote over every
+  other setting in it. A byte order mark at the start of the file is read correctly.
+- `diff` always started at the workspace's version, also for a file that was already brought
+  over. The stamp now records per file which release it came from.
+- A deleted pre-commit hook came back without its executable bit, so git skipped it. `apply
+  <path>` now brings back a deleted copy file and keeps the mode.
+- The two-second limit of the update check at session start did not hold when git's helper
+  process kept running (seen on macOS as a leftover process, expected on Windows as a long
+  wait). The whole process group is stopped now.
+- A workspace built from a version newer than the newest release got "up to date" from
+  `check` and an error from `plan`. Both now say it is ahead.
+- Smaller: a missing `git` is named as such, a file of the other team size is no longer
+  offered as new, a path spelled with other capitals in `backup` no longer blocks `mark`, an
+  undo leaves no empty folders, and the fetched copy of a release follows a changed `source`.
+
 ---
 
 ## [1.0.0] - 2026-11-22

@@ -163,7 +163,7 @@ def test_stamp_records_version_source_and_kinds(ws, nest_repo):
     s = stamp(ws)
     assert s["version"] == "1.0.0" and s["source"] == str(nest_repo) and s["update_check"] is True
     files = s["files"]
-    assert files["scripts/wiki.py"] == {"kit": "kit/scripts/wiki.py", "kind": "copy",
+    assert files["scripts/wiki.py"] == {"kit": "kit/scripts/wiki.py", "kind": "copy", "version": "1.0.0",
                                         "sha256": nu.sha(ws / "_setup/nest/kit/scripts/wiki.py")}
     assert files[".claude/skills/inbox/SKILL.md"]["kind"] == "adapted"
     assert files[".claude/rules/wiki.md"]["kit"] == "kit/claude/rules/wiki.md"
@@ -695,3 +695,310 @@ def test_a_source_without_releases_says_so_everywhere(ws, tmp_path, capsys):
     assert "No release found" in capsys.readouterr().out
     assert run("plan") == 1
     assert "No release found" in capsys.readouterr().err
+
+
+# --- what the audit of 1.0.0 found -----------------------------------------------------------
+
+def add_release(nest_repo: Path, tmp_path: Path, version: str, tree: dict) -> Path:
+    """A copy of the source with one more release on top."""
+    newer = tmp_path / f"source-{version}"
+    subprocess.run(["git", "clone", "--quiet", str(nest_repo), str(newer)], check=True, capture_output=True)
+    write_tree(newer, tree)
+    git(newer, "add", "-A")
+    git(newer, "commit", "--quiet", "-m", f"Release: v{version}")
+    git(newer, "tag", f"v{version}")
+    return newer
+
+
+def point_at(ws: Path, source: Path) -> None:
+    data = json.loads((ws / "nest.json").read_text(encoding="utf-8"))
+    data["nest"]["source"] = str(source)
+    (ws / "nest.json").write_text(json.dumps(data), encoding="utf-8")
+
+
+def test_a_second_undo_never_reaches_for_an_older_update(ws, nest_repo, tmp_path, capsys):
+    finished_update(ws)                                   # update A: wiki.py and guard.py
+    (ws / "scripts/validate.py").write_text("print('validate 1')  # my own line\n", encoding="utf-8")
+    time.sleep(1.1)                                       # run folders are named by the second
+    assert run("plan", "--json") == 0                     # update B: validate.py is a merge now
+    assert run("backup", "scripts/validate.py") == 0
+    (ws / "scripts/validate.py").write_text("print('validate 2')  # my own line\n", encoding="utf-8")
+    assert run("mark", "scripts/validate.py=kit/scripts/validate.py") == 0
+    assert run("finish") == 0
+    (ws / "scripts/validate.py").write_text("print('validate 2')  # edited after B\n", encoding="utf-8")
+    capsys.readouterr()
+    assert run("restore") == 0                            # B: validate.py is left alone
+    assert "Left alone" in capsys.readouterr().out
+    assert (ws / "scripts/wiki.py").read_text(encoding="utf-8") == V110["kit/scripts/wiki.py"]   # A untouched
+    assert run("restore", "--force") == 0                 # still B, and only the file it left
+    assert (ws / "scripts/validate.py").read_text(encoding="utf-8") == "print('validate 1')  # my own line\n"
+    assert (ws / "scripts/wiki.py").read_text(encoding="utf-8") == V110["kit/scripts/wiki.py"]
+    assert (ws / "scripts/guard.py").is_file()
+    capsys.readouterr()
+    assert run("restore") == 1                            # B is done; A is never taken by default
+    err = capsys.readouterr().err
+    assert "already put back" in err and "--run" in err
+    assert (ws / "scripts/wiki.py").read_text(encoding="utf-8") == V110["kit/scripts/wiki.py"]
+
+
+def test_an_older_update_is_put_back_by_name_only(ws, capsys):
+    finished_update(ws)
+    first = sorted(p.name for p in (ws / nu.HISTORY_DIR).glob("nest-update-*"))[0]
+    assert run("restore") == 0
+    capsys.readouterr()
+    assert run("restore", "--list") == 0
+    out = capsys.readouterr().out
+    assert first in out and "put back" in out and "1.0.0" in out
+    assert run("restore", "--run", "nest-update-19990101-000000") == 1
+    assert "--list" in capsys.readouterr().err
+
+
+def test_an_update_that_only_declined_is_what_undo_puts_back(ws, capsys):
+    assert run("plan", "--json") == 0
+    assert run("decline", "kit/skills/study") == 0
+    assert run("finish") == 0
+    assert stamp(ws)["declined"]
+    assert len(list((ws / nu.HISTORY_DIR).glob("nest-update-*"))) == 1
+    assert run("restore") == 0
+    assert stamp(ws)["declined"] == {}
+
+
+def test_restore_dry_run_changes_nothing(ws, capsys):
+    finished_update(ws)
+    before = (ws / "nest.json").read_text(encoding="utf-8")
+    capsys.readouterr()
+    assert run("restore", "--dry-run") == 0
+    out = capsys.readouterr().out
+    assert "scripts/wiki.py" in out and "scripts/guard.py" in out and "Nothing was changed" in out
+    assert (ws / "nest.json").read_text(encoding="utf-8") == before
+    assert (ws / "scripts/guard.py").is_file()
+    assert run("restore") == 0
+
+
+def test_a_broken_nest_json_is_never_overwritten(ws, capsys):
+    path = ws / "nest.json"
+    broken = path.read_text(encoding="utf-8").rstrip()[:-1] + ',}'
+    path.write_text(broken, encoding="utf-8")
+    capsys.readouterr()
+    for command in (("plan",), ("stamp",), ("check",), ("finish",), ("decline", "kit/skills/study")):
+        assert run(*command) == 1
+        assert "not valid JSON" in capsys.readouterr().err
+    assert path.read_text(encoding="utf-8") == broken
+    assert "cannot be read" in nu.notice(ws)
+    assert run("check", "--quiet") == 0
+
+
+def test_a_byte_order_mark_in_nest_json_is_fine(ws):
+    path = ws / "nest.json"
+    text = path.read_text(encoding="utf-8")
+    path.write_bytes(b"\xef\xbb\xbf" + text.encode("utf-8"))
+    assert run("plan", "--json") == 0
+    assert run("apply", "scripts/wiki.py") == 0
+    data = json.loads(path.read_text(encoding="utf-8-sig"))
+    assert data["wiki_backup"] == {"git_dir": "~/.x.git"} and data["nest"]["version"] == "1.0.0"
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="read-only files behave differently on Windows")
+def test_a_restore_that_fails_halfway_can_be_run_again(ws, capsys):
+    assert run("plan", "--json") == 0
+    assert run("apply", "scripts/wiki.py", "scripts/validate.py") == 0
+    assert run("finish") == 0
+    folder = next((ws / nu.HISTORY_DIR).glob("nest-update-*"))
+    (ws / "scripts").chmod(0o755)
+    blocked = folder / "files/scripts/wiki.py"
+    kept_text = blocked.read_text(encoding="utf-8")
+    blocked.chmod(0o000)                                   # the kept version cannot be read
+    try:
+        capsys.readouterr()
+        assert run("restore") == 1
+        assert "scripts/wiki.py" in capsys.readouterr().err
+        assert not (folder / "restored").exists()
+        assert (ws / "scripts/validate.py").read_text(encoding="utf-8") == V100["kit/scripts/validate.py"]
+    finally:
+        blocked.chmod(0o644)
+    assert run("restore") == 0
+    assert (ws / "scripts/wiki.py").read_text(encoding="utf-8") == kept_text
+    # the version the update had written is still the one kept aside, not the file put back in the first try
+    assert (folder / "undone/scripts/validate.py").read_text(encoding="utf-8") == V110["kit/scripts/validate.py"]
+    assert stamp(ws)["version"] == "1.0.0"
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="read-only files behave differently on Windows")
+def test_restore_writes_over_a_read_only_file(ws):
+    finished_update(ws)
+    (ws / "scripts/wiki.py").chmod(0o444)
+    assert run("restore") == 0
+    assert (ws / "scripts/wiki.py").read_text(encoding="utf-8") == V100["kit/scripts/wiki.py"]
+
+
+def test_undo_leaves_no_empty_folder_behind(ws):
+    assert run("plan", "--json") == 0
+    assert run("backup", ".claude/skills/study/SKILL.md") == 0
+    write_tree(ws, {".claude/skills/study/SKILL.md": "studie\n"})
+    assert run("mark", ".claude/skills/study/SKILL.md=kit/skills/study/SKILL.md") == 0
+    assert run("restore") == 0
+    assert not (ws / ".claude/skills/study").exists() and (ws / ".claude/skills/inbox").is_dir()
+
+
+def test_diff_starts_where_the_file_was_made_from(ws, nest_repo, tmp_path, capsys):
+    assert run("plan", "--json") == 0
+    assert run("backup", ".claude/skills/inbox/SKILL.md") == 0
+    (ws / ".claude/skills/inbox/SKILL.md").write_text("Ruim de inbox op, oudste eerst.\n", encoding="utf-8")
+    assert run("mark", ".claude/skills/inbox/SKILL.md=kit/skills/inbox/SKILL.md") == 0
+    assert run("finish") == 0                             # other parts stay open: still on 1.0.0
+    assert stamp(ws)["version"] == "1.0.0"
+    assert stamp(ws)["files"][".claude/skills/inbox/SKILL.md"]["version"] == "1.1.0"
+    newer = add_release(nest_repo, tmp_path, "1.2.0", {
+        "kit/skills/inbox/SKILL.md": "---\nname: inbox\n---\n<!-- customise: language -->\nFile the inbox, oldest first, in batches.\n"})
+    point_at(ws, newer)
+    assert run("plan", "--json") == 0
+    capsys.readouterr()
+    assert run("diff", "kit/skills/inbox/SKILL.md") == 0
+    out = capsys.readouterr().out
+    assert "NEST 1.1.0/kit/skills/inbox/SKILL.md" in out and "in batches" in out
+    assert "-File the inbox.\n" not in out               # the 1.0.0 line is not the start any more
+
+
+def test_a_deleted_copy_file_comes_back_executable(ws, nest_repo, tmp_path, capsys):
+    source = add_release(nest_repo, tmp_path, "1.2.0", {"kit/github/pre-commit": "#!/bin/sh\nexit 0\n"})
+    subprocess.run(["git", "update-index", "--chmod=+x", "kit/github/pre-commit"], cwd=source, check=True)
+    git(source, "commit", "--quiet", "-m", "Fix: mode")
+    git(source, "tag", "v1.3.0")
+    newest = add_release(source, tmp_path, "1.4.0", {"kit/github/pre-commit": "#!/bin/sh\n# stricter\nexit 0\n"})
+    fetched = nu.fetch_release(ws, str(newest), (1, 3, 0))
+    write_tree(ws, {".githooks/pre-commit": "#!/bin/sh\nexit 0\n"})
+    data = json.loads((ws / "nest.json").read_text(encoding="utf-8"))
+    data["nest"].update(version="1.3.0", source=str(newest))
+    data["nest"]["files"] = {".githooks/pre-commit": {"kit": "kit/github/pre-commit", "kind": "copy",
+                                                      "sha256": nu.sha(fetched / "kit/github/pre-commit")}}
+    (ws / "nest.json").write_text(json.dumps(data), encoding="utf-8")
+    (ws / ".githooks/pre-commit").unlink()
+    assert run("plan", "--json") == 0
+    assert status(ws)[".githooks/pre-commit"] == "missing"
+    assert run("apply", ".githooks/pre-commit") == 0
+    hook = ws / ".githooks/pre-commit"
+    assert "stricter" in hook.read_text(encoding="utf-8")
+    if sys.platform != "win32":
+        assert hook.stat().st_mode & 0o111
+
+
+def test_a_deleted_adapted_file_says_how_to_bring_it_back(ws, capsys):
+    (ws / ".claude/skills/inbox/SKILL.md").unlink()
+    assert run("plan", "--json") == 0
+    capsys.readouterr()
+    assert run("apply", ".claude/skills/inbox/SKILL.md") == 1
+    err = capsys.readouterr().err
+    assert "was deleted" in err and "mark" in err and "done" in err
+
+
+def test_another_spelling_in_backup_does_not_block_mark(ws):
+    assert run("plan", "--json") == 0
+    assert run("backup", ".claude/Skills/Inbox/SKILL.md") == 0
+    (ws / ".claude/skills/inbox/SKILL.md").write_text("Ruim de inbox op, oudste eerst.\n", encoding="utf-8")
+    assert run("mark", ".claude/skills/inbox/SKILL.md=kit/skills/inbox/SKILL.md") == 0
+
+
+def test_a_new_file_of_the_other_size_is_not_offered(ws, nest_repo, tmp_path):
+    newer = add_release(nest_repo, tmp_path, "1.2.0", {"kit/agents/full/council-newseat.md": "full only\n",
+                                                       "kit/agents/light/council-clerk.md": "light too\n"})
+    point_at(ws, newer)
+    kits = {item["kit"]: item["status"] for item in nu.current_plan(ws, nu.load_stamp(ws), fresh=True)["items"]}
+    assert "kit/agents/full/council-newseat.md" not in kits
+    assert kits["kit/agents/light/council-clerk.md"] == "new"
+
+
+def test_a_changed_reference_file_is_reported(ws, nest_repo, tmp_path, capsys):
+    base = add_release(nest_repo, tmp_path, "1.2.0", {"kit/scripts/wiki.config.example.json": "{}\n",
+                                                      "kit/integrations/permissions.example.json": "{}\n"})
+    newer = add_release(base, tmp_path, "1.3.0", {"kit/scripts/wiki.config.example.json": '{"new_key": 1}\n',
+                                                  "kit/integrations/permissions.example.json": '{"x": 1}\n'})
+    data = json.loads((ws / "nest.json").read_text(encoding="utf-8"))
+    data["nest"].update(version="1.2.0", source=str(newer))
+    for entry in data["nest"]["files"].values():           # as if the workspace is level with 1.2.0
+        if entry["kit"] in V110 and V110[entry["kit"]] is not None:
+            entry["sha256"] = nu.sha(newer / entry["kit"])
+    (ws / "nest.json").write_text(json.dumps(data), encoding="utf-8")
+    found = status(ws)
+    assert found["kit/scripts/wiki.config.example.json"] == "reference"
+    assert "kit/integrations/permissions.example.json" not in found   # no integrations in this workspace
+    assert run("plan", "--json") == 0
+    assert run("done", "kit/scripts/wiki.config.example.json") == 0
+    assert "kit/scripts/wiki.config.example.json" not in {i["kit"] for i in nu.open_items(plan(ws))}
+
+
+def test_a_workspace_ahead_of_the_newest_release_is_up_to_date(ws, capsys):
+    data = json.loads((ws / "nest.json").read_text(encoding="utf-8"))
+    data["nest"]["version"] = "1.5.0"
+    (ws / "nest.json").write_text(json.dumps(data), encoding="utf-8")
+    capsys.readouterr()
+    assert run("check") == 0
+    assert "newer than the newest release" in capsys.readouterr().out
+    assert run("plan") == 0
+    assert "newer than the newest release" in capsys.readouterr().out
+    assert run("plan", "--json") == 0
+    out = json.loads(capsys.readouterr().out)
+    assert out["up_to_date"] is True and out["ahead"] is True
+
+
+def test_a_file_that_is_already_the_new_one_only_needs_its_record(ws, capsys):
+    assert run("plan", "--json") == 0
+    (ws / "scripts/wiki.py").write_text(V110["kit/scripts/wiki.py"], encoding="utf-8")   # copied, never recorded
+    assert status(ws)["scripts/wiki.py"] == "replace"
+    assert run("apply", "scripts/wiki.py") == 0
+    assert status(ws)["scripts/wiki.py"] == "unchanged"
+
+
+def test_a_failed_check_is_tried_again_the_next_day(ws, monkeypatch):
+    calls = []
+
+    def unreachable(source, timeout):
+        calls.append(source)
+        raise nu.Problem("no network")
+
+    monkeypatch.setattr(nu, "remote_versions", unreachable)
+    assert nu.notice(ws) == ""
+    assert nu.notice(ws) == "" and len(calls) == 1          # not again within the day
+    cache = json.loads((ws / nu.CACHE_FILE).read_text(encoding="utf-8"))
+    assert cache["failed"] is True
+    cache["checked"] -= 2 * 86400                           # two days later: look again, do not wait a week
+    (ws / nu.CACHE_FILE).write_text(json.dumps(cache), encoding="utf-8")
+    monkeypatch.undo()
+    monkeypatch.setenv("CLAUDE_PROJECT_DIR", str(ws))
+    assert "NEST 1.1.0 is available" in nu.notice(ws)
+    assert "failed" not in json.loads((ws / nu.CACHE_FILE).read_text(encoding="utf-8"))
+
+
+def test_a_missing_git_is_named(ws, monkeypatch, capsys):
+    def no_git(*args, **kwargs):
+        raise FileNotFoundError("git")
+
+    monkeypatch.setattr(nu, "run_bounded", no_git)
+    capsys.readouterr()
+    assert run("check") == 1
+    assert "git was not found" in capsys.readouterr().err
+
+
+def test_a_command_that_hangs_comes_back_in_time(tmp_path):
+    """A child that starts a helper which keeps the pipes open, like git and its remote helper."""
+    helper = "import subprocess, sys, time; subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)']); time.sleep(60)"
+    started = time.monotonic()
+    with pytest.raises(subprocess.TimeoutExpired):
+        nu.run_bounded([sys.executable, "-c", helper], timeout=1.0)
+    assert time.monotonic() - started < 15
+
+
+def test_the_fetch_cache_follows_the_source(ws, nest_repo, tmp_path):
+    other = tmp_path / "other-source"
+    subprocess.run(["git", "clone", "--quiet", str(nest_repo), str(other)], check=True, capture_output=True)
+    git(other, "tag", "-d", "v1.1.0")
+    (other / "kit/scripts/wiki.py").write_text("print('wiki from elsewhere')\n", encoding="utf-8")
+    git(other, "commit", "--quiet", "-am", "Release: v1.1.0")
+    git(other, "tag", "v1.1.0")
+    first = nu.fetch_release(ws, str(nest_repo), (1, 1, 0))
+    assert (first / "kit/scripts/wiki.py").read_text(encoding="utf-8") == V110["kit/scripts/wiki.py"]
+    second = nu.fetch_release(ws, str(other), (1, 1, 0))
+    assert "elsewhere" in (second / "kit/scripts/wiki.py").read_text(encoding="utf-8")
+
+
+def test_a_run_name_with_a_suffix_keeps_its_time():
+    assert nu.run_started("nest-update-20261122-101500.2") == nu.run_started("nest-update-20261122-101500")
