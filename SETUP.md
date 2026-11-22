@@ -671,8 +671,8 @@ cause; never tick around it. Commits stay separate questions.
    guard failing safe, not a broken workspace: start Claude Code from a terminal where
    `uv --version` works.
 7. `.claude/settings.json` from `kit/claude/settings.reference.json`: the hooks, permissions from
-   D6, `"attribution": {"commit": "", "pr": ""}` (the commits are the user's own: no
-   "Co-Authored-By" line), with idea or blueprint the three allow rules their scripts need
+D6, the `attribution` block as the reference has it (it keeps "Co-Authored-By" lines out of
+   the user's commits), with idea or blueprint the three allow rules their scripts need
    (`Bash(uv run scripts/council_score.py *)`, `Bash(uv run --script scripts/idea_page.py *)`,
    `Bash(uv run scripts/wiki.py *)`, so a run is not stopped by a prompt halfway), and nothing
    else yet. Always: the secret scan before and after writes and after shell commands, the session-start
