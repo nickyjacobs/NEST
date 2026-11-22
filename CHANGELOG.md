@@ -104,8 +104,10 @@ section in plain words: what it means if you already built a workspace with an e
 - Before the build the setup tells the user that Claude Code itself asks before every write
   and command in its default mode (a trial counted 143 questions in one build), and offers a
   short list of things it may do without asking for the length of the build: writing in the
-  workspace's own folders, running the workspace's own scripts, looking at and staging
-  changes. After a yes the rules of `kit/claude/setup-permissions.example.json` go into the
+  workspace's own folders, running the workspace's own scripts, copying out of NEST's own kit
+  copy, looking at and staging changes. A trial with the list: 64 questions where there were
+  143, none of them for writing a file; the build is now told to work in plain single commands,
+  which is what the remaining ones came from. After a yes the rules of `kit/claude/setup-permissions.example.json` go into the
   workspace's local settings, and the wrap-up takes them out again. Deleting, the network,
   installs, `.claude/` and commits stay questions. The setup never changes the permission mode.
 - Helper agents: the setup stays in the turn while they work and reports per finished piece.

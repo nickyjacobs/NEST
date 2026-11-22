@@ -19,6 +19,7 @@
       "Bash(git diff*)",
       "Bash(git add *)",
       "Bash(git check-ignore *)",
+      "Bash(cp _setup/nest/kit/*)",
       "Bash(ls *)",
       "Bash(mkdir -p *)"
     ]

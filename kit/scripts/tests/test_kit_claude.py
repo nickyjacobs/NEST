@@ -21,9 +21,11 @@ BASH = (
     "Bash(git diff*)",
     "Bash(git add *)",
     "Bash(git check-ignore *)",
+    "Bash(cp _setup/nest/kit/*)",
     "Bash(ls *)",
     "Bash(mkdir -p *)",
 )
+COPY_FROM_THE_KIT = ("Bash(cp _setup/nest/kit/*)",)
 NEVER = ("rm", "push", "commit", "curl", "wget", "install", "sudo", "chmod", "mv ", "cp ", "gh ", "claude", "http", "WebFetch", "mcp__")
 
 
@@ -40,6 +42,8 @@ def test_every_rule_is_an_edit_inside_the_workspace_or_a_known_harmless_command(
 
 def test_nothing_that_deletes_sends_installs_or_reaches_the_assistant_settings():
     for rule in RULES["permissions"]["allow"]:
+        if rule in COPY_FROM_THE_KIT:  # the one copy on the list: out of the kit copy, nothing else
+            continue
         assert not any(word in rule for word in NEVER), rule
         assert ".claude" not in rule, f"{rule}: the assistant's own settings stay a question"
         assert rule not in ("Bash", "Bash(*)", "Edit", "Edit(**)", "Edit(/**)", "Write"), rule

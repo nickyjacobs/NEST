@@ -35,8 +35,8 @@ protects the workspace is its own guards, which check every file whatever Claude
 Before B1, in a message of its own and in plain words: these questions come from Claude Code,
 not from you; and for the length of the build you can give Claude Code a short list of things
 it may do without asking, which you take away again at the end. Say what is on the list:
-writing files in the folders of this workspace; running the workspace's own tools; looking at
-changes and staging them. And what is not: deleting, anything on the internet, installing, the
+writing files in the folders of this workspace; running the workspace's own tools; copying
+from NEST's own files; looking at changes and staging them. And what is not: deleting, anything on the internet, installing, the
 assistant's own settings, and saving a snapshot. Then one dialog: yes, use the short list
 (recommended); or no, ask me every time.
 
@@ -55,6 +55,25 @@ assistant's own settings, and saving a snapshot. Then one dialog: yes, use the s
 
 Either way: never change the permission mode yourself, and never suggest skipping permissions
 altogether. The copy into `.claude/` and a commit stay questions on purpose.
+
+**Work in plain single commands, or the list does not help.** Claude Code can only wave
+through a command it can read. A trial with the list in place still had 57 questions, nearly
+all of them made by the way the commands were written. So during the build:
+
+- One command per call. No chain with `&&`, `;` or a pipe, no `cd` in front (give paths from
+  the workspace root), no shell variable, no brace expansion, no here-document.
+- Read a file with the Read tool and search with the search tool, not with `cat`, `sed -n` or
+  `grep` in the shell.
+- Change a file with the Edit and Write tools, also `_setup/STATE.md` and `_setup/log.md`:
+  never `printf >>`, `sed -i` or a script that rewrites a file. Those ask every time, and they
+  slip past the scan that checks a file before it is written.
+- Copy from the kit with a plain `cp _setup/nest/kit/<path> <target>`, one file per call and
+  without options: Claude Code asks for every `cp` that carries an option such as `-R`, whatever
+  the list says. A whole folder is one `cp -R` and one question, which is fine.
+- Wait for a helper agent by waiting for its result, never with a `sleep` loop in the shell.
+
+Commands that are still asked after that are asked rightly: `git init`, a commit, and the
+tests in B4 that write a fake key or remove a test file.
 
 ### B1. The skeleton
 

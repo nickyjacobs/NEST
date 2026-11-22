@@ -25,8 +25,8 @@ done, and say what failed or was skipped.
    estimate inside an idea review, is not a reason to fail.
 9. `git status` is clean after the last commit, or what is left is explained.
 10. The build permissions are still in `.claude/settings.local.json` only until the wrap-up:
-    note here that step 1 of section 10 takes them out, and never report "done" while the line
-    in STATE.md is unticked.
+    note here that the last step of section 10 takes them out, and never report "done" while
+    the line in STATE.md is unticked.
 
 Say what this check does not cover: whether the answers describe the user well (that shows in the
 first weeks), whether the Council's scores are well calibrated (that shows after about ten real
@@ -36,15 +36,10 @@ ideas), and whether an integration keeps working after its token expires.
 
 ## 10. Wrap-up
 
-When you start the wrap-up, add its five points to STATE.md as checkboxes, plus every B4 test that
+When you start the wrap-up, add its six points to STATE.md as checkboxes, plus every B4 test that
 did not run yet. Tick each only when it is done; the wrap-up is not done while one is open.
 
-1. Take the build permissions out again, when the user said yes to the short list: remove from
-   `.claude/settings.local.json` exactly the rules `_setup/log.md` says you added, and nothing
-   else; when nothing is left in the file and you created it, remove the file (check: none of
-   the rules in `kit/claude/setup-permissions.example.json` is in it any more, unless the user
-   had that rule before). Tick the line in STATE.md and tell the user in one line that Claude
-   Code asks again from now on. Then remove the "Setup in progress" line from `CLAUDE.md`. Something the user postponed (opening
+1. Remove the "Setup in progress" line from `CLAUDE.md`. Something the user postponed (opening
    Obsidian, the sensitive terms list, a connection) is an open item in `docs/next-session.md`,
    never a reason to keep the setup open: finish the wrap-up in this session. Keep `_setup/` as it is, with
    `_setup/nest/` in it: it is the history of how this workspace was made, it is gitignored, and
@@ -69,6 +64,19 @@ did not run yet. Tick each only when it is done; the wrap-up is not done while o
    - "Mail chaos": a first organizer run on the inbox, board only, no moves.
    - "Every session starts from zero": end today with the session-end skill.
    Ask which one to start with. The first real task decides whether a workspace gets used.
+
+6. Last of all, when the user said yes to the short list before the build: take the build
+   permissions out again. Remove from `.claude/settings.local.json` exactly the rules
+   `_setup/log.md` says you added, and nothing else; when nothing is left in the file and you
+   created it, remove the file (check: none of the rules in
+   `kit/claude/setup-permissions.example.json` is in it any more, unless the user had that rule
+   before). Tick the line in STATE.md, and tell the user in one line that the short list is
+   gone and Claude Code asks again from now on. Only then set `next: done`.
+
+Through the final check and the wrap-up the rules of the build still hold: you stay in the turn
+while a helper agent works, a choice is a dialog, and points 3 and 4 above are not optional.
+A wrap-up that ends in a list of open items, without the overview and the cheat sheet, leaves
+the user with a workspace they do not know how to open tomorrow.
 
 From here the workspace is alive: a lesson or a rule gets added after something went wrong (a
 lesson in `.claude/lessons.json` for one kind of step, a rule for a whole topic), a skill after a
