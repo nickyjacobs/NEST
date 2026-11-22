@@ -51,7 +51,7 @@ What it does not do:
   in it looks like an ordinary word and passes.
 - A value that is an address (`https://...`) or that names a password manager
   (`stored-in-1Password`) counts as a pointer to the secret, not as the secret, and passes.
-- It can stop a harmless line by mistake: a line that gives `minimaal12tekens` as the value of
+- It can stop a harmless line by mistake: a line that gives `minimaal12tekens` (Dutch for "at least 12 characters") as the value of
   `wachtwoord` has the shape of a password. Write such a value with spaces (`minimaal 12 tekens`)
   or put it between `<` and `>`. (This page cannot show the line itself: the scan would stop it.)
 - After a shell command it does not see a file that git ignores (apart from the wiki backup

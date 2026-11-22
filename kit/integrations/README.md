@@ -105,7 +105,7 @@ and calls that tool. Format:
 | Operation | Tool | Ask first | Notes |
 |---|---|---|---|
 | mail.list | `uv run scripts/graph.py mail list` | no | `--unread`, `--folder`, `--limit` |
-| calendar.add | `mcp__<server>__<tool>` | repeating only | |
+| calendar.add_repeating | `mcp__<server>__<tool>` | yes | |
 ```
 
 - **Tool** is either an MCP tool name (`mcp__<server>__<tool>`) or a shell command the skill

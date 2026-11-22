@@ -83,7 +83,7 @@ Read by `scripts/blind_seat_guard.py`. Only with The Council or The Architects i
 
 ## wiki_backup
 
-Read by `scripts/wiki_backup.py` and the session-start line. Only when your wiki has its own
+Read by `scripts/wiki_backup.py`, the session-start line and the scan after a shell command. Only when your wiki has its own
 backup repository.
 
 | Key | Default | Meaning |

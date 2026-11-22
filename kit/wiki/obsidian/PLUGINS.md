@@ -67,7 +67,7 @@ plugins have similar names.
 - Home opens as the start page and shows tiles, panels and (when configured) the KPI row.
 - A tile creates a note in the right folder with a kebab-case name.
 - The sidebar shows an icon and colour per section, and hides `_bases` and `_templates`.
-- Settings → Appearance → CSS snippets shows `base` and `idea-note` switched on.
+- Settings → Appearance → CSS snippets shows `base` switched on, and `idea-note` when you have The Council or The Architects with the styled look.
 
 ## Left out on purpose
 

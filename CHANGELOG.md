@@ -37,8 +37,8 @@ Nothing breaks: everything you have keeps working. What you will notice after `/
   messages shows `[secret removed]` in its place and is readable by you alone. Older files are
   not cleaned; they go by themselves after 14 days.
 - **Undo is safer.** `/nest-update undo` tells you first which update it puts back and which
-  files that concerns, and it always means the last update: asking twice no longer reaches
-  back to an earlier one.
+  files that concerns. It always means the last update, all of it, also when you brought it
+  over in parts; asking twice no longer reaches back to an earlier one.
 - **A typing mistake in `nest.json` no longer costs you your settings.** The update stops and
   names the line, and the start of a session tells you the file is broken.
 - **The wiki check is stricter, and right.** A link to a folder that no longer exists used to
@@ -48,12 +48,13 @@ Nothing breaks: everything you have keeps working. What you will notice after `/
   Cyrillic gave a note without a name, and ß, ø and ł were lost. Existing notes do not change.
 - **The wiki backup protects you from three mistakes:** it stops when a note holds what looks
   like a real key, when the wiki folder is suddenly empty, and when the backup folder belongs
-  to another wiki. It says what to do in each case. After moving your workspace, run the
-  backup's `init` once with `--rebind`.
+  to another wiki. It says what to do in each case. After moving your workspace, ask your
+  assistant to point the wiki backup at the new folder (it runs `wiki_backup.py init <address>
+  --rebind`).
 - **Long conversations:** when one is summarised, the summary gets your first message plus
   your newest ones, and lessons are shown again.
-- **The read-only reviewer is really read-only now.** Its agent file gets new hook lines. It
-  works from a list of allowed commands, so now and then it rephrases a search.
+- **The read-only reviewer is really read-only now.** It can only run a fixed list
+  of read commands, so now and then it words a search differently.
 - **The Council and The Architects:** an idea page no longer points at a team you did not
   install, and its summary shows the assumption the plan really rests on. If a run stops
   halfway to ask permission for its own scripts, ask your assistant to add the allow rules for
@@ -62,14 +63,16 @@ Nothing breaks: everything you have keeps working. What you will notice after `/
   without internet or after an expired sign-in you get one plain sentence with the command to
   type; and before a meeting you organise is moved or cancelled, you hear that the people in
   it get a message.
-- **Updates:** one you brought over in parts no longer shows you changes you already have, a
-  check that failed offline is tried again the next day, and you hear it when NEST changes an
-  example that something of yours was made from, such as your wiki settings.
+- **Updates:** an update you brought over in parts no longer shows you changes you already
+  have, a check that failed offline is tried again the next day, and you hear it when NEST
+  changes an example that something of yours was made from, such as your wiki settings.
 - **Two things by hand, once.** In Obsidian, add your inbox, your raw sources folder and your
   archive to "Excluded folders" in the settings of Meta Bind, so a button inside text that
   came from outside cannot run anything; `/nest-update` shows the exact names. And if your
   commits got a "Co-Authored-By: Claude" line, let `/nest-update` add the `attribution`
   setting.
+- Without uv on the path, the check before a commit now says so in one line and does not
+  fail with a cryptic error.
 - The fixes to the setup itself are for new workspaces; nothing in yours changes because of
   them.
 
@@ -106,6 +109,10 @@ Nothing breaks: everything you have keeps working. What you will notice after `/
   repository. The workspace folder is no longer proposed inside a downloads folder or a folder
   a cloud service syncs. In a workspace in another language the setup fills in the labels of
   the idea pages.
+- The setup now builds `.github/dependabot.yml` and the checks workflow and asks about them
+  in E7, adds an MCP server in the local scope and never in the project, and makes the
+  sensitive terms file from the kit's example with the command that opens it. The empty
+  folder `kit/claude/hooks/` is gone.
 - `kit/claude/settings.reference.json` sets `attribution` to empty, so a commit never
   carries a "Co-Authored-By" line.
 - `NEST`'s own `CLAUDE.md` says first that a session asked to follow `SETUP.md` ignores it.
@@ -116,8 +123,8 @@ Nothing breaks: everything you have keeps working. What you will notice after `/
 - `validate.py --hook pre` refuses a write when it cannot read the hook input. A private key
   block counts only when key material follows the header. `pass:` and `pw:` on their own no
   longer count as a secret name. A file over 2 MB is named as skipped.
-- The compaction summary gets the first message and the newest ones, at most 9,500
-  characters, between two marker lines.
+- The compaction summary gets the first message and the newest ones, 8,000 characters by
+  default and at most 9,500, between two marker lines.
 - The agent templates ship real hooks where they had a placeholder; the blind seats pass
   `--seat`.
 - `ROADMAP.md` says where NEST is going, and the README links to it. Questions and ideas now

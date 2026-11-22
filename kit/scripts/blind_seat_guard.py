@@ -124,7 +124,7 @@ def check(data: dict, seat_arg: str | None = None) -> str | None:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="PreToolUse guard that keeps a blind seat inside its run file.")
-    ap.add_argument("--seat", help="Agent name, used when the hook input has no agent_type")
+    ap.add_argument("--seat", help="The seat this hook guards; it wins over the agent type in the hook input")
     args = ap.parse_args(argv)
     try:
         raw = sys.stdin.buffer.read().decode("utf-8", errors="replace")

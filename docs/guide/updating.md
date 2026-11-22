@@ -38,6 +38,8 @@ Type `/nest-update`, or just ask "is there a NEST update?".
 | Something with the same name as a file of your own | Yours stays. You are asked what you want |
 | Dropped by NEST | You choose: keep it, or take it out (the last version is kept) |
 | An example that something of yours was made from, such as your wiki settings | You hear what changed in the example and whether yours needs it |
+| A wiki template or style | You hear what changed and get a proposal that fits your wiki; your pages are not touched |
+| Something you removed | Mentioned once; it only comes back when you ask |
 
 4. **Checks run**, and you get a short report with what was updated, added and skipped.
 

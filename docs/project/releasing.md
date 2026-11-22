@@ -41,7 +41,7 @@ the STATE template in `SETUP.md`, and the newest heading in `CHANGELOG.md`.
 ```markdown
 | Release | Date | In short |
 |---|---|---|
-| [1.2.0](#120---2026-03-01) | 2026-03-01 | One sentence a newcomer understands. |
+| [1.2.0](#120---2027-03-01) | 2027-03-01 | One sentence a newcomer understands. |
 | [1.1.0](#110---2026-11-22) | 2026-11-22 | ... |
 
 ## [Unreleased]
@@ -56,7 +56,7 @@ the STATE template in `SETUP.md`, and the newest heading in `CHANGELOG.md`.
 
 ---
 
-## [1.2.0] - 2026-03-01
+## [1.2.0] - 2027-03-01
 
 > **In short:** One sentence a newcomer understands.
 
@@ -93,7 +93,7 @@ the STATE template in `SETUP.md`, and the newest heading in `CHANGELOG.md`.
 
 [Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.2.0...HEAD
 [1.2.0]: https://github.com/nickyjacobs/NEST/compare/v1.1.0...v1.2.0
-[1.1.0]: https://github.com/nickyjacobs/NEST/releases/tag/v1.1.0
+[1.1.0]: https://github.com/nickyjacobs/NEST/compare/v1.0.0...v1.1.0
 ```
 
 Rules:
@@ -131,6 +131,11 @@ Preview it before tagging: `uv run --script tools/release_check.py --notes <x.y.
    `## [Unreleased]` with a `---` above it, and update the link lines.
 3. Set the version in the README badge (`NEST_v<x.y.z>` in the URL, and the alt text) and in
    `SETUP.md` (the header and `nest_version` in the STATE template).
+   Move the examples one release up as well, so they never show the new release as something
+   still to come: the example in `docs/reference/nest-json.md`, the session line in
+   `docs/guide/updating.md`, the diagram and the template on this page, the overview in
+   `kit/skills/nest-update/SKILL.md`, and `assets/quickstart-src/scene-update.html`. Render the
+   GIFs again (`assets/quickstart-src/README.md`): the quick start shows the head of `SETUP.md`.
 4. Check:
    ```bash
    uv run --script tools/release_check.py

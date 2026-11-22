@@ -16,7 +16,8 @@ proposes a workspace and builds it with you. Nothing is built without your yes.
 | git and [uv](https://docs.astral.sh/uv/) | History, backups and the scripts | The setup checks and gives you the install command for your system |
 | The GitHub CLI (optional) | A private repo and a backup for your wiki | Skip it; everything works locally |
 
-It works on macOS, Windows and Linux. You do not need to know how to code.
+The scripts are tested on macOS, Windows and Linux, and a complete setup has been run on macOS
+and Linux. You do not need to know how to code.
 
 ## The five sessions
 
@@ -59,7 +60,8 @@ valid answer: it becomes an open question you can settle later.
 ## What you end up with
 
 A folder you open with Claude Code every day: an assistant that knows you, a wiki that files and
-indexes itself, the skills you picked, guards that scan for secrets when a file is written and before a commit, and
+indexes itself, the skills you picked, guards that scan for secrets when a file is written and, with the pre-commit check, before a
+commit, and
 a cheat sheet for daily use. The [README](../../README.md#what-you-get) has the full list.
 
 ## Stopping and continuing

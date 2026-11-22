@@ -84,7 +84,8 @@ Next to that: your own list of sensitive terms, and a read-only reviewer agent. 
 lives in a file that git ignores. The scan knows the shapes of common keys, tokens and passwords;
 it cannot recognise a password that looks like an ordinary word, so the reviewer and your own
 eyes still count. Now and then it stops a harmless line that has the shape of a password, such
-as one that gives `minimaal12tekens` as the value of `wachtwoord`: write the value with spaces, or
+as one that gives `minimaal12tekens` (Dutch for "at least 12 characters") as the value of
+`wachtwoord` ("password"): write the value with spaces, or
 put it between `<` and `>`.
 [SECURITY.md](../../SECURITY.md) lists what is covered and what is not.
 
