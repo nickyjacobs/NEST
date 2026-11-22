@@ -25,6 +25,7 @@
   <a href="#your-data">Your data</a> ·
   <a href="#staying-up-to-date">Updates</a> ·
   <a href="#faq">FAQ</a> ·
+  <a href="ROADMAP.md">Roadmap</a> ·
   <a href="docs/README.md">Docs</a>
 </p>
 
@@ -174,16 +175,6 @@ has so far been done on macOS only, so an issue about what you hit is very welco
 </details>
 
 <details>
-<summary><b>What is NEST not?</b></summary>
-
-Not a voice assistant or an always-on service: everything runs in your own Claude Code
-sessions. Not a template you copy: the files in `kit/` are reference material the setup adapts
-to your answers. Not a cloud service: nothing leaves your machine unless you push it to your own
-private repo.
-
-</details>
-
-<details>
 <summary><b>How do I remove it?</b></summary>
 
 Delete the workspace folder. Everything NEST built lives inside it.
@@ -191,6 +182,16 @@ Delete the workspace folder. Everything NEST built lives inside it.
 </details>
 
 More questions: [docs/guide/faq.md](docs/guide/faq.md).
+
+## Roadmap
+
+<p align="center">
+  <a href="ROADMAP.md"><img src="assets/roadmap.png" alt="NEST roadmap. Now: your assistant from your phone, a board on your Home page, what your assistant remembers is yours. Next: capture on the go, tried on Windows by a person. Later: upkeep that runs by itself, no plugin homework." width="100%"></a>
+</p>
+
+The next releases work on three things: your assistant from your phone, a board for your
+projects and ideas on your Home page, and a place in your own workspace for what your
+assistant remembers. What comes after that: [ROADMAP.md](ROADMAP.md).
 
 ## Documentation
 
@@ -202,13 +203,15 @@ More questions: [docs/guide/faq.md](docs/guide/faq.md).
 | [nest.json](docs/reference/nest-json.md) | Every setting of a workspace |
 | [The kit](kit/README.md) | The reference files the setup adapts |
 | [Changelog](CHANGELOG.md) | Every release, with what it means for your workspace |
+| [Roadmap](ROADMAP.md) | What is coming next |
 | [Contributing](CONTRIBUTING.md) | Branches, commits, pull requests, releases |
 
 ## Feedback
 
 NEST is new. If the setup confused you, asked something odd or broke on your system, please
 [open an issue](https://github.com/nickyjacobs/NEST/issues): that is exactly what makes it
-better. Ideas for skills are welcome too.
+better. Questions, ideas for skills and what you built with it belong in
+[Discussions](https://github.com/nickyjacobs/NEST/discussions).
 
 ## Credits
 

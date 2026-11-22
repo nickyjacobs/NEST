@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Question or idea
+    url: https://github.com/nickyjacobs/NEST/discussions
+    about: Ask how something works, share an idea for a skill, or show what you built.
   - name: Security problem
     url: https://github.com/nickyjacobs/NEST/security/advisories/new
     about: Report vulnerabilities privately, not in an issue.
