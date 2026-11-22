@@ -37,13 +37,6 @@ What the next releases work on.
 - 🧩 **No plugin homework.** The setup installs the Obsidian plugins you chose, where today you
   click through a list.
 
-## Not planned
-
-- A voice assistant, a side screen or an always-on service. NEST runs in your own Claude Code
-  sessions and keeps it that way.
-- NEST as a ready-made plugin. A plugin is the same for everyone; NEST is written around your
-  answers, in your language.
-
 ## Have a say
 
 This list comes from our own trial runs and from what people ask for in projects like this

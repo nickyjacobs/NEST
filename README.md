@@ -175,16 +175,6 @@ has so far been done on macOS only, so an issue about what you hit is very welco
 </details>
 
 <details>
-<summary><b>What is NEST not?</b></summary>
-
-Not a voice assistant or an always-on service: everything runs in your own Claude Code
-sessions. Not a template you copy: the files in `kit/` are reference material the setup adapts
-to your answers. Not a cloud service: nothing leaves your machine unless you push it to your own
-private repo.
-
-</details>
-
-<details>
 <summary><b>How do I remove it?</b></summary>
 
 Delete the workspace folder. Everything NEST built lives inside it.
@@ -201,7 +191,7 @@ More questions: [docs/guide/faq.md](docs/guide/faq.md).
 
 The next releases work on three things: your assistant from your phone, a board for your
 projects and ideas on your Home page, and a place in your own workspace for what your
-assistant remembers. The rest, and what NEST will not become: [ROADMAP.md](ROADMAP.md).
+assistant remembers. What comes after that: [ROADMAP.md](ROADMAP.md).
 
 ## Documentation
 
@@ -213,7 +203,7 @@ assistant remembers. The rest, and what NEST will not become: [ROADMAP.md](ROADM
 | [nest.json](docs/reference/nest-json.md) | Every setting of a workspace |
 | [The kit](kit/README.md) | The reference files the setup adapts |
 | [Changelog](CHANGELOG.md) | Every release, with what it means for your workspace |
-| [Roadmap](ROADMAP.md) | What is coming, and what NEST will not become |
+| [Roadmap](ROADMAP.md) | What is coming next |
 | [Contributing](CONTRIBUTING.md) | Branches, commits, pull requests, releases |
 
 ## Feedback
