@@ -122,6 +122,12 @@ The principles that make the original work, and that you keep in every build:
 - **Ask, don't infer from the machine.** The user's apps, level and habits come from the interview,
   not from what is installed or configured on this computer (it may be shared, borrowed or set up
   by someone else). Machine facts are only for the machine check.
+- **The names The Council and The Architects, and their seat names, stay as they are** in
+  every language, from the first time you mention them, unless the user asks for a
+  translation in D2. Name a skill the same way every time: its command (`/wiki-inbox`) with a
+  few words in the user's language the first time.
+- **Examples you write into a file are invented.** A rule or a skill never uses something the
+  user told you about a real person as its example.
 - **Honour the style answers from A8 in your own messages too** (no emojis if they said so, the
   length they asked for), from the moment they give them.
 - **Warn once.** Give a warning or advice once, clearly. If the user declines, record it in
@@ -206,7 +212,8 @@ Ask one question, in English and in the language of the user's first message if 
 user wants, the assistant's tone) follows that choice. The repo-facing parts (scripts, settings
 keys) stay English.
 
-Then introduce yourself in a few lines: what NEST builds, the four phases (check, interview,
+Then introduce yourself in a few lines, without tool names (git, uv, hooks) until you know the
+user's level from 0.5: what NEST builds, the four phases (check, interview,
 build, grow), how many sessions, that every step waits for a yes, and that the names come last.
 Say once that Claude Code itself will ask permission for some commands in the first minutes
 (looking at the machine, saving the docs): those are the checks of Phase 0, and "yes" is safe.
@@ -242,7 +249,7 @@ Every question may be skipped:
 |---|---|
 | "I don't know yet" | an open question: what, who might know, the assumption the workspace uses meanwhile |
 | "Not decided yet" | an open question: what, who decides, the assumption meanwhile |
-| "Rather not say" | in the block file only that this topic stays outside the workspace. No content. It counts as done |
+| "Rather not say" | in the block file only that this topic stays outside the workspace. No content. It counts as done: it is not an open question and is never asked again |
 
 An empty field in a built file is never silently empty: it reads "unknown, see open question n"
 or the line is removed. A well-filled open-questions list is a good outcome, not a failed interview.
@@ -337,8 +344,8 @@ the context pages of the wiki, the card in CLAUDE.md, `CLAUDE.local.md` for what
 - **A5** Interests and hobbies, and what you would like to learn.
 - **A6** Where do you want to grow in the next one to three years? What would make this year a
   good year? Short-term goals (this quarter) and long-term ones.
-- **A7** **Apps and software.** Go through the categories one at a time and propose what is
-  common so the user only corrects: mail, calendar, tasks or to-do, notes (where do notes live
+- **A7** **Apps and software.** Go through the categories in two or three short rounds, never
+  as one long table, and propose what is common so the user only corrects: mail, calendar, tasks or to-do, notes (where do notes live
   today?), chat (Teams, Slack, WhatsApp, Signal ...), cloud storage, browser, password manager,
   smart home, music, and the tools of their work or study. Per app: private or work account, and
   what they use it for. *This list feeds block D and, later, every new skill.*
@@ -382,7 +389,9 @@ Explain the idea first in three lines, at the user's level: a vault in Obsidian;
 things in an inbox; the assistant files them into sections, links and indexes them; nothing is
 deleted.
 
-- **C1** **Sections.** Propose a folder tree derived from A and B. Keep the generic backbone:
+- **C1** **Sections.** Propose a folder tree derived from A and B, with every folder name
+  written exactly as it will be on disk (lowercase, hyphens, no spaces, for example
+  `30-weiterbildung`) and the readable label next to it; what the user confirms is what you build. Keep the generic backbone:
   numbered sections with gaps (00, 10, 20 ...) so new ones fit between, plus `_inbox`,
   `_templates`, `_bases` and an archive section (90). Typical sections: context (who you are,
   goals, priorities), projects, knowledge, research, sessions, references, decisions, archive. Add
@@ -625,8 +634,9 @@ cause; never tick around it. Commits stay separate questions.
    `_setup/nest/SETUP.md` exists; if not, see the end of "The handover" in section 6 and build
    nothing here). Writes into `.claude/` ask for permission in Claude Code; tell
    the user before B1 starts so they expect those prompts and approve them. If a write there is
-   refused anyway, build the files under `_setup/build/.claude/` and give the user one copy command
-   for their OS.
+   refused anyway, build the files under `_setup/build/dot-claude/` and give the user one copy
+   command for their OS. A refusal counts for that moment only: at the start of each later
+   phase try one write into `.claude/` again before you fall back.
 2. `git init -b main` (some systems still start on `master`; the rules and the workflows expect
    `main`), the commit identity from E5 set for this repo (`git config user.name` and
    `user.email` without `--global`), and a `.gitignore` from `kit/github/gitignore.template`:
@@ -661,12 +671,14 @@ cause; never tick around it. Commits stay separate questions.
    guard failing safe, not a broken workspace: start Claude Code from a terminal where
    `uv --version` works.
 7. `.claude/settings.json` from `kit/claude/settings.reference.json`: the hooks, permissions from
-   D6, with idea or blueprint the three allow rules their scripts need
+   D6, `"attribution": {"commit": "", "pr": ""}` (the commits are the user's own: no
+   "Co-Authored-By" line), with idea or blueprint the three allow rules their scripts need
    (`Bash(uv run scripts/council_score.py *)`, `Bash(uv run --script scripts/idea_page.py *)`,
    `Bash(uv run scripts/wiki.py *)`, so a run is not stopped by a prompt halfway), and nothing
    else yet. Always: the secret scan before and after writes and after shell commands, the session-start
    line, and the `session_guard.py` hooks for `start`, `prompt`, `precompact` and `end`. From D8:
-   the `lesson` hook and the `plan` hook, each only on a yes. Leave out the `check_style.py` hook
+   the `lesson` hook and the `plan` hook, each only on a yes: on a no, take that entry out of the
+   file, and take out keys the reference leaves empty. Leave out the `check_style.py` hook
    unless writing-style was chosen. Keep the exec form the reference uses (`"command": "uv"` with
    `args`, and `${CLAUDE_PROJECT_DIR}` in braces): it runs the same on macOS, Linux and Windows
    without depending on a shell. Compare with FACTS.md (check: valid JSON; the paths in the
@@ -713,6 +725,9 @@ Do this in the new folder, in a fresh session (the hooks are now active).
    (check: valid JSON; every section in the tree from C1 is in it). When idea or blueprint was
    chosen, add the ideas section exactly as `kit/skills/idea/reference.md` specifies (index type
    `folders`, page `idea.md`, its own status words), with the section name recorded in STATE.md.
+   When the user's language is not English, also fill that section's `idea_page.labels` with
+   the headings and texts of the idea page in their language (the header of
+   `kit/scripts/idea_page.py` lists every key): without it every idea page is half English.
 2. The folders, each section's `index.md` from `kit/wiki/section-index.md` (hand-written intro,
    optional Bases embed, the `<!-- AUTO-INDEX -->` marker; context and decisions keep a
    hand-written index), the root pages `index.md`, `log.md`, `Home.md`,
@@ -725,7 +740,8 @@ Do this in the new folder, in a fresh session (the hooks are now active).
    user writes themselves gets (`user`, unless the `authors` list was changed); `_bases/`
    adapted to the sections, the status words and the dashboard from C4.
 5. `.obsidian/`: settings from `kit/wiki/obsidian/`, CSS from `kit/wiki/snippets/` with the palette
-   from C5. In the Meta Bind settings (`plugins/obsidian-meta-bind-plugin/data.json`), set
+   from C5. Resolve the `customise:` comments in the CSS and remove them, like everywhere else.
+   In the Meta Bind settings (`plugins/obsidian-meta-bind-plugin/data.json`), set
    `excludedFolders` to the user's own names for the templates folder, the inbox, the raw sources
    folder and the archive, plus every other folder in `raw_folders`: a button inside text that
    came from outside must never run. Plugins cannot be installed from here: walk the user through

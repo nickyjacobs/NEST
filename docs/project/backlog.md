@@ -34,6 +34,13 @@ for users is in the [roadmap](../../ROADMAP.md).
 - **After a shell command** the scan reads files changed in the last two minutes, within a
   budget; a commit on another branch and a stash are not followed.
 
+## Language
+
+- **Two things stay English in a workspace in another language:** the session-start line
+  ("Workspace: wiki inbox 3 notes, ...") and the headings of the generated skills list in
+  `docs/skills.md`. Both need labels in `nest.json` that the scripts read. The idea pages
+  already have them (`idea_page.labels`), and the setup now fills those in.
+
 ## Skills
 
 - The Obsidian Markdown and Bases skills are a copy of `obsidianmd/obsidian-skills` at the commit
