@@ -37,11 +37,27 @@ _setup/
 wiki/.obsidian/workspace*.json
 wiki/.obsidian/cache
 wiki/.trash/
-# Plugin and theme code: other people's programs, put back by scripts/obsidian_setup.py install.
-# The settings (data.json) stay in the repo.
-wiki/.obsidian/plugins/*/main.js
-wiki/.obsidian/plugins/*/manifest.json
-wiki/.obsidian/plugins/*/styles.css
 wiki/.obsidian/plugins/*/data.json.bak
-wiki/.obsidian/plugins/*/data.json.before-restore
-wiki/.obsidian/themes/
+wiki/.obsidian/plugins/*/data.json.before-restore*
+# Temporary files of scripts/obsidian_setup.py that a killed run left behind
+wiki/.obsidian/plugins/*/.nest-*.part
+wiki/.obsidian/themes/*/.nest-*.part
+# The code of the plugins and the theme that scripts/obsidian_setup.py install puts back: one
+# line per name in scripts/obsidian.lock.json, nothing wider. The settings (data.json) stay in
+# the repo, and so does the code of a plugin or theme you added yourself.
+wiki/.obsidian/plugins/obsidian-minimal-settings/main.js
+wiki/.obsidian/plugins/obsidian-minimal-settings/manifest.json
+wiki/.obsidian/plugins/obsidian-minimal-settings/styles.css
+wiki/.obsidian/plugins/templater-obsidian/main.js
+wiki/.obsidian/plugins/templater-obsidian/manifest.json
+wiki/.obsidian/plugins/templater-obsidian/styles.css
+wiki/.obsidian/plugins/notebook-navigator/main.js
+wiki/.obsidian/plugins/notebook-navigator/manifest.json
+wiki/.obsidian/plugins/notebook-navigator/styles.css
+wiki/.obsidian/plugins/obsidian-style-settings/main.js
+wiki/.obsidian/plugins/obsidian-style-settings/manifest.json
+wiki/.obsidian/plugins/obsidian-style-settings/styles.css
+wiki/.obsidian/plugins/obsidian-meta-bind-plugin/main.js
+wiki/.obsidian/plugins/obsidian-meta-bind-plugin/manifest.json
+wiki/.obsidian/plugins/obsidian-meta-bind-plugin/styles.css
+wiki/.obsidian/themes/Minimal/

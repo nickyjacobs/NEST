@@ -67,12 +67,29 @@ DEFAULT_EXCLUDES = """\
 .obsidian/workspaces.json
 .obsidian/cache/
 .obsidian/plugins/*/data.json.bak
-.obsidian/plugins/*/data.json.before-restore
-# Plugin and theme code: other people's programs, put back by obsidian_setup.py install.
-.obsidian/plugins/*/main.js
-.obsidian/plugins/*/manifest.json
-.obsidian/plugins/*/styles.css
-.obsidian/themes/
+.obsidian/plugins/*/data.json.before-restore*
+# Temporary files of obsidian_setup.py that a killed run left behind.
+.obsidian/plugins/*/.nest-*.part
+.obsidian/themes/*/.nest-*.part
+# The code of the plugins and the theme that obsidian_setup.py install puts back: one line per
+# name in obsidian.lock.json, nothing wider. A plugin or theme you added yourself is not in that
+# list, so its code stays in the backup: nothing else could put it back.
+.obsidian/plugins/obsidian-minimal-settings/main.js
+.obsidian/plugins/obsidian-minimal-settings/manifest.json
+.obsidian/plugins/obsidian-minimal-settings/styles.css
+.obsidian/plugins/templater-obsidian/main.js
+.obsidian/plugins/templater-obsidian/manifest.json
+.obsidian/plugins/templater-obsidian/styles.css
+.obsidian/plugins/notebook-navigator/main.js
+.obsidian/plugins/notebook-navigator/manifest.json
+.obsidian/plugins/notebook-navigator/styles.css
+.obsidian/plugins/obsidian-style-settings/main.js
+.obsidian/plugins/obsidian-style-settings/manifest.json
+.obsidian/plugins/obsidian-style-settings/styles.css
+.obsidian/plugins/obsidian-meta-bind-plugin/main.js
+.obsidian/plugins/obsidian-meta-bind-plugin/manifest.json
+.obsidian/plugins/obsidian-meta-bind-plugin/styles.css
+.obsidian/themes/Minimal/
 .trash/
 .DS_Store
 Thumbs.db

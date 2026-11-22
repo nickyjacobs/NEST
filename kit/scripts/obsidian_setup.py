@@ -19,8 +19,9 @@ loses its settings every time. With the plugin files in place beforehand, the se
 
 Usage:
   obsidian_setup.py install --vault <wiki>   download what the vault asks for and is not there yet
-       --only <id,id>                        only these plugin ids or theme names
-       --dry-run                             say what would happen, write nothing
+       --only <id,id>                        only these plugin ids or theme names (at least one)
+       --dry-run                             say what would happen, write nothing; ends with 1 when
+                                             something would be installed, as `status` does
   obsidian_setup.py status --vault <wiki>    what is listed, installed, missing or set aside
   obsidian_setup.py restore --vault <wiki>   put a `data.json.bak` that Obsidian set aside back
   obsidian_setup.py vaults                   the vaults Obsidian knows on this computer
@@ -45,12 +46,28 @@ What install does:
   - It writes only regular files directly inside `.obsidian/plugins/<id>/` and
     `.obsidian/themes/<name>/`. When `.obsidian`, one of those folders or a file in them is a
     symbolic link or a junction, that item is refused: nothing is written or read through a link.
+    The same goes for every file this script reads inside the vault (`community-plugins.json`,
+    `appearance.json`, a `manifest.json`, `data.json` and `data.json.bak`): a link, a folder, a
+    named pipe or a device in the place of such a file is reported and never opened.
+  - The folders are made one level at a time, and the whole path is checked again before each
+    folder is made and before each file is written. These are checks on path names: they stop a
+    link that is there when the script looks, and they cannot fully stop somebody who swaps a
+    folder for a link in the instant between a check and the write. That takes a program that
+    already writes in the vault while this script runs.
+  - A settings file of the wrong shape (a `community-plugins.json` that is not a list of ids, an
+    `appearance.json` that is not an object) is named in the output and makes the result 1; it
+    is never read as "nothing asked for".
+  - Temporary files get a fresh random name (`.nest-<random>.part`) and are removed after a
+    failure. One that a killed run left behind is removed the next time that folder is written.
   - One item that fails does not stop the others; every item gets its own result.
 
 What restore does: for every plugin in the lock file with a `data.json.bak` that differs from
 `data.json`, it moves the current `data.json` aside as `data.json.before-restore` (then `-2`,
 `-3`: an earlier kept copy is never overwritten) and moves the backup into its place. The backup
 is used up by that, so a second restore finds nothing and cannot undo what changed since.
+restore handles the plugins in the lock file only, and only for those do `status` and `install`
+speak of settings set aside. For any other plugin `status` says that a `data.json.bak` is there
+and leaves it to the user.
 
 The vault must not be open in Obsidian while install or restore write: Obsidian rewrites its
 settings files from memory and would undo the change. The check reads Obsidian's own list of
@@ -80,6 +97,7 @@ import os
 import plistlib
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -94,6 +112,7 @@ TIMEOUT = 30
 PLUGIN_FILES = ("main.js", "styles.css", "manifest.json")  # manifest.json last
 THEME_FILES = ("theme.css", "manifest.json")
 CODE_FILE = {"plugin": "main.js", "theme": "theme.css"}
+TEMP_PREFIX, TEMP_SUFFIX = ".nest-", ".part"  # this script's own temporary files, and nobody else's
 REPO_RE = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")
 VERSION_RE = re.compile(r"[A-Za-z0-9_.+-]+")
 NAME_RE = re.compile(r"[A-Za-z0-9 _.-]+")
@@ -113,9 +132,34 @@ class Refused(SetupError):
 # --- small helpers ---------------------------------------------------------------------------
 
 
-def read_json(path: Path, pairs_hook=None):
+def is_regular(path: Path) -> bool:
+    """A regular file itself: not a link to one, not a folder, a named pipe or a device."""
     try:
-        return json.loads(path.read_text(encoding="utf-8-sig"), object_pairs_hook=pairs_hook)
+        return stat.S_ISREG(os.lstat(path).st_mode)
+    except (OSError, ValueError):
+        return False
+
+
+def read_regular(path: Path) -> bytes:
+    """The bytes of a regular file. A link is not followed, and a pipe or a device is never waited on."""
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+    handle = os.open(path, flags)
+    try:
+        if not stat.S_ISREG(os.fstat(handle).st_mode):
+            raise OSError(f"{path.name} is not a regular file")
+        with os.fdopen(handle, "rb") as stream:
+            handle = -1
+            return stream.read()
+    finally:
+        if handle != -1:
+            os.close(handle)
+
+
+def read_json(path: Path, pairs_hook=None, plain: bool = False):
+    """The JSON in `path`, None when the file is not there. `plain`: only from a regular file, never a link."""
+    try:
+        text = read_regular(path).decode("utf-8-sig") if plain else path.read_text(encoding="utf-8-sig")
+        return json.loads(text, object_pairs_hook=pairs_hook)
     except FileNotFoundError:
         return None
     except (OSError, ValueError, RecursionError) as exc:
@@ -249,7 +293,14 @@ def vault_is_open(vault: Path) -> bool:
     vaults, found, unclear = vault_registry()
     if not found:
         return False  # no obsidian.json anywhere: Obsidian has never run here
-    marked = any(v["open"] for v in vaults if same_path(Path(v["path"]), vault))
+    marked = False
+    for entry in vaults:
+        try:
+            same = same_path(Path(entry["path"]), vault)
+        except ValueError:  # a path nobody can compare (a NUL in it): this may be the vault
+            unclear = True
+            continue
+        marked = marked or (same and entry["open"])
     if not marked and not unclear:
         return False
     return obsidian_running() is not False  # only a clear "not running" clears a mark or a doubt
@@ -308,7 +359,7 @@ def folder_name_problem(key: str) -> str | None:
         return "has characters outside letters, digits, space, dot, dash and underscore"
     if key[0] in ". " or key[-1] in ". ":
         return "starts or ends with a dot or a space"
-    if key.split(".")[0].upper() in RESERVED:
+    if key.split(".")[0].rstrip(" .").upper() in RESERVED:  # Windows reads `CON .txt` as CON too
         return "is a reserved device name on Windows"
     return None
 
@@ -408,14 +459,49 @@ def obsidian_dir(vault: Path) -> Path:
     return vault / ".obsidian"
 
 
-def wanted(vault: Path) -> tuple[list[str], str]:
-    """The plugin ids and the theme name the vault's own settings ask for."""
-    config = obsidian_dir(vault)
-    ids = read_json(config / "community-plugins.json")
-    plugins = [i for i in ids if isinstance(i, str)] if isinstance(ids, list) else []
-    appearance = read_json(config / "appearance.json")
-    theme = appearance.get("cssTheme", "") if isinstance(appearance, dict) else ""
-    return plugins, theme if isinstance(theme, str) else ""
+MISSING = object()
+
+
+def read_setting(vault: Path, name: str):
+    """One of the vault's own settings files in `.obsidian`, or MISSING. Never through a link."""
+    config = vault / ".obsidian"
+    if is_link(config):
+        raise Refused(".obsidian is a link to another place; nothing is read through a link")
+    if os.path.lexists(config) and not config.is_dir():
+        raise Refused(".obsidian is not a folder")
+    if not os.path.lexists(config / name):
+        return MISSING
+    check_files(config, [name])
+    return read_json(config / name, plain=True)
+
+
+def wanted(vault: Path) -> tuple[list[str], str, list[str]]:
+    """The plugin ids and the theme name the vault's own settings ask for, and what could not be read.
+
+    A settings file that is a link, not a regular file, not JSON or not of the expected shape is a
+    problem with a name, never an empty list: nothing is taken from that file.
+    """
+    obsidian_dir(vault)
+    plugins: list[str] = []
+    theme = ""
+    problems: list[str] = []
+    try:
+        ids = read_setting(vault, "community-plugins.json")
+        if ids is not MISSING:
+            if not isinstance(ids, list) or not all(isinstance(i, str) for i in ids):
+                raise SetupError("it is not a list of plugin ids")
+            plugins = ids
+    except SetupError as exc:
+        problems.append(f"community-plugins.json: {exc}. No plugin was looked at")
+    try:
+        appearance = read_setting(vault, "appearance.json")
+        if appearance is not MISSING:
+            if not isinstance(appearance, dict) or not isinstance(appearance.get("cssTheme", ""), str):
+                raise SetupError("it is not an object with the theme name as text")
+            theme = appearance.get("cssTheme", "")
+    except SetupError as exc:
+        problems.append(f"appearance.json: {exc}. The theme was not looked at")
+    return plugins, theme, problems
 
 
 def is_link(path: Path) -> bool:
@@ -452,7 +538,7 @@ def check_files(folder: Path, names) -> None:
         path = folder / name
         if is_link(path):
             raise Refused(f"{name} in {folder.name} is a link; nothing is written or read through a link")
-        if os.path.lexists(path) and not path.is_file():
+        if os.path.lexists(path) and not is_regular(path):
             raise Refused(f"{name} in {folder.name} is not a regular file")
 
 
@@ -462,25 +548,28 @@ def folder_state(folder: Path, kind: str, key: str) -> tuple[str, str | None]:
     if not os.path.lexists(manifest_path):
         return "free", None  # nothing, or the leftovers of an interrupted run
     try:
-        manifest = read_json(manifest_path)
+        manifest = read_json(manifest_path, plain=True)
     except SetupError:
         return "foreign", "its manifest.json cannot be read, so it is not clear whose folder this is"
     field = "id" if kind == "plugin" else "name"
     if not isinstance(manifest, dict) or manifest.get(field) != key:
         other = manifest.get(field) if isinstance(manifest, dict) else None
         return "foreign", f"the folder holds another {kind} ({other!r}); it is left as it is"
-    if not (folder / CODE_FILE[kind]).is_file():
+    if not is_regular(folder / CODE_FILE[kind]):
         return "free", None  # a manifest without the code: incomplete, install again
     return "installed", str(manifest.get("version", "?"))
 
 
 def settings_set_aside(folder: Path) -> bool:
-    """A `data.json.bak` that holds something else than `data.json` (or there is no `data.json`)."""
+    """A `data.json.bak` that holds something else than `data.json` (or there is no `data.json`).
+
+    Both are regular files or absent: the caller ran check_files on them first.
+    """
     backup, current = folder / "data.json.bak", folder / "data.json"
-    if not os.path.lexists(backup):
+    if not is_regular(backup):
         return False
     try:
-        return not (current.is_file() and current.read_bytes() == backup.read_bytes())
+        return not (is_regular(current) and read_regular(current) == read_regular(backup))
     except OSError:
         return True
 
@@ -493,8 +582,6 @@ def item_state(vault: Path, kind: str, key: str) -> dict:
         folder = item_folder(vault, kind, key)
         check_files(folder, PLUGIN_FILES if kind == "plugin" else THEME_FILES)
         found, detail = folder_state(folder, kind, key)
-        if kind == "plugin":
-            state.update(settings=(folder / "data.json").is_file(), set_aside=settings_set_aside(folder))
     except Refused as exc:
         state["blocked"] = str(exc)
         return state
@@ -505,13 +592,21 @@ def item_state(vault: Path, kind: str, key: str) -> dict:
         state["installed"] = detail
     elif found == "foreign":
         state["blocked"] = detail
+    if kind == "plugin":  # the settings: looked at separately, so a strange file there hides nothing above
+        try:
+            check_files(folder, ["data.json", "data.json.bak"])
+            state.update(settings=is_regular(folder / "data.json"), set_aside=settings_set_aside(folder))
+        except Refused as exc:
+            state["blocked"] = state["blocked"] or str(exc)
+        except ITEM_ERRORS as exc:
+            state["blocked"] = state["blocked"] or f"cannot look at the settings: {exc}"
     return state
 
 
 def write_file(folder: Path, name: str, data: bytes) -> None:
     """Write through a fresh temporary file in the same folder, then move it into place."""
     check_files(folder, [name])
-    handle, temp = tempfile.mkstemp(dir=folder, prefix=".nest-", suffix=".part")
+    handle, temp = tempfile.mkstemp(dir=folder, prefix=TEMP_PREFIX, suffix=TEMP_SUFFIX)
     try:
         with os.fdopen(handle, "wb") as out:
             out.write(data)
@@ -523,6 +618,36 @@ def write_file(folder: Path, name: str, data: bytes) -> None:
         except OSError:
             pass
         raise
+
+
+def clear_stale(folder: Path) -> None:
+    """Remove temporary files a killed run of this script left in an item folder: regular files of its own naming only."""
+    try:
+        names = os.listdir(folder)
+    except OSError:
+        return
+    for name in names:
+        if name.startswith(TEMP_PREFIX) and name.endswith(TEMP_SUFFIX) and is_regular(folder / name):
+            try:
+                os.unlink(folder / name)
+            except OSError:
+                pass
+
+
+def make_folder(vault: Path, kind: str, key: str) -> Path:
+    """Create the folder of one item, one level at a time, the whole path checked before each level.
+
+    Never `parents=True`: a parent that became a link since the last check is seen by the next
+    check, before anything is made under it.
+    """
+    folder = item_folder(vault, kind, key)
+    for path in (folder.parent.parent, folder.parent, folder):
+        try:
+            path.mkdir()
+        except FileExistsError:
+            pass
+        folder = item_folder(vault, kind, key)
+    return folder
 
 
 def install_item(vault: Path, kind: str, key: str, entry: dict, app: str | None, dry_run: bool) -> dict:
@@ -552,12 +677,14 @@ def install_item(vault: Path, kind: str, key: str, entry: dict, app: str | None,
             return {**result, "status": "failed",
                     "reason": f"{name} does not match the checksum in the lock file; nothing was written"}
         blobs[name] = data
-    folder.mkdir(parents=True, exist_ok=True)
-    folder = item_folder(vault, kind, key)  # again: the downloads took a while
+    folder = make_folder(vault, kind, key)  # checks again: the downloads took a while
+    check_files(folder, order)
     if folder_state(folder, kind, key)[0] == "foreign":
         raise Refused("the folder changed while the files were downloaded; nothing was written")
+    clear_stale(folder)
     for name in order:  # manifest.json is last in both orders
         if name in blobs:
+            item_folder(vault, kind, key)  # and again before every single write
             write_file(folder, name, blobs[name])
     return {**result, "status": "installed"}
 
@@ -582,8 +709,8 @@ def restore_item(vault: Path, key: str) -> dict | None:
     backup, current = folder / "data.json.bak", folder / "data.json"
     check_files(folder, ["data.json.bak", "data.json"])
     kept: Path | None = None
-    if current.is_file():
-        if current.read_bytes() == backup.read_bytes():
+    if is_regular(current):
+        if read_regular(current) == read_regular(backup):
             return {"id": key, "status": "same"}
         number = 1
         while True:
@@ -618,8 +745,8 @@ def require_closed(vault: Path, assume_closed: bool) -> None:
 def cmd_install(args) -> tuple[dict, int]:
     vault = Path(args.vault)
     lock = load_lock(find_lock(args.lock))
-    plugins, theme = wanted(vault)
-    only = {x.strip() for x in args.only.split(",") if x.strip()} if args.only else None
+    plugins, theme, problems = wanted(vault)
+    only = args.only  # a set of names, or None for everything the vault asks for
     if not args.dry_run:
         require_closed(vault, args.assume_closed)
     app = app_version()
@@ -640,29 +767,35 @@ def cmd_install(args) -> tuple[dict, int]:
     not_asked = sorted(only - set(plugins) - {theme}) if only is not None else []
     set_aside = [r["id"] for r in results if r["kind"] == "plugin" and item_state(vault, "plugin", r["id"])["set_aside"]]
     report = {"vault": str(vault), "obsidian": app, "results": results, "unknown": unknown,
-              "not_asked": not_asked, "set_aside": set_aside, "listed": bool(plugins or theme)}
-    bad = any(r["status"] in ("failed", "skipped", "refused") for r in results)
+              "not_asked": not_asked, "set_aside": set_aside, "problems": problems,
+              "listed": bool(plugins or theme)}
+    # would-install: a dry run that found something missing ends as `status` does for the same vault.
+    bad = any(r["status"] in ("failed", "skipped", "refused", "would-install") for r in results)
     # A name the user typed after --only must lead somewhere; a plugin the vault merely lists may be unknown.
-    bad = bad or bool(not_asked) or (only is not None and bool(unknown))
+    bad = bad or bool(not_asked) or (only is not None and bool(unknown)) or bool(problems)
     return report, 1 if bad else 0
 
 
 def cmd_status(args) -> tuple[dict, int]:
     vault = Path(args.vault)
     lock = load_lock(find_lock(args.lock))
-    plugins, theme = wanted(vault)
+    plugins, theme, problems = wanted(vault)
     items = []
     for key in dict.fromkeys(plugins):
         state = item_state(vault, "plugin", key)
         state["known"] = key in lock["plugins"]
+        # "Set aside" is said only where `restore` can act on it: for the plugins in the lock file.
+        state["backup_file"] = state["set_aside"]
+        state["set_aside"] = state["set_aside"] and state["known"]
         items.append(state)
     if theme:
         state = item_state(vault, "theme", theme)
         state["known"] = theme in lock["themes"]
         items.append(state)
-    report = {"vault": str(vault), "obsidian": app_version(), "open": vault_is_open(vault), "items": items}
+    report = {"vault": str(vault), "obsidian": app_version(), "open": vault_is_open(vault), "items": items,
+              "problems": problems}
     missing = any(i["installed"] is None and i["known"] for i in items)  # an unknown one is the user's own
-    return report, 1 if missing else 0
+    return report, 1 if missing or problems else 0
 
 
 def cmd_restore(args) -> tuple[dict, int]:
@@ -691,7 +824,10 @@ def cmd_vaults(args) -> tuple[dict, int]:
     out = []
     for entry in vaults:
         path = Path(entry["path"])
-        exists = path.is_dir()
+        try:
+            exists = path.is_dir()
+        except (OSError, ValueError):  # a path this system cannot even ask about
+            exists = False
         notes = 0
         if exists:
             try:
@@ -699,7 +835,7 @@ def cmd_vaults(args) -> tuple[dict, int]:
                     notes = index
                     if index >= 5000:
                         break
-            except OSError:
+            except (OSError, ValueError):
                 pass
         out.append({"path": entry["path"], "exists": exists, "open": entry["open"], "notes": notes})
     return {"obsidian_found": found, "vaults": out}, 0
@@ -727,7 +863,9 @@ def print_report(command: str, report: dict) -> None:
         if report["set_aside"]:
             print("  settings set aside by Obsidian (data.json.bak) found for: " + ", ".join(report["set_aside"]))
             print("  run `restore` to put them back.")
-        if not report["listed"]:
+        for problem in report["problems"]:
+            print(f"  could not use {problem}.")
+        if not report["listed"] and not report["problems"]:
             print("  nothing to install: the vault lists no community plugins and no theme.")
     elif command == "status":
         print(f"Vault: {report['vault']}  (Obsidian {report['obsidian'] or 'version not found'}, "
@@ -738,11 +876,15 @@ def print_report(command: str, report: dict) -> None:
                 bits.append("settings" if i["settings"] else "no settings file")
                 if i["set_aside"]:
                     bits.append("other settings set aside in data.json.bak")
+                elif i["backup_file"]:
+                    bits.append("a data.json.bak with other settings is there, which restore does not handle")
             if not i["known"]:
                 bits.append("not in the lock file")
             if i["blocked"]:
                 bits.append(i["blocked"])
             print(f"  {i['kind']:<6} {i['id']}: " + ", ".join(bits))
+        for problem in report["problems"]:
+            print(f"  could not use {problem}.")
     elif command == "restore":
         for r in report["results"]:
             if r["status"] == "restored":
@@ -771,6 +913,15 @@ class Parser(argparse.ArgumentParser):
         super().error(message)  # usage on stderr, exit status 2
 
 
+def only_names(text: str) -> set[str]:
+    """The value of --only as a set of names. An empty one is a mistake, never "everything"."""
+    names = {part.strip() for part in text.split(",") if part.strip()}
+    if not names:
+        raise argparse.ArgumentTypeError("it names nothing; give at least one plugin id or theme name, "
+                                         "or leave --only out to install everything the vault asks for")
+    return names
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = Parser(description="Install the Obsidian plugins and theme a vault asks for.")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -784,7 +935,7 @@ def build_parser() -> argparse.ArgumentParser:
             p.add_argument("--assume-closed", action="store_true",
                            help="skip the check that the vault is closed; only after the user confirmed it is")
         if name == "install":
-            p.add_argument("--only", help="comma-separated plugin ids or theme names")
+            p.add_argument("--only", type=only_names, help="comma-separated plugin ids or theme names")
             p.add_argument("--dry-run", action="store_true", help="write nothing")
     return parser
 
@@ -795,7 +946,9 @@ COMMANDS = {"install": cmd_install, "status": cmd_status, "restore": cmd_restore
 def main(argv: list[str] | None = None) -> int:
     for stream in (sys.stdout, sys.stderr):
         try:
-            stream.reconfigure(encoding="utf-8")
+            # backslashreplace: a name that is not valid text (a lone surrogate from a settings file, a
+            # folder name that is not UTF-8) is printed escaped; in JSON that escape is valid JSON.
+            stream.reconfigure(encoding="utf-8", errors="backslashreplace")
         except (AttributeError, ValueError):
             pass
     argv = sys.argv[1:] if argv is None else argv
@@ -803,7 +956,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         report, code = COMMANDS[args.command](args)
-    except (SetupError, OSError) as exc:
+    except (SetupError, OSError, ValueError) as exc:  # ValueError: a path no system call accepts
         if args.json:
             print(json.dumps({"error": str(exc)}, ensure_ascii=False))
         else:

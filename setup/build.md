@@ -141,15 +141,19 @@ Do this in the new folder, in a fresh session (the hooks are now active).
    release was tried with) and that a plugin can do anything Obsidian can, ask for one yes, and
    run `uv run --script scripts/obsidian_setup.py install --vault wiki`, where `wiki` is the
    wiki folder (`wiki_dir` in `wiki.config.json`, default `wiki`) (check: it ends with 0, and
-   `status` lists every plugin and the theme as installed, each plugin with its settings file
-   and none with settings set aside). When it says the vault is open in Obsidian, or may be, ask
+   `status` lists every plugin and the theme as installed, each plugin the setup wrote
+   settings for still has its settings file (Style Settings ships none, on purpose), and none
+   has settings set aside). When it says the vault is open in Obsidian, or may be, ask
    the user to quit Obsidian and run it again; never add `--assume-closed` on your own, only
    after the user has confirmed that Obsidian is closed. The user never installs a plugin
    through Obsidian's own browser: that sets the settings you wrote aside. What is left for
-   them is two clicks: open the wiki folder as a vault, and choose "Trust author and enable
-   plugins". Without a yes, record it as an open item. When `install` ends with anything but 0
+   them is three small steps, which `PLUGINS.md` spells out: open the wiki folder as a vault
+   (give the full path to paste, never "the folder wiki": people pick the folder above it),
+   choose "Trust author and enable plugins", and quit and reopen Obsidian once. Then check with
+   `uv run --script scripts/obsidian_setup.py vaults` that the wiki folder itself is in
+   Obsidian's list, not the workspace folder above it. Without a yes, record it as an open item. When `install` ends with anything but 0
    (no connection, an Obsidian that is too old, a checksum that does not match, a folder it
-   refused), record that as an open item too, with the reason the script printed, and tell the
+   refused, a settings file it could not use), record that as an open item too, with the reason the script printed, and tell the
    user that reason in plain words; do not work around a refusal. The wiki works as plain notes
    until then. The user may
    postpone opening Obsidian and step 7: record both as open items, carry on with B3, and

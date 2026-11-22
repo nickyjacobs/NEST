@@ -7,7 +7,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import random
+import subprocess
 import sys
+from pathlib import PurePosixPath, PureWindowsPath
 from pathlib import Path
 
 import pytest
@@ -253,7 +257,7 @@ def test_names_the_lock_does_not_know_are_reported(tmp_path, store, capsys):
 def test_dry_run_writes_nothing(tmp_path, store, calls):
     lock = make_lock(tmp_path, store)
     vault = make_vault(tmp_path, settings=False)
-    assert run("install", "--vault", str(vault), "--lock", str(lock), "--dry-run") == 0
+    assert run("install", "--vault", str(vault), "--lock", str(lock), "--dry-run") == 1  # as status says
     assert calls == []
     assert not (vault / ".obsidian" / "plugins").exists()
 
@@ -506,7 +510,7 @@ def test_every_configured_plugin_with_settings_is_in_the_kit_list():
 @pytest.mark.parametrize(
     "key",
     ["evil\n", "sample-plugin.", "sample-plugin ", " sample", ".hidden", ".. ", "...", " ", "CON", "nul", "NUL.txt",
-     "com1", "LPT9.js", "a/b", "a\\b", "Sample-Plugin"],
+     "com1", "LPT9.js", "a/b", "a\\b", "Sample-Plugin", "CON .x", "nul .txt", "aux .b.c", "COM1 .js", "prn  .a"],
 )
 def test_a_lock_key_that_is_not_a_plain_folder_name_is_refused(tmp_path, store, key):
     lock = make_lock(tmp_path, store)
@@ -590,10 +594,13 @@ def test_a_linked_settings_folder_is_refused(tmp_path, store, which, capsys):
         outside.mkdir()
         link(vault / ".obsidian" / which, outside)
     assert run("install", "--vault", str(vault), "--lock", str(lock), "--json") == 1
-    results = {r["id"]: r["status"] for r in out_json(capsys)["results"]}
-    expected = {".obsidian": {PLUGIN: "refused", THEME: "refused"}, "plugins": {PLUGIN: "refused", THEME: "installed"},
+    report = out_json(capsys)
+    results = {r["id"]: r["status"] for r in report["results"]}
+    # A linked `.obsidian` is not even read: there is no list to work from, and both files are named.
+    expected = {".obsidian": {}, "plugins": {PLUGIN: "refused", THEME: "installed"},
                 "themes": {PLUGIN: "installed", THEME: "refused"}}[which]
     assert results == expected
+    assert len(report["problems"]) == (2 if which == ".obsidian" else 0)
     assert not list(outside.rglob("main.js")) and not list(outside.rglob("theme.css"))
 
 
@@ -850,12 +857,14 @@ def test_the_open_error_does_not_invite_the_flag(tmp_path, store, isolated, monk
     assert "confirmed" in message and "add --assume-closed" not in message
 
 
-def test_dry_run_does_not_need_a_closed_vault(tmp_path, store, isolated, monkeypatch):
+def test_dry_run_does_not_need_a_closed_vault(tmp_path, store, isolated, monkeypatch, capsys):
     lock = make_lock(tmp_path, store)
     vault = make_vault(tmp_path)
     register(isolated, vault, is_open=True)
     monkeypatch.setattr(osu, "obsidian_running", lambda: True)
-    assert run("install", "--vault", str(vault), "--lock", str(lock), "--dry-run") == 0
+    assert run("install", "--vault", str(vault), "--lock", str(lock), "--dry-run", "--json") == 1
+    report = out_json(capsys)
+    assert "error" not in report and {r["status"] for r in report["results"]} == {"would-install"}
 
 
 def test_the_open_vault_is_recognised_however_its_path_is_written(tmp_path, isolated, monkeypatch):
@@ -1076,3 +1085,440 @@ def test_restore_says_what_it_did(tmp_path, store, capsys):
     assert run("restore", "--vault", str(vault), "--lock", str(lock)) == 0
     out = capsys.readouterr().out
     assert PLUGIN in out and "data.json.before-restore" in out
+
+
+# --- what the second review found ------------------------------------------------------------
+
+SCRIPT = Path(osu.__file__)
+
+
+def script(*argv, config: Path, timeout: int = 60) -> subprocess.CompletedProcess:
+    """The real script in its own process: the real stdout, the real exit status, and a timeout."""
+    env = {**os.environ, "NEST_OBSIDIAN_CONFIG": str(config)}
+    return subprocess.run([sys.executable, str(SCRIPT), *argv], capture_output=True, env=env, timeout=timeout)
+
+
+def snapshot(root: Path) -> list[str]:
+    return sorted(str(p.relative_to(root)) for p in root.rglob("*"))
+
+
+def fifo(path: Path) -> None:
+    if not hasattr(os, "mkfifo"):
+        pytest.skip("this system has no named pipes")
+    os.mkfifo(path)
+
+
+# 1: set aside is only said of plugins that restore handles
+
+
+def test_status_does_not_offer_restore_for_a_plugin_outside_the_lock(tmp_path, store, capsys):
+    lock = make_lock(tmp_path, store)
+    vault = make_vault(tmp_path, plugins=("homemade",), theme="")
+    (vault / ".obsidian" / "plugins" / "homemade" / "data.json.bak").write_text("older", encoding="utf-8")
+    assert run("status", "--vault", str(vault), "--lock", str(lock), "--json") == 0
+    item = out_json(capsys)["items"][0]
+    assert item["set_aside"] is False and item["backup_file"] is True
+    run("status", "--vault", str(vault), "--lock", str(lock))
+    out = capsys.readouterr().out
+    assert "data.json.bak" in out and "set aside" not in out and "restore does not handle" in out
+    assert run("restore", "--vault", str(vault), "--lock", str(lock), "--json") == 0
+    assert out_json(capsys)["results"] == []
+
+
+# 2: which kit plugins come with settings (the build check and PLUGINS.md say "each plugin the setup wrote
+# settings for"; Style Settings ships none on purpose)
+
+
+def test_the_kit_plugins_that_come_with_settings():
+    folders = {p.parent.name for p in (KIT / "wiki" / "obsidian" / "plugins").glob("*/data.json")}
+    assert folders == {"obsidian-minimal-settings", "templater-obsidian", "notebook-navigator",
+                       "obsidian-meta-bind-plugin"}
+    ids = set(json.loads((KIT / "wiki" / "obsidian" / "community-plugins.json").read_text(encoding="utf-8")))
+    assert ids - folders == {"obsidian-style-settings"}
+    for doc in (KIT.parent / "setup" / "build.md", KIT / "wiki" / "obsidian" / "PLUGINS.md"):
+        text = " ".join(doc.read_text(encoding="utf-8").split())
+        assert "each plugin the setup wrote settings for" in text, doc.name
+        assert "each plugin with its settings file" not in text, doc.name
+
+
+# 3: an empty --only is wrong usage, not "everything"
+
+
+@pytest.mark.parametrize("only", ["", ",", " ", " , ,"])
+def test_an_empty_only_is_a_usage_error(tmp_path, store, calls, capsys, only):
+    lock = make_lock(tmp_path, store)
+    vault = make_vault(tmp_path)
+    with pytest.raises(SystemExit) as stop:
+        run("install", "--vault", str(vault), "--lock", str(lock), "--only", only, "--json")
+    assert stop.value.code == 2
+    assert "error" in out_json(capsys)
+    assert calls == [] and not (vault / ".obsidian" / "plugins" / PLUGIN / "manifest.json").exists()
+
+
+# 4: no traceback, whatever the files and the paths hold
+
+
+@pytest.mark.parametrize("path", ["bad\x00path", "x" * 5000])
+def test_a_vault_list_with_a_path_that_cannot_be_compared_counts_as_unclear(tmp_path, store, isolated, monkeypatch, capsys, path):
+    lock = make_lock(tmp_path, store)
+    vault = make_vault(tmp_path)
+    (isolated / "obsidian.json").write_text(json.dumps({"vaults": {"a": {"path": path, "open": True}}}), encoding="utf-8")
+    monkeypatch.setattr(osu, "obsidian_running", lambda: None)
+    if "\x00" in path:  # a path nobody can compare: refuse unless Obsidian is clearly not running
+        assert run("install", "--vault", str(vault), "--lock", str(lock), "--json") == 1
+        assert "open in Obsidian" in out_json(capsys)["error"]
+        run("status", "--vault", str(vault), "--lock", str(lock), "--json")
+        assert out_json(capsys)["open"] is True
+    assert run("vaults", "--json") == 0
+    assert out_json(capsys)["vaults"][0]["exists"] is False
+    monkeypatch.setattr(osu, "obsidian_running", lambda: False)
+    assert run("install", "--vault", str(vault), "--lock", str(lock), "--json") == 0
+    assert "error" not in out_json(capsys)
+
+
+@pytest.mark.parametrize("command", ["status", "install"])
+@pytest.mark.parametrize("as_json", [True, False])
+def test_a_lone_surrogate_in_the_settings_is_printed_not_a_traceback(tmp_path, store, isolated, command, as_json):
+    lock = make_lock(tmp_path, store)
+    vault = make_vault(tmp_path, settings=False)
+    (vault / ".obsidian" / "community-plugins.json").write_text('["\\ud800x"]', encoding="utf-8")
+    (vault / ".obsidian" / "appearance.json").write_text('{"cssTheme": "\\udcff"}', encoding="utf-8")
+    argv = [command, "--vault", str(vault), "--lock", str(lock)] + (["--dry-run"] if command == "install" else [])
+    done = script(*argv, *(["--json"] if as_json else []), config=isolated)
+    assert b"Traceback" not in done.stderr and done.returncode == 0, done.stderr
+    if as_json:
+        report = json.loads(done.stdout.decode("utf-8"))
+        assert "\ud800x" in json.dumps(report, ensure_ascii=False)
+    else:
+        assert b"\\ud800x" in done.stdout
+
+
+@pytest.mark.skipif(os.name == "nt", reason="a Windows command line is text, never raw bytes")
+def test_a_vault_path_that_is_not_utf8_is_an_error_not_a_traceback(tmp_path, store, isolated):
+    lock = make_lock(tmp_path, store)
+    env = {**os.environ, "NEST_OBSIDIAN_CONFIG": str(isolated)}
+    argv = [os.fsencode(sys.executable), os.fsencode(SCRIPT), b"status", b"--json", b"--vault", b"/nowhere/caf\xe9",
+            b"--lock", os.fsencode(lock)]
+    done = subprocess.run(argv, capture_output=True, env=env, timeout=60)
+    assert done.returncode == 1 and b"Traceback" not in done.stderr, done.stderr
+    assert "vault folder not found" in json.loads(done.stdout.decode("utf-8"))["error"]
+
+
+def test_a_vault_path_with_a_nul_is_an_error(tmp_path, store, capsys):
+    lock = make_lock(tmp_path, store)
+    for command in ("status", "install", "restore"):
+        assert run(command, "--vault", "bad\x00vault", "--lock", str(lock), "--json") == 1
+        assert "error" in out_json(capsys)
+
+
+# 5: nothing is read through a link, and nothing that is not a regular file is read at all
+
+
+@pytest.mark.parametrize("command", ["status", "install"])
+@pytest.mark.parametrize("name", ["data.json.bak", "data.json"])
+def test_a_named_pipe_as_settings_file_does_not_hang(tmp_path, store, isolated, command, name):
+    lock = make_lock(tmp_path, store)
+    vault = make_vault(tmp_path, theme="")
+    folder = vault / ".obsidian" / "plugins" / PLUGIN
+    (folder / "manifest.json").write_bytes(manifest(PLUGIN, "id", "1.2.3"))
+    (folder / "main.js").write_text("code", encoding="utf-8")
+    (folder / "data.json.bak").write_text("bak", encoding="utf-8")
+    (folder / name).unlink()
+    fifo(folder / name)
+    done = script(command, "--json", "--vault", str(vault), "--lock", str(lock), config=isolated, timeout=20)
+    assert b"Traceback" not in done.stderr and done.returncode == 0, done.stderr
+    report = json.loads(done.stdout.decode("utf-8"))
+    if command == "status":
+        item = report["items"][0]
+        assert item["installed"] == "1.2.3" and name in item["blocked"] and item["set_aside"] is False
+    else:
+        assert report["results"][0]["status"] == "present" and report["set_aside"] == []
+
+
+def test_settings_are_not_compared_through_a_link(tmp_path, store, monkeypatch, capsys):
+    lock = make_lock(tmp_path, store)
+    vault = make_vault(tmp_path, theme="")
+    folder = vault / ".obsidian" / "plugins" / PLUGIN
+    secret = tmp_path / "secret.txt"
+    secret.write_text("from outside", encoding="utf-8")
+    link(folder / "data.json.bak", secret)
+    opened: list[str] = []
+    real = Path.read_bytes
+    monkeypatch.setattr(Path, "read_bytes", lambda self: opened.append(self.name) or real(self))
+    run("status", "--vault", str(vault), "--lock", str(lock), "--json")
+    item = out_json(capsys)["items"][0]
+    assert "data.json.bak" in item["blocked"] and "link" in item["blocked"] and item["set_aside"] is False
+    assert opened == []
+
+
+@pytest.mark.parametrize("name", ["community-plugins.json", "appearance.json"])
+@pytest.mark.parametrize("command", ["status", "install"])
+def test_a_vault_settings_file_that_is_a_link_is_not_read(tmp_path, store, calls, capsys, name, command):
+    lock = make_lock(tmp_path, store)
+    vault = make_vault(tmp_path, settings=False)
+    elsewhere = tmp_path / "elsewhere.json"
+    (vault / ".obsidian" / name).rename(elsewhere)
+    link(vault / ".obsidian" / name, elsewhere)
+    assert run(command, "--vault", str(vault), "--lock", str(lock), "--json") == 1
+    report = out_json(capsys)
+    assert any(name in line and "link" in line for line in report["problems"])
+    listed = [r["id"] for r in report.get("results", report.get("items"))]
+    assert listed == ([THEME] if name == "community-plugins.json" else [PLUGIN])  # the other file still counts
+
+
+@pytest.mark.parametrize("command", ["status", "install", "restore"])
+def test_a_linked_settings_folder_is_not_read_through(tmp_path, store, calls, capsys, command):
+    lock = make_lock(tmp_path, store)
+    other = make_vault(tmp_path, plugins=(PLUGIN, OTHER))
+    (other / ".obsidian" / "plugins" / PLUGIN / "data.json.bak").write_text("bak", encoding="utf-8")
+    vault = tmp_path / "mine"
+    vault.mkdir()
+    link(vault / ".obsidian", other / ".obsidian")
+    before = snapshot(other)
+    assert run(command, "--vault", str(vault), "--lock", str(lock), "--json") == 1
+    report = out_json(capsys)
+    text = json.dumps(report)
+    assert ".obsidian is a link" in text and OTHER not in text  # the other vault's list was never read
+    assert calls == [] and snapshot(other) == before
+
+
+@pytest.mark.parametrize("command", ["status", "install"])
+def test_a_named_pipe_as_plugin_list_does_not_hang(tmp_path, store, isolated, command):
+    lock = make_lock(tmp_path, store)
+    vault = make_vault(tmp_path, settings=False)
+    (vault / ".obsidian" / "community-plugins.json").unlink()
+    fifo(vault / ".obsidian" / "community-plugins.json")
+    done = script(command, "--json", "--vault", str(vault), "--lock", str(lock), "--dry-run" if command == "install" else "--json",
+                  config=isolated, timeout=20)
+    assert done.returncode == 1 and b"Traceback" not in done.stderr
+    assert any("community-plugins.json" in line for line in json.loads(done.stdout.decode("utf-8"))["problems"])
+
+
+# 6: folders are made one at a time, after a check, and every write is checked again
+
+
+def swapping_fetch(monkeypatch, swap) -> None:
+    """Let `swap` run once, in the middle of the downloads: after the first checks, before the writes."""
+    real = osu.fetch
+    done: list[bool] = []
+
+    def fetch(url: str) -> bytes:
+        if not done:
+            done.append(True)
+            swap()
+        return real(url)
+
+    monkeypatch.setattr(osu, "fetch", fetch)
+
+
+@pytest.mark.parametrize("swapped", [".obsidian", "plugins", "folder"])
+def test_a_folder_swapped_for_a_link_during_the_downloads_makes_nothing_outside(tmp_path, store, monkeypatch, capsys, swapped):
+    lock = make_lock(tmp_path, store)
+    vault = make_vault(tmp_path, theme="", settings=False)
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "keep.txt").write_text("keep", encoding="utf-8")
+    config = vault / ".obsidian"
+
+    def swap() -> None:
+        if swapped == ".obsidian":
+            config.rename(vault / "moved-away")
+            link(config, outside)
+        elif swapped == "plugins":
+            link(config / "plugins", outside)
+        else:
+            (config / "plugins").mkdir()
+            link(config / "plugins" / PLUGIN, outside)
+
+    swapping_fetch(monkeypatch, swap)
+    assert run("install", "--vault", str(vault), "--lock", str(lock), "--json", "--assume-closed") == 1
+    assert out_json(capsys)["results"][0]["status"] == "refused"
+    assert snapshot(outside) == ["keep.txt"]
+
+
+def test_a_foreign_manifest_that_appears_during_the_downloads_is_respected(tmp_path, store, monkeypatch, capsys):
+    lock = make_lock(tmp_path, store)
+    vault = make_vault(tmp_path, theme="")
+    folder = vault / ".obsidian" / "plugins" / PLUGIN
+
+    def swap() -> None:
+        (folder / "manifest.json").write_text('{"id": "somebody-elses"}', encoding="utf-8")
+        (folder / "main.js").write_text("their code", encoding="utf-8")
+
+    swapping_fetch(monkeypatch, swap)
+    assert run("install", "--vault", str(vault), "--lock", str(lock), "--json") == 1
+    assert out_json(capsys)["results"][0]["status"] == "refused"
+    assert (folder / "main.js").read_text(encoding="utf-8") == "their code"
+    assert sorted(p.name for p in folder.iterdir()) == ["data.json", "main.js", "manifest.json"]
+
+
+def test_a_folder_swapped_between_two_writes_stops_the_rest(tmp_path, store, monkeypatch, capsys):
+    lock = make_lock(tmp_path, store)
+    vault = make_vault(tmp_path, theme="", settings=False)
+    folder = vault / ".obsidian" / "plugins" / PLUGIN
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    real = osu.write_file
+    written: list[str] = []
+
+    def write_then_swap(target: Path, name: str, data: bytes) -> None:
+        real(target, name, data)
+        written.append(name)
+        if len(written) == 1:
+            folder.rename(vault / "moved-away")
+            link(folder, outside)
+
+    monkeypatch.setattr(osu, "write_file", write_then_swap)
+    assert run("install", "--vault", str(vault), "--lock", str(lock), "--json") == 1
+    assert out_json(capsys)["results"][0]["status"] == "refused"
+    assert written == ["main.js"] and snapshot(outside) == []
+
+
+def test_write_file_itself_refuses_a_link_or_a_folder_in_the_place_of_the_file(tmp_path):
+    folder = tmp_path / "item"
+    folder.mkdir()
+    victim = tmp_path / "victim.txt"
+    victim.write_text("precious", encoding="utf-8")
+    link(folder / "main.js", victim)
+    (folder / "styles.css").mkdir()
+    for name in ("main.js", "styles.css"):
+        with pytest.raises(osu.Refused):
+            osu.write_file(folder, name, b"new")
+    assert victim.read_text(encoding="utf-8") == "precious" and (folder / "main.js").is_symlink()
+    assert sorted(p.name for p in folder.iterdir()) == ["main.js", "styles.css"]  # and no temporary file
+
+
+def test_a_link_this_python_cannot_recognise_is_still_refused(tmp_path, store, monkeypatch, capsys):
+    """A Windows junction on a Python without os.path.isjunction: only where the folder really is tells."""
+    lock = make_lock(tmp_path, store)
+    vault = make_vault(tmp_path, theme="", settings=False)
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (vault / ".obsidian" / "plugins").mkdir()
+    link(vault / ".obsidian" / "plugins" / PLUGIN, outside)
+    monkeypatch.setattr(osu, "is_link", lambda path: False)
+    assert run("install", "--vault", str(vault), "--lock", str(lock), "--json") == 1
+    result = out_json(capsys)["results"][0]
+    assert result["status"] == "refused" and "not inside the vault" in result["reason"]
+    assert snapshot(outside) == []
+
+
+def test_the_temporary_file_has_a_name_nobody_can_plant(tmp_path, store, monkeypatch):
+    """Whatever the naming scheme: a link planted at the names one run used is not written through by the next."""
+    lock = make_lock(tmp_path, store)
+    used: list[str] = []
+    real = os.replace
+
+    def replace(src, dst):
+        used.append(Path(src).name)
+        real(src, dst)
+
+    monkeypatch.setattr(os, "replace", replace)
+    first = make_vault(tmp_path / "one", theme="", settings=False)
+    assert run("install", "--vault", str(first), "--lock", str(lock)) == 0
+    assert len(used) == 3 and len(set(used)) == 3
+    victim = tmp_path / "victim.txt"
+    victim.write_text("precious", encoding="utf-8")
+    second = make_vault(tmp_path / "two", theme="")
+    folder = second / ".obsidian" / "plugins" / PLUGIN
+    for name in used:
+        link(folder / name, victim)
+    assert run("install", "--vault", str(second), "--lock", str(lock)) == 0
+    assert victim.read_text(encoding="utf-8") == "precious"
+    assert (folder / "main.js").read_bytes() == b"code of sample-plugin"
+
+
+# 7: generated lock keys: what passes is one folder, directly inside, on every system
+
+
+def test_generated_lock_keys_never_leave_the_folder_or_collide(tmp_path, store):
+    lock_path = make_lock(tmp_path, store)
+    base = json.loads(lock_path.read_text(encoding="utf-8"))
+    entry = base["plugins"][PLUGIN]
+    pieces = list("abAB09 ._-/\\:*?\"<>|\n\t~$%'") + ["..", "CON", "nul", "aux", "prn", "COM1", "LPT9", "é", "ß", "\u202e"]
+    rng = random.Random(20261122)
+    accepted: list[str] = []
+    for _ in range(4000):
+        key = "".join(rng.choice(pieces) for _ in range(rng.randint(0, 5)))
+        lock_path.write_text(json.dumps({"plugins": {key: entry}, "themes": {}}), encoding="utf-8")
+        try:
+            osu.load_lock(lock_path)
+        except osu.SetupError:
+            continue
+        accepted.append(key)
+    assert len(accepted) > 100  # the generator does reach valid names
+    devices = {"CON", "PRN", "AUX", "NUL", *(f"COM{n}" for n in range(1, 10)), *(f"LPT{n}" for n in range(1, 10))}
+    for key in accepted:
+        assert key.isascii() and key == key.strip(" ."), key
+        for flavour in (PureWindowsPath("C:/v/.obsidian/plugins"), PurePosixPath("/v/.obsidian/plugins")):
+            built = flavour / key
+            assert built.parent == flavour and built.name == key, key
+        assert key.split(".")[0].rstrip(" ").upper() not in devices, key
+    distinct = sorted(set(accepted))
+    by_fold: dict[str, list[str]] = {}
+    for key in distinct:
+        by_fold.setdefault(key.casefold(), []).append(key)
+    colliding = [keys for keys in by_fold.values() if len(keys) > 1]
+    assert colliding  # the generator does reach names that differ in case only
+    for a, b, *_ in colliding:
+        lock_path.write_text(json.dumps({"plugins": {a: entry, b: entry}, "themes": {}}), encoding="utf-8")
+        with pytest.raises(osu.SetupError):
+            osu.load_lock(lock_path)
+
+
+# 8: exit codes of a dry run, and settings files of the wrong shape
+
+
+def test_a_dry_run_with_nothing_to_do_ends_with_0(tmp_path, store):
+    lock = make_lock(tmp_path, store)
+    vault = make_vault(tmp_path)
+    assert run("install", "--vault", str(vault), "--lock", str(lock)) == 0
+    assert run("install", "--vault", str(vault), "--lock", str(lock), "--dry-run") == 0
+    assert run("status", "--vault", str(vault), "--lock", str(lock)) == 0
+
+
+@pytest.mark.parametrize(
+    ("name", "body"),
+    [("community-plugins.json", '{"a": 1}'), ("community-plugins.json", '"sample-plugin"'),
+     ("community-plugins.json", '["sample-plugin", 5]'), ("community-plugins.json", "null"),
+     ("appearance.json", "[]"), ("appearance.json", '{"cssTheme": 5}'), ("appearance.json", '"Plain"')],
+)
+def test_a_settings_file_of_the_wrong_shape_is_named(tmp_path, store, calls, capsys, name, body):
+    lock = make_lock(tmp_path, store)
+    vault = make_vault(tmp_path, settings=False)
+    (vault / ".obsidian" / name).write_text(body, encoding="utf-8")
+    for command in ("status", "install"):
+        assert run(command, "--vault", str(vault), "--lock", str(lock), "--json") == 1
+        assert any(name in line for line in out_json(capsys)["problems"])
+        assert run(command, "--vault", str(vault), "--lock", str(lock)) == 1
+        assert name in capsys.readouterr().out
+
+
+def test_a_vault_with_sound_settings_has_no_problems(tmp_path, store, capsys):
+    lock = make_lock(tmp_path, store)
+    vault = make_vault(tmp_path)
+    (vault / ".obsidian" / "appearance.json").write_text('{"accentColor": "#123456"}', encoding="utf-8")  # no theme: fine
+    for command in ("install", "status"):
+        assert run(command, "--vault", str(vault), "--lock", str(lock), "--json") == 0
+        assert out_json(capsys)["problems"] == []
+
+
+# 9: install clears its own leftovers, and only those
+
+
+def test_stale_temporary_files_of_an_earlier_run_are_removed(tmp_path, store):
+    lock = make_lock(tmp_path, store)
+    vault = make_vault(tmp_path, theme="")
+    folder = vault / ".obsidian" / "plugins" / PLUGIN
+    victim = tmp_path / "victim.txt"
+    victim.write_text("precious", encoding="utf-8")
+    (folder / ".nest-abc123.part").write_text("half a file", encoding="utf-8")
+    link(folder / ".nest-linked.part", victim)
+    (folder / ".nest-folder.part").mkdir()
+    (folder / "nest-notes.part").write_text("the user's", encoding="utf-8")
+    (folder / ".nest-other.txt").write_text("the user's", encoding="utf-8")
+    assert run("install", "--vault", str(vault), "--lock", str(lock)) == 0
+    assert sorted(p.name for p in folder.iterdir()) == [
+        ".nest-folder.part", ".nest-linked.part", ".nest-other.txt", "data.json", "main.js", "manifest.json",
+        "nest-notes.part", "styles.css"]
+    assert victim.read_text(encoding="utf-8") == "precious"

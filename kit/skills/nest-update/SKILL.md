@@ -202,7 +202,10 @@ is written again for them (`backup <path>`, write, `mark <path>=<kit path>`).
    vault asks for that are not installed (it then ends with 1, which is an answer and not a
    broken check), and settings Obsidian set aside as `data.json.bak` (that happened when a
    plugin was installed from inside Obsidian after the setup wrote its settings: the Home
-   buttons or the sidebar colours are then missing). Offer what applies in plain words, and
+   buttons or the sidebar colours are then missing). It says "set aside" only for the plugins
+   `restore` handles. For a plugin the user added themselves it says that a `data.json.bak` is
+   there, which `restore` does not handle: mention it, do not offer `restore` for it. When it
+   names a settings file it could not use, tell the user and stop there. Offer what applies in plain words, and
    after a yes, with Obsidian closed: `install --vault wiki` for what is missing, `restore
    --vault wiki` for the settings. Before the yes for `restore`, tell the user what it does: it
    puts back the settings the setup wrote, over whatever they set in those plugins since; their

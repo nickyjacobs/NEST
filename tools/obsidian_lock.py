@@ -16,7 +16,8 @@ real vault before it goes into a release:
   uv run --script tools/obsidian_lock.py --check    exit 1 when the lock file differs from upstream
 
 --check compares everything a fresh run would write except the date: the set of plugins and
-themes, each version, and each file's checksum. A release whose files were replaced under the
+themes, each name, repository and version, the Obsidian version each needs, and each file's
+checksum. A release whose files were replaced under the
 same version number shows up as a changed checksum.
 
 Not part of the kit: it never runs in a workspace.
@@ -136,6 +137,8 @@ def differences(old: dict, new: dict) -> list[str]:
                 if a != b:
                     lines.append(f"{label} {key} {entry['version']}: {name} changed upstream under the same "
                                  f"version ({str(a)[:12]} -> {str(b)[:12]})")
+            if before.get("name") != entry["name"]:
+                lines.append(f"{label} {key}: name {before.get('name')!r} -> {entry['name']!r}")
             if before.get("minAppVersion", "") != entry["minAppVersion"]:
                 lines.append(f"{label} {key}: needs Obsidian {before.get('minAppVersion') or '?'} -> "
                              f"{entry['minAppVersion'] or '?'}")

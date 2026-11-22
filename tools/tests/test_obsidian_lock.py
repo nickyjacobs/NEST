@@ -125,6 +125,19 @@ def test_check_sees_a_file_replaced_under_the_same_version(upstream, monkeypatch
     assert "templater-obsidian" in out and "main.js changed upstream" in out
 
 
+def test_check_sees_a_changed_name_or_repository_in_the_lock_file(upstream, monkeypatch, capsys):
+    """A lock file edited by hand: everything a fresh run would write is compared, not only the checksums."""
+    assert run(monkeypatch) == 0
+    lock = json.loads(ol.LOCK.read_text(encoding="utf-8"))
+    lock["plugins"]["templater-obsidian"]["name"] = "Something Friendlier"
+    lock["themes"]["Minimal"]["repo"] = "somebody/else"
+    ol.LOCK.write_text(json.dumps(lock), encoding="utf-8")
+    capsys.readouterr()
+    assert run(monkeypatch, "--check") == 1
+    out = capsys.readouterr().out
+    assert "templater-obsidian: name 'Something Friendlier'" in out and "repository somebody/else" in out
+
+
 def test_check_sees_an_entry_that_left_or_joined_the_table(upstream, monkeypatch, capsys):
     assert run(monkeypatch) == 0
     without = {k: v for k, v in ol.PLUGINS.items() if k != "templater-obsidian"}
