@@ -24,6 +24,9 @@ done, and say what failed or was skipped.
    "Approved to keep here" list in `CLAUDE.local.md`; a finding that is on that list, or a cost
    estimate inside an idea review, is not a reason to fail.
 9. `git status` is clean after the last commit, or what is left is explained.
+10. The build permissions are still in `.claude/settings.local.json` only until the wrap-up:
+    note here that the last step of section 10 takes them out, and never report "done" while
+    the line in STATE.md is unticked.
 
 Say what this check does not cover: whether the answers describe the user well (that shows in the
 first weeks), whether the Council's scores are well calibrated (that shows after about ten real
@@ -33,27 +36,47 @@ ideas), and whether an integration keeps working after its token expires.
 
 ## 10. Wrap-up
 
-When you start the wrap-up, add its five points to STATE.md as checkboxes, plus every B4 test that
+When you start the wrap-up, add its six points to STATE.md as checkboxes, plus every B4 test that
 did not run yet. Tick each only when it is done; the wrap-up is not done while one is open.
 
-1. Remove the "Setup in progress" line from `CLAUDE.md`. Keep `_setup/` as it is, with
+1. Remove the "Setup in progress" line from `CLAUDE.md`. Something the user postponed (opening
+   Obsidian, the sensitive terms list, a connection) is an open item in `docs/next-session.md`,
+   never a reason to keep the setup open: finish the wrap-up in this session. Keep `_setup/` as it is, with
    `_setup/nest/` in it: it is the history of how this workspace was made, it is gitignored, and
    the updater can fall back on that kit copy. When the wrap-up is done, set `next: done` in
    STATE.md.
 2. Write `wiki/how-this-wiki-works.md` for real: how the workspace works, in plain words, on one
    page, in the user's language.
-3. Give the user an overview in the chat itself, not as a pointer to a file: the folder tree two
-   levels deep, one line per skill and agent with how to start it,
-   the three commands they will use most, and what they maintain themselves (the context pages,
-   the sensitive terms list, the open questions).
+3. Give the user an overview in the chat itself, not as a pointer to a file, as two or three
+   short messages rather than one long one (never inside the text of a dialog): the folder tree two
+   levels deep, one line per skill and agent with how to start it (and which ones only they can
+   start, by typing the command),
+   the three commands they will use most, what they maintain themselves (the context pages,
+   the sensitive terms list, the open questions), and how they open the workspace tomorrow, in
+   the form for where they work (section 3).
 4. A cheat sheet: capture (drop it in the inbox), file (the inbox skill), find (the query skill),
    end of session, maintenance once a week.
-5. Propose three or four **first tasks** that answer the top pain points from B3, for example:
+5. Propose three or four **first tasks** with the choice dialog. When C7 found notes the user
+   wants to bring in, that move is the first one on the list: an empty wiki next to a full old
+   vault does not get used. The others answer the top pain points from B3, for example:
    - "Notes pile up": put ten old notes in the inbox and run the inbox skill together.
    - "Ideas never get decided": run the idea skill on the idea they mentioned in block B.
    - "Mail chaos": a first organizer run on the inbox, board only, no moves.
    - "Every session starts from zero": end today with the session-end skill.
    Ask which one to start with. The first real task decides whether a workspace gets used.
+
+6. Last of all, when the user said yes to the short list before the build: take the build
+   permissions out again. Remove from `.claude/settings.local.json` exactly the rules
+   `_setup/log.md` says you added, and nothing else; when nothing is left in the file and you
+   created it, remove the file (check: none of the rules in
+   `kit/claude/setup-permissions.example.json` is in it any more, unless the user had that rule
+   before). Tick the line in STATE.md, and tell the user in one line that the short list is
+   gone and Claude Code asks again from now on. Only then set `next: done`.
+
+Through the final check and the wrap-up the rules of the build still hold: you stay in the turn
+while a helper agent works, a choice is a dialog, and points 3 and 4 above are not optional.
+A wrap-up that ends in a list of open items, without the overview and the cheat sheet, leaves
+the user with a workspace they do not know how to open tomorrow.
 
 From here the workspace is alive: a lesson or a rule gets added after something went wrong (a
 lesson in `.claude/lessons.json` for one kind of step, a rule for a whole topic), a skill after a

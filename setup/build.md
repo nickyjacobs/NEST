@@ -8,21 +8,80 @@ when to read this one. Read `SETUP.md` first.
 ## 8. Build
 
 At the start of each build phase (B1, B2, B3, B3b, B5) show the whole plan for that phase as one
-short tree or list and ask **one yes for the phase**. Then build its steps one after the other
-without asking again, unless something deviates from the plan, leaves the machine, or cannot be
-undone. After each step run its check and tick the line in STATE.md. If a check fails, fix the
-cause; never tick around it. Commits stay separate questions.
+short tree or list and ask **one yes for the phase**, with the choice dialog. Then build its
+steps one after the other without asking again, unless something deviates from the plan, leaves
+the machine, or cannot be undone. After each step run its check and tick the line in STATE.md.
+If a check fails, fix the cause; never tick around it.
+
+B1, B2 and B3 run in one session: the hooks you write in B1 are active from that moment, and
+the skills from B3 exist as soon as their files do. After each phase offer the user a stop, and
+go on when they want to. Ask about a commit once per session, at its end or when the user
+stops, as one dialog that says in a plain sentence what a commit is ("a snapshot of the
+workspace you can go back to"); never once per phase.
+
+The user watches most of the build. Keep them posted in their language, one short line per
+step, and in B3 one line per skill or agent as it is finished ("The routine that files your
+notes is ready."): twenty minutes of silence reads as a program that hangs. Save questions for
+what only they can answer. Helper agents are fine for speed, but you stay in the turn while
+they work: never end your message with "I will let you know when it is done" and stop. Nothing
+wakes you up; the user would have to ask. Wait for the helpers, report per finished piece, and
+only then hand the turn back.
+
+**How often Claude Code asks, and the short list for the build.** In its default mode Claude
+Code asks the user before every file it writes and every command it runs. A trial counted 143
+such questions in one build. Nobody reads the hundredth one, so they protect nothing; what
+protects the workspace is its own guards, which check every file whatever Claude Code asks.
+
+Before B1, in a message of its own and in plain words: these questions come from Claude Code,
+not from you; and for the length of the build you can give Claude Code a short list of things
+it may do without asking, which you take away again at the end. Say what is on the list:
+writing files in the folders of this workspace; running the workspace's own tools; copying
+from NEST's own files; looking at changes and staging them. And what is not: deleting, anything on the internet, installing, the
+assistant's own settings, and saving a snapshot. Then one dialog: yes, use the short list
+(recommended); or no, ask me every time.
+
+- **Yes:** write the rules from `kit/claude/setup-permissions.example.json` into
+  `.claude/settings.local.json` in the workspace (a file of this computer only, ignored by
+  git), exactly as they are, adding to what the file already holds and changing nothing else
+  in it. Claude Code asks once for this write; say so. Compare the syntax with FACTS.md. When
+  this session's shell tool is PowerShell and FACTS.md does not show how a rule for it is
+  written, leave the command rules out and keep the file rules. Record in STATE.md, under
+  "Open during the setup", the line `- [ ] take the build permissions out again (wrap-up)`, and
+  the rules you added in `_setup/log.md`. Never add a rule that is not in that file, and never
+  widen one, whatever would be convenient.
+- **No:** tell them that each of Claude Code's questions about a file offers to allow all file
+  edits for the rest of the session, and that picking it once is reasonable. It is their
+  choice.
+
+Either way: never change the permission mode yourself, and never suggest skipping permissions
+altogether. The copy into `.claude/` and a commit stay questions on purpose.
+
+**Work in plain single commands, or the list does not help.** Claude Code can only wave
+through a command it can read. A trial with the list in place still had 57 questions, nearly
+all of them made by the way the commands were written. So during the build:
+
+- One command per call. No chain with `&&`, `;` or a pipe, no `cd` in front (give paths from
+  the workspace root), no shell variable, no brace expansion, no here-document.
+- Read a file with the Read tool and search with the search tool, not with `cat`, `sed -n` or
+  `grep` in the shell.
+- Change a file with the Edit and Write tools, also `_setup/STATE.md` and `_setup/log.md`:
+  never `printf >>`, `sed -i` or a script that rewrites a file. Those ask every time, and they
+  slip past the scan that checks a file before it is written.
+- Copy from the kit with a plain `cp _setup/nest/kit/<path> <target>`, one file per call and
+  without options: Claude Code asks for every `cp` that carries an option such as `-R`, whatever
+  the list says. A whole folder is one `cp -R` and one question, which is fine.
+- Wait for a helper agent by waiting for its result, never with a `sleep` loop in the shell.
+
+Commands that are still asked after that are asked rightly: `git init`, a commit, and the
+tests in B4 that write a fake key or remove a test file.
 
 ### B1. The skeleton
 
 1. You are now in the workspace folder (check: the current folder is the path in STATE.md and
    `_setup/nest/SETUP.md` exists; if not, see the end of "The handover" in
-   `setup/interview.md` and build nothing here). Writes into `.claude/` ask for permission in Claude Code; tell
-   the user before B1 starts so they expect those prompts and approve them. If a write there is
-   refused anyway, build the files under `_setup/build/dot-claude/` and give the user one copy
-   command for their OS; after they say it ran, run the stamp of step 11 again, so the files
-   under `.claude/` are in it. A refusal counts for that moment only: at the start of each
-   later phase try one write into `.claude/` again before you fall back.
+   `setup/interview.md` and build nothing here). The files of steps 5, 7 and 8 go through the
+   staging folder (see the top of this section): one copy into `.claude/` at the end of B1,
+   before the stamp of step 11.
 2. `git init -b main` (some systems still start on `master`; the rules and the workflows expect
    `main`), the commit identity from E5 set for this repo (`git config user.name` and
    `user.email` without `--global`), and a `.gitignore` from `kit/github/gitignore.template`:
@@ -31,7 +90,8 @@ cause; never tick around it. Commits stay separate questions.
    `.claude/sensitive-terms.txt`, `.runs/` and `_setup/` are ignored; `wiki/` too if E4 is (a)).
 3. `CLAUDE.md`, under 150 lines, in this order: who the assistant is (name, the sentence from F2,
    personality); who the user is (the card from A, at most 10 lines); how to talk; the workspace
-   (where things are, with the language and the local formats from A1 in one line each); the
+   (where things are, how it is opened day to day in the form for `surface`, and the language
+   and the local formats from A1 in one line each); the
    wiki rules (the four from section 1, points 1 to 4, in one short list); when the assistant
    acts on its own (D5); with a yes to lessons in D8, one line that a lesson goes into
    `.claude/lessons.json`; the skills list (one line each); and at the top a
@@ -51,11 +111,10 @@ cause; never tick around it. Commits stay separate questions.
    (writing-style). Then run `uv run --script scripts/validate.py --self-test` once:
    it proves the scanner works and makes uv fetch Python now, so the first hook does not time out
    (check: the self-test passes; `uv run --script scripts/wiki.py --help` runs). Tell the user
-   once what it looks like when uv cannot be found later (a new terminal without it on the
-   PATH, an app started from the dock): every write is refused with a line such as
-   `PreToolUse:Write hook error: ... failed; blocking because onFailure is "block"`. That is the
-   guard failing safe, not a broken workspace: start Claude Code from a terminal where
-   `uv --version` works.
+   once what it looks like when uv cannot be found later: every write is refused with a line
+   such as `PreToolUse:Write hook error: ... failed; blocking because onFailure is "block"`.
+   That is the guard failing safe, not a broken workspace. The cure is to quit the app they
+   work in completely (VS Code, or the terminal program) and start it again, so it sees uv.
 7. `.claude/settings.json` from `kit/claude/settings.reference.json`: the hooks, permissions from
    D6, the `attribution` block exactly as the reference has it (it keeps "Co-Authored-By" lines out of
    the user's commits), with idea or blueprint the three allow rules their scripts need
@@ -72,12 +131,15 @@ cause; never tick around it. Commits stay separate questions.
    without depending on a shell. Compare with FACTS.md (check: valid JSON; the paths in the
    commands exist).
 8. `.claude/sensitive-terms.txt`, from `kit/claude/sensitive-terms.example.txt` (keep its
-   comment lines, which explain the format, and remove the example lines with `<fill in`): the user fills it themselves, in an editor, not in the chat:
-   names, domains, IP ranges or words that must never land in a committed file. One per line.
-   The folder is hidden in most file explorers, so give the command that opens the file in
-   their editor (macOS `open -e .claude/sensitive-terms.txt`, Windows
-   `notepad .claude\sensitive-terms.txt`, Linux `xdg-open .claude/sensitive-terms.txt`). Ask:
-   now or later (check: the file exists, even if it holds no terms; it is ignored by git).
+   comment lines, which explain the format, and remove the example lines with `<fill in`): the
+   user fills it themselves, in an editor, not in the chat: names, domains, IP ranges or words
+   that must never land in a committed file. One per line. You never fill it for them from what
+   they told you in the interview. Give the way to open the file that fits where they work: in
+   VS Code the file `.claude/sensitive-terms.txt` in the Explorer; else macOS
+   `open -e .claude/sensitive-terms.txt`, Windows `notepad .claude\sensitive-terms.txt`, Linux
+   `xdg-open .claude/sensitive-terms.txt`. Ask with the dialog: now or later; "later" becomes
+   one open item, with one sentence on what the list is for (check: the file exists, even if it
+   holds no terms; it is ignored by git).
 9. If E7 said yes: `.githooks/pre-commit` from `kit/github/pre-commit` with a file copy (never
    written out by hand: the copy keeps it executable), `chmod +x .githooks/pre-commit` on macOS
    and Linux, `.gitattributes` from `kit/github/gitattributes.template` (it keeps the hook's
@@ -98,14 +160,11 @@ cause; never tick around it. Commits stay separate questions.
     release found, or that it could not reach the source. All four are fine here). The stamp
     is run again at the end of B3, B3b and B5 (each has its own step): it only adds what is new.
     A kit file installed under another name gets `--map <workspace path>=<kit path>`.
-12. Stop point: update STATE.md (`next: B2`, `read: setup/build.md (B2)`,
-    `trigger: Read _setup/nest/SETUP.md and follow it.`),
-    ask to commit, then ask the user to close Claude Code and start it again in this folder, so the
-    hooks and settings load.
+12. Update STATE.md (`next: B2`, `read: setup/build.md (B2)`,
+    `trigger: Read _setup/nest/SETUP.md and follow it.`). The guards are active now: say so in
+    one line. Offer a stop; otherwise go on with B2 in this session.
 
 ### B2. The wiki
-
-Do this in the new folder, in a fresh session (the hooks are now active).
 
 1. `wiki.config.json` in the workspace root (next to `CLAUDE.md`, not inside `wiki/`), from
    `kit/scripts/wiki.config.example.json`, with the sections, kinds, status words and labels
@@ -128,44 +187,54 @@ Do this in the new folder, in a fresh session (the hooks are now active).
 4. `_templates/` from `kit/wiki/_templates/`, translated, with the `author` value a note the
    user writes themselves gets (`user`, unless the `authors` list was changed); `_bases/`
    adapted to the sections, the status words and the dashboard from C4.
-5. `.obsidian/`: settings from `kit/wiki/obsidian/`, CSS from `kit/wiki/snippets/` with the palette
-   from C5. Resolve the `customise:` comments in the CSS and remove them, like everywhere else.
-   In the Meta Bind settings (`plugins/obsidian-meta-bind-plugin/data.json`), set
-   `excludedFolders` to the user's own names for the templates folder, the inbox, the raw sources
-   folder and the archive, plus every other folder in `raw_folders`: a button inside text that
-   came from outside must never run. Write all of this before the user opens the vault; if the
-   vault is already open in Obsidian, ask them to quit Obsidian first (it rewrites these files
-   from memory). Then install the theme and the plugins yourself, as
-   `kit/wiki/obsidian/PLUGINS.md` describes: say in one or two sentences what gets downloaded
-   (the plugins they chose and the theme, each from its own project on GitHub, at a version this
-   release was tried with) and that a plugin can do anything Obsidian can, ask for one yes, and
-   run `uv run --script scripts/obsidian_setup.py install --vault wiki`, where `wiki` is the
-   wiki folder (`wiki_dir` in `wiki.config.json`, default `wiki`) (check: it ends with 0, and
-   `status` lists every plugin and the theme as installed, each plugin the setup wrote
-   settings for still has its settings file (Style Settings ships none, on purpose), and none
-   has settings set aside). When it says the vault is open in Obsidian, or may be, ask
-   the user to quit Obsidian and run it again; never add `--assume-closed` on your own, only
-   after the user has confirmed that Obsidian is closed. The user never installs a plugin
-   through Obsidian's own browser: that sets the settings you wrote aside. What is left for
-   them is three small steps, which `PLUGINS.md` spells out: open the wiki folder as a vault
-   (give the full path to paste, never "the folder wiki": people pick the folder above it),
-   choose "Trust author and enable plugins", and quit and reopen Obsidian once. Then check with
-   `uv run --script scripts/obsidian_setup.py vaults` that the wiki folder itself is in
-   Obsidian's list, not the workspace folder above it. Without a yes, record it as an open item. When `install` ends with anything but 0
-   (no connection, an Obsidian that is too old, a checksum that does not match, a folder it
-   refused, a settings file it could not use), record that as an open item too, with the reason the script printed, and tell the
-   user that reason in plain words; do not work around a refusal. The wiki works as plain notes
-   until then. The user may
-   postpone opening Obsidian and step 7: record both as open items, carry on with B3, and
-   mention them at most once per session. They never block B3 or B4.
+5. `.obsidian/`, in this order. `kit/wiki/obsidian/PLUGINS.md` has the detail of every step.
+   1. **Settings.** Write them before the user opens the vault; if the vault is already open
+      in Obsidian, ask them to quit Obsidian first (it rewrites these files from memory).
+      Settings from `kit/wiki/obsidian/`, CSS from `kit/wiki/snippets/` with the palette from
+      C5. Resolve the `customise:` comments in the CSS and remove them, like everywhere else.
+      In the Meta Bind settings (`plugins/obsidian-meta-bind-plugin/data.json`), set
+      `excludedFolders` to the user's own names for the templates folder, the inbox, the raw
+      sources folder and the archive, plus every other folder in `raw_folders`: a button inside
+      text that came from outside must never run.
+   2. **One yes.** Say in one or two sentences what gets downloaded (the plugins they chose and
+      the theme, each from its own project on GitHub, at a version this release was tried with)
+      and that a plugin can do anything Obsidian can. Ask with the dialog. Without a yes,
+      record it as an open item and go to step 6; the wiki works as plain notes until then.
+   3. **Install.** `uv run --script scripts/obsidian_setup.py install --vault wiki`, where
+      `wiki` is the wiki folder (`wiki_dir` in `wiki.config.json`, default `wiki`) (check: it
+      ends with 0, and `status` lists every plugin and the theme as installed, each plugin the
+      setup wrote settings for still has its settings file (Style Settings ships none, on
+      purpose), and none has settings set aside). When it ends with anything but 0 (no
+      connection, an Obsidian that is too old, a checksum that does not match, a folder it
+      refused, a settings file it could not use), record that as an open item with the reason
+      the script printed, and tell the user that reason in plain words; do not work around a
+      refusal. When it says the vault is open in Obsidian, or may be, ask the user to quit
+      Obsidian and run it again; never add `--assume-closed` on your own, only after the user
+      has confirmed that Obsidian is closed. The user never installs a plugin through
+      Obsidian's own browser: that sets the settings you wrote aside.
+   4. **The user opens the vault,** in three small steps you give one at a time: open the wiki
+      folder as a vault (give the full path to paste, never "the folder wiki": people pick the
+      folder above it), choose "Trust author and enable plugins", and quit and reopen Obsidian
+      once (until then the buttons on Home show as text). Give the steps for the user's own
+      system only (the key for pasting a path on theirs, not all three), and each button by the
+      name it has on screen, with what it means in their language next to it when Obsidian
+      shows it in English.
+   5. **Check which folder Obsidian opened:** `uv run --script scripts/obsidian_setup.py vaults`
+      must list the wiki folder itself, not the workspace folder above it. When it lists the
+      folder above, follow "The wiki folder is not in the list?" in `PLUGINS.md`.
+   The user may postpone opening Obsidian and step 7: record both as open items, carry on with
+   B3, and mention them at most once per session. They never block B3 or B4.
 6. `uv run scripts/wiki.py log migrate "Wiki created by NEST"`, then `reindex`, then `lint`
    (check: lint reports zero errors; a search of `wiki/` for `customise:` and `<fill in` finds
    nothing).
-7. Ask the user to open Home in Obsidian and say what looks wrong. Fix, lint again.
+7. Ask the user to look at Home in Obsidian and say what looks wrong; this is the one thing in
+   the build only their eyes can check. Give them what to look for: buttons in the tiles, a
+   colour per section in the sidebar, their own section names. Fix, lint again.
 
 ### B3. Skills and agents
 
-1. For each skill chosen in D, and always `nest-update`: create `.claude/skills/<name>/` from
+1. For each skill chosen in D, and always `nest-update`: create `.claude/skills/<name>/` (through
+   the staging folder, one copy for all skills and agents at the end of step 3) from
    `kit/skills/<name>/`. Rewrite,
    don't copy: paths and section names from `wiki.config.json`, labels in the user's language,
    their apps from A7, every `<!-- customise: ... -->` resolved and removed. The exception:
@@ -200,7 +269,10 @@ Do this in the new folder, in a fresh session (the hooks are now active).
    also fails on a `customise:` or `<fill in` marker left in a skill or agent).
 5. `uv run --script scripts/nest_update.py stamp` again, so the skills and agents are in the
    stamp (check: `nest.json` lists a file under `.claude/skills/nest-update/`).
-6. Stop point: STATE.md `next: B3b`, ask to commit, ask for a restart so skills and agents load.
+6. Stop point: STATE.md `next: B3b` (or `next: B4` without integrations to connect now), the
+   commit question for this session, and a new session for what comes next: the tests run in a
+   session that starts the way every later one will, with the workspace's own `CLAUDE.md`,
+   rules, skills and hooks loaded from the start.
 
 ### B3b. Integrations
 
@@ -208,7 +280,7 @@ Per integration skill the user wants connected now (D4), in a fresh session. A s
 connection was postponed has nothing to do here: its open item stays.
 
 1. Connect the route the user chose: add the MCP server, enable the connector, or run the login
-   script. Only after a yes; a login the user does themselves (`! <command>`). Tokens stay where the
+   script. Only after a yes; a login the user does themselves, in the form for where they work (section 3). Tokens stay where the
    route keeps them, never in the workspace. Add an MCP server in the local scope (the default
    of `claude mcp add`), not the project scope: a project-scoped server is written to
    `.mcp.json` in the workspace, which can hold addresses and keys. For the Microsoft route: copy
@@ -225,8 +297,8 @@ connection was postponed has nothing to do here: its open item stays.
 4. `uv run --script scripts/nest_update.py stamp` again, so `scripts/graph.py` and
    `tool-map.md` are in the stamp when they were installed.
 5. Stop point when a server or connector was added: STATE.md `next: B3b, step 6 (test the
-   integrations)`, ask to commit, ask for a restart so the new tools load. A route that is only
-   a script (the Microsoft route) needs no restart: go on.
+   integrations)`, the commit question for this session, and a new session so the new tools
+   load. A route that is only a script (the Microsoft route) needs no new session: go on.
 6. One read-only test per integration: the next three appointments, or the unread count, or
    today's weather (check: the result is real and matches what the user sees in their app).
    Only then tick it.
@@ -236,6 +308,18 @@ connection was postponed has nothing to do here: its open item stays.
 
 In a session that started after B3 (and after B3b step 5 when a server or connector was added).
 Record every outcome in `_setup/log.md`.
+
+**You run the tests, not the user.** The first real user spent twenty-four minutes and
+twenty-one messages here supplying a note, an idea, approvals and typed commands, until she
+wrote "do all the tests that are still needed" and the assistant simply did. Start with one
+dialog: you will now test the workspace yourself, it takes about ten minutes (about twenty with
+a team to run), they can watch or step away; and, with a team installed, whether to include a
+trial run of the team now (recommended) or leave it for their first real idea. After that, ask
+nothing until the tests are done, except when something fails in a way only they can judge.
+
+Everything the tests write is yours and temporary. Keep a list in `_setup/log.md` of every file
+a test created or changed. The user's wiki must look afterwards as it did before, except for
+the wiki log.
 
 1. **Secret guard:** `uv run --script scripts/validate.py --self-test` passes; then try to write a
    file containing a fake key in the shape of a real one (for example a GitHub token prefix with
@@ -247,18 +331,35 @@ Record every outcome in `_setup/log.md`.
 2. **Session start:** the session-start line appeared at the start of this session. After the
    first message, `.claude/.session/` holds a words file with that message in it.
 3. **Wiki:** without the wiki skills (the backbone only): lint is zero and the context pages
-   open; go on to step 4. With them: ask the user for a small real note for the inbox (a thought, a link, a question);
-   write a sample yourself only if they would rather not. Run the inbox skill, check it is filed,
-   linked, logged, and the original is in the archive unchanged. Ask one question with the query skill. Lint is zero.
-4. **One run per chosen team:** a small, real idea of the user's through `idea` (light or full),
-   and, if chosen, through `blueprint`. Check the board shows, the score comes from
-   `council_score.py`, and saving writes the idea pages and lint stays zero.
-5. **Each other chosen skill:** one natural test phrase from its `metadata.try`. An integration
-   skill that is not connected yet: its test is that it says so in one line and invents nothing.
+   open; go on to step 4. With them: write a sample note into the inbox yourself, two lines in
+   the user's language on a neutral subject, with a title that starts with the word for "test"
+   in their language. Run the inbox skill on it and approve its proposal yourself; check the
+   note is filed, linked and logged, and the original is in the archive unchanged. Ask one
+   question with the query skill that the sample note answers. Then take the test out again:
+   remove the filed page and the archived original, run `reindex` and `lint` (zero), and add one
+   line to the wiki log that a setup test was run and removed. These are files you made for the
+   test, not the user's notes: the rule that nothing is deleted is about theirs.
+4. **One run per chosen team,** when the user said yes to it in the opening dialog: an idea of
+   your own, small and harmless, in the area the user named in block B (never their real idea:
+   that one deserves a run they follow). Run it through `idea` (light or full) and, if chosen,
+   through `blueprint`. Say at the start of the run that it is a setup test, approve the brief
+   yourself, and take the recommended answer to every question a seat asks. Check the board
+   shows and the score comes from `council_score.py`. Do not save the result to the wiki: the
+   run files under `.runs/` are enough proof, and they are ignored by git. Saving is tested by
+   the script itself (`uv run --script scripts/idea_page.py --help` runs).
+5. **Each other chosen skill:** one natural test phrase from its `metadata.try`, which you run
+   yourself. A skill that only the user can start (`disable-model-invocation: true`) is not run:
+   its test is that `uv run --script scripts/skills_catalog.py --check --installed` passes and
+   that every file and section its `SKILL.md` names exists. Never ask the user to type a list
+   of commands for you. An integration skill that is not connected yet: its test is that it says
+   so in one line and invents nothing.
 6. **Updates:** `uv run --script scripts/nest_update.py plan` says the workspace is up to date (or
    that it could not reach the source, which is an open item, not a failure).
 7. **Leftovers:** search the workspace for `customise:`, `<fill in` and `TODO` outside `_setup/`
-   (check: nothing, or each one is a known open item).
+   (check: nothing, or each one is a known open item). `git status` shows no file a test left
+   behind.
+8. **Tell the user** in at most six lines what you tested, what passed, and what is open. One
+   thing is theirs, if it is still open from B2: looking at Home in Obsidian.
 
 ### B5. GitHub
 

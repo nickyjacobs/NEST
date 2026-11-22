@@ -5,7 +5,7 @@
 NEST is a conversation, not an installer. Claude Code reads `SETUP.md`, asks you questions,
 proposes a workspace and builds it with you. Nothing is built without your yes.
 
-**On this page:** [Before you start](#before-you-start) · [The five sessions](#the-five-sessions) · [The interview](#the-interview) · [What you end up with](#what-you-end-up-with) · [Stopping and continuing](#stopping-and-continuing)
+**On this page:** [Before you start](#before-you-start) · [The four sessions](#the-four-sessions) · [The interview](#the-interview) · [What you end up with](#what-you-end-up-with) · [Stopping and continuing](#stopping-and-continuing)
 
 ## Before you start
 
@@ -19,27 +19,36 @@ proposes a workspace and builds it with you. Nothing is built without your yes.
 The scripts are tested on macOS, Windows and Linux, and a complete setup has been run on macOS
 and Linux. You do not need to know how to code.
 
-## The five sessions
+## The four sessions
 
-The setup suggests five sessions of 30 to 60 minutes. You start each one with the same line.
+The setup suggests four sessions. The interview takes about an hour and a half, spread over the
+first two; the build about an hour, in which you mostly watch and say yes. You start each
+session with the same line, and you can stop between any two steps.
 
 | Session | What happens | It ends with |
 |---|---|---|
 | 1 | The machine check, then who you are and where you get stuck | A recap of you and what bothers you |
-| 2 | Your wiki, your skills and apps, GitHub, the names | You create the workspace folder with one command |
-| 3 | The skeleton: your assistant, the rules, the guards | A restart, so the guards load |
-| 4 | The wiki, then the skills and agents | A restart, so the skills load |
-| 5 | Tests, GitHub, the wrap-up | Your first real task |
+| 2 | Your wiki, your skills and apps, GitHub, the names | The setup creates your workspace folder; you open it |
+| 3 | The build: your assistant, the rules, the guards, the wiki, the skills | A workspace that is built |
+| 4 | Tests the setup runs itself, GitHub, the wrap-up | Your first real task |
 
-Connecting mail or a calendar adds one session before the last, because Claude Code has to
-restart before a new connection can be tested.
+Connecting mail or a calendar adds one session before the last, because a new connection only
+loads when a session starts.
+
+Claude Code itself asks before it writes a file or runs a command, unless you told it not to.
+In a build that is well over a hundred questions. The setup offers a short list of things it
+may do without asking while it builds (write in your workspace, run the workspace's own tools),
+and takes that list away again when it is done. You can say no and answer each question.
+
+Most questions are a choice you click. A handful ask for your own words: who you are, what gets
+in your way, what would make this a good year.
 
 ```mermaid
 flowchart LR
     A[Check your machine] --> B[Interview]
     B --> C[You say yes to a plan]
     C --> D[Build, step by step]
-    D --> E[Test together]
+    D --> E[The setup tests itself]
     E --> F[First real task]
 ```
 

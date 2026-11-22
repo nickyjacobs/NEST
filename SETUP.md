@@ -21,7 +21,10 @@ that fit their life. Everything comes from an interview; nothing is assumed.
 - **No `_setup/STATE.md` yet:** this is the first session. Read this file and
   `setup/check.md`, then start at section 4 (the language question) and Phase 0. Read
   `setup/interview.md` when Phase 0 is done.
-- **`_setup/STATE.md` exists:** the setup is running. Read this file, `_setup/STATE.md`, and
+- **`_setup/STATE.md` exists:** the setup is running. Say nothing until you have read
+  `_setup/STATE.md`: your first words to the user come after it, in the language its
+  `language:` line names, and so does every line after ("I am reading where we were"). No
+  remark in English about a state file that already exists. Then read this file, `_setup/STATE.md`, and
   the parts named after `read:` in STATE.md. Then read what the earlier
   sessions left behind, because you have no memory of them: every file in `_setup/interview/`
   (the user's answers; the question IDs such as E5 or D8 are explained in
@@ -32,13 +35,16 @@ that fit their life. Everything comes from an interview; nothing is assumed.
   "Open during the setup", and offer the nest-update skill or one of the open items. Build nothing.
 - **`next:` says `handover`:** see "The handover" at the end of `setup/interview.md`: check
   whether the workspace folder exists and continue there.
-- **Why several sessions:** hooks, skills, agents and MCP servers load when a Claude Code session
-  starts. You build in one session and test in the next. Each stop point: update STATE.md, ask
-  whether you may commit (once git exists), and tell the user exactly how the next session
-  starts: close Claude Code, open it again in this folder (name the folder), and type the line
-  after `trigger:` in STATE.md (quote it). When the user stops on their own ("I have to go"), it
-  is a stop point too: update STATE.md, ask in one line whether to commit what is built so far,
-  and give the same folder and line.
+- **Why several sessions:** the setup is long, and a person's attention is not. A new session
+  is only *needed* in three places: after the handover (the workspace is another folder), before
+  the tests in B4 (so the workspace starts the way it will every day), and after an MCP server or
+  connector was added (those load when a session starts). Hooks and skills you write become
+  active in the session that wrote them; that is no reason to restart. Everywhere else a stop is
+  the user's choice: offer one at the end of each interview block and each build phase, never
+  insist. Each stop point: update STATE.md, ask whether you may commit (once git exists), and
+  tell the user how the next session starts, in the form that fits where they work (section
+  3, "Starting a session"), with the line after `trigger:` in STATE.md quoted. When the user
+  stops on their own ("I have to go"), it is a stop point too.
 - The reference files live in `kit/` next to this file (`kit/README.md` explains them). You
   **adapt** them to the user's answers; you never copy one blindly and never retype a script:
   scripts are copied with a file copy and configured, never rewritten from memory.
@@ -135,8 +141,27 @@ The principles that make the original work, and that you keep in every build:
   Never propose access to a password manager or keychain either (no "I could install its CLI").
 - **Dates are absolute.** Take today's date from the system (`date`) and write `YYYY-MM-DD`; never
   "yesterday" or "last week" in a file.
-- **Talk in the user's language** (chosen first), short, answer first. No walls of text. Explain a
-  term the first time it appears, at the user's level (Phase 0 measures it).
+- **Talk in the user's language** (chosen first), short, answer first. That covers everything
+  they see: the text in a choice dialog, option labels, and the one-line notes between your
+  steps ("Now the templates."). No message longer than about twelve lines; a longer plan becomes
+  two messages or a list they can skim. Explain a term the first time it appears, at the user's
+  level (Phase 0 measures it), and for a beginner say what a thing does before what it is
+  called: "a routine that files your notes (the inbox skill)", not "the wiki-inbox skill".
+- **Labels are yours, not the user's.** Question IDs (A1, C5, F3), phase names (Phase 0, block
+  C, B2, B4) and working files (`STATE.md`, `_setup/`) never appear in a message or a dialog.
+  Say what happens: "the wiki is next", not "continue with B2". The same for the words of the
+  trade when the user is not technical: not "lint is at zero" but "the check of your wiki finds
+  nothing wrong"; not "nothing is committed yet" but "no snapshot has been saved yet". File
+  names (`docs/next-session.md`, `.claude/sensitive-terms.txt`), "README", "tokens", "agents",
+  "checksum" and the names of the seats of a team are such words too: say what the thing is
+  for, and give the name only when the user will have to find or type it.
+- **Try before you say you cannot.** Do not tell the user that Claude Code "may not" do
+  something because this file or your memory says so. Try the action; when Claude Code asks the
+  user for permission, tell them what the question is for; only a real refusal makes it a step
+  for the user.
+- **Check what a command did.** Read the exit status of the command itself, not of a pipe
+  behind it, and after a commit look at `git status`: a commit that took half the files looks
+  like a success.
 - **Keep the user posted:** one line before a longer action, and say when something failed.
 - **Ask, don't infer from the machine.** The user's apps, level and habits come from the interview,
   not from what is installed or configured on this computer (it may be shared, borrowed or set up
@@ -167,6 +192,8 @@ Create `_setup/STATE.md` in Phase 0. Shape:
 language: <the user's language>
 level: <beginner | intermediate | technical>
 os: <macOS | Windows | Linux> <version>
+surface: <vscode | terminal | desktop | other>   # where the user types; from Phase 0.2
+restart_app: <no | yes>               # yes when a tool was installed in this run (see 0.2)
 workspace: <fill in at F1>            # absolute path once known
 assistant: <fill in at F3>            # the name; written at F3
 teams: <fill in at D2 and D7>         # for example "council: light, architects: none, ideas: 50-ideas"
@@ -209,16 +236,35 @@ At the handover after block F it is copied into the new workspace, and the setup
 | Session | What happens | Ends with |
 |---|---|---|
 | 1 | Phase 0, interview blocks A and B | a recap of who the user is and what bothers them |
-| 2 | Interview blocks C to F, then the handover | the user creates the workspace with one command and restarts there |
-| 3 | B1 (the skeleton) | restart, so the hooks load |
-| 4 | B2 (wiki) and B3 (skills and agents) | restart, so skills and agents load |
-| 5 | B4 (tests), B5 (GitHub), wrap-up | the first real task |
+| 2 | Interview blocks C to F, then the handover | you create the workspace folder; the user opens it |
+| 3 | B1 (the skeleton), B2 (the wiki), B3 (skills and agents) | a workspace that is built; a new session for the tests |
+| 4 | B4 (tests, which you run yourself), B5 (GitHub), wrap-up | the first real task |
 
 With integrations (D4) there is one more session before the last: B3b connects them, and a
-restart follows so the new tools load before they are tested.
+new session follows so the new tools load before they are tested. A user with energy to spare
+may do sessions 1 and 2 in one sitting; never push for it.
 
-Tell the user this plan in Phase 0, in two or three lines, with a rough time per session
-(30 to 60 minutes).
+Tell the user this plan in Phase 0, in two or three lines, with an honest time: the interview
+takes about an hour and a half spread over two sessions, the build about an hour in which they
+mostly watch and say yes.
+
+**Starting a session.** Whenever the user has to open a folder, start a new session or come
+back later, give the steps for the place they work (`surface:` in STATE.md), with the real
+folder path filled in. Never give terminal commands to someone in the VS Code panel, and never
+the `!` prefix there: it does not exist in the panel.
+
+| | A new session in the same folder | Open another folder (the handover) |
+|---|---|---|
+| `vscode` (the Claude Code panel in VS Code) | Start a new conversation in the Claude Code panel. VS Code stays open. | File > Open Folder, paste the path, confirm. Trust the folder when VS Code asks, and again when Claude Code asks. Open the Claude Code panel and start a conversation. |
+| `terminal` | Leave Claude Code (`/exit`), then `claude` again in the same folder. | `cd "<path>"`, then `claude`. Trust the folder when asked. |
+| `desktop`, `other` | Ask the user how they opened this folder, and describe the same route back. | The same, for the new folder. |
+
+Take the exact names of buttons and menus from the docs you fetched in Phase 0 (the VS Code
+page for `vscode`), not from this table: they change. When `restart_app:` is `yes`, the first
+time the user reopens anything they quit the whole app first (VS Code or the terminal program)
+and start it again: an app only sees a newly installed tool after it was started afresh.
+Without that, the first hook in the workspace cannot find uv and every write is refused. Set
+`restart_app:` back to `no` once the user has done it.
 
 ---
 
@@ -227,41 +273,72 @@ Tell the user this plan in Phase 0, in two or three lines, with a rough time per
 ### 4.1 Before anything else
 
 Ask one question, in English and in the language of the user's first message if that differs:
-**which language should we use?** Everything after that (questions, the wiki, folder names if the
-user wants, the assistant's tone) follows that choice. The repo-facing parts (scripts, settings
-keys) stay English.
+**which language should we use?** That question is the whole first message: no introduction
+before the answer. Everything after that (questions, dialogs, the wiki, folder
+names if the user wants, the assistant's tone) follows that choice. The repo-facing parts
+(scripts, settings keys) stay English.
 
 Then introduce yourself in a few lines, without tool names (git, uv, hooks) until you know the
-user's level from 0.5: what NEST builds, the four phases (check, interview,
-build, grow), how many sessions, that every step waits for a yes, and that the names come last.
-Say once that Claude Code itself will ask permission for some commands in the first minutes
-(looking at the machine, saving the docs): those are the checks of Phase 0, and "yes" is safe.
-Ask if you can start.
+user's level from 0.5: what NEST builds, the four phases (check, interview, build, grow), how
+many sessions, that every step waits for a yes, and that the names come last. Say once that
+Claude Code itself may ask permission for some commands in the first minutes (looking at the
+machine, saving the docs): those are the checks of Phase 0, and "yes" is safe. Do not promise
+those questions: in some permission modes none appear. Ask if you can start.
 
 ### 4.2 How you ask
 
-- Each block opens with one sentence: why you ask this and where the answers will land.
-- **Closed questions** go through the choice dialog (AskUserQuestion), your recommendation as the
-  first option, marked as recommended. **Story questions** are plain text. The dialog holds at
-  most four questions with two to four options each: a longer list (the pain points in B1, the
-  plugins in C6) is a numbered list in plain text, and the user answers with the numbers.
-- **At most four questions per message.** Fewer is better for story questions.
+The first real user answered forty questions by typing and fourteen by clicking, and by the
+second session her answers were three words long. Typing is the expensive part. Spend it on
+the few questions where the user's own words matter.
+
+- **A choice is a click.** Every question with a known set of answers goes through the choice
+  dialog (AskUserQuestion), in the user's language, your recommendation first and marked as
+  recommended. That holds in the build too: "now or later", "may I commit", "which of these
+  two". A yes to a proposal is a dialog with two options (this is right; I want to change
+  something), not a typed "yes".
+- **A long list is a few dialogs, not a wall.** The dialog holds four questions with up to four
+  options each, and a question can allow several answers. Group a long list by theme (the pain
+  points in B1, the apps in A7, the skills in D) and ask it as multi-select questions, the
+  commonest options named, "Other" for the rest. Never a numbered list the user answers with
+  numbers.
+- **One open question per message.** A story question (who are you, what goes wrong, what
+  would make this year good) stands alone, with an example of the kind of answer you mean. Two
+  questions joined by "and" are two questions. When
+  an answer covers only part of what you asked, you asked too much at once: take what you got
+  and ask the rest as its own question, once.
+- **Propose, then ask.** Where earlier answers let you fill something in (a folder tree, a
+  dashboard, the tone, the skills), show your proposal and ask whether it is right. The
+  proposal is in a message the user can read, sent before the dialog: what you worked out in
+  your own reasoning is invisible to them, and a dialog that asks "is this folder layout right?"
+  about a layout they never saw wastes a turn. A dialog never points at "the list above" unless
+  there is one. Never ask what you already know from an earlier answer or from the machine
+  check.
+- **The level decides how much you ask.** For a beginner, every block opens with a proposal
+  for the whole block built from what they said so far, and you ask only what you cannot
+  propose. Choices that need knowledge they do not have (status words, kinds of notes,
+  permission rules, how independent each skill is) take the default: say in one line what you
+  chose and that it can change later, and ask nothing. A technical user gets the separate
+  questions. In between: propose, and offer "show me the details".
+- **Show, do not describe.** Anything the user must judge by eye (colours, the look of a
+  page) is shown as something they can see, never as codes or names. See C5.
+- **A closed dialog is not an answer.** When the dialog comes back rejected or closed, nothing
+  was saved: say so in one line and show the same dialog once more. Do not turn it into typed
+  questions. Only when the dialog does not exist in this session at all (the tool is missing or
+  errors every time) do you ask the same choice as a short lettered list.
+- **An answer you can read two ways** ("all of them", "the second") goes back as a dialog with
+  the two readings, not as a guess.
 - **Write answers down as they come.** After every message with answers, append them verbatim
   to `_setup/interview/<block>.md` and move `next:` in STATE.md to the next question, before
   you ask anything else. When the answer is a yes to something you proposed (a folder tree, a
   dashboard, a palette, a list of skills), write the proposal itself with it, in full: "yes" on
   its own tells a later session nothing, and it would build something else than the user
   agreed to. The recap at the end of a block confirms what is already on file.
-- Give an example or a proposal with every question, so the user corrects instead of writing from
-  nothing. Where earlier answers already suggest the answer, propose it and ask for a yes.
-- Never ask what you already know from an earlier answer or from the machine check.
+- Each block opens with one sentence: why you ask this and where the answers will land.
 - Follow up when an answer raises a new question, at most twice per topic.
-- After each block: a recap of at most five lines and "Is this right?". A block without a yes is
-  not done.
+- After each block: a recap of at most five lines and the two-option dialog. A block without a
+  yes is not done. Then offer to stop here or go on.
 - After each block, check the routing table (section 7): every answer has a place. An answer that
   landed nowhere is a silent failure.
-- Adapt to the level from Phase 0: a beginner gets a short explanation of each term (vault,
-  repo, skill, hook) the first time; a technical user gets none.
 
 ### 4.3 Three ways to skip
 
