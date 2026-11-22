@@ -101,6 +101,11 @@ section in plain words: what it means if you already built a workspace with an e
 - Files for `.claude/` are built in a staging folder under `_setup/` and copied in once per
   phase. In a trial every write into `.claude/` raised a permission question: about
   thirty-seven during one build.
+- Before the build the setup tells the user that Claude Code itself asks before every write
+  and command in its default mode (a trial counted 143 questions in one build) and that the
+  question offers to allow all edits for the session. The setup never changes the mode itself.
+- Helper agents: the setup stays in the turn while they work and reports per finished piece.
+  A postponed step (opening Obsidian) no longer keeps the wrap-up from finishing.
 - Labels stay out of sight: phase names (B2, block C) and working files (`STATE.md`) are no
   longer shown to the user, a proposal is always in a visible message before the dialog that
   asks about it, and a later session reads the user's language before its first word.

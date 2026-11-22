@@ -36,13 +36,16 @@ ideas), and whether an integration keeps working after its token expires.
 When you start the wrap-up, add its five points to STATE.md as checkboxes, plus every B4 test that
 did not run yet. Tick each only when it is done; the wrap-up is not done while one is open.
 
-1. Remove the "Setup in progress" line from `CLAUDE.md`. Keep `_setup/` as it is, with
+1. Remove the "Setup in progress" line from `CLAUDE.md`. Something the user postponed (opening
+   Obsidian, the sensitive terms list, a connection) is an open item in `docs/next-session.md`,
+   never a reason to keep the setup open: finish the wrap-up in this session. Keep `_setup/` as it is, with
    `_setup/nest/` in it: it is the history of how this workspace was made, it is gitignored, and
    the updater can fall back on that kit copy. When the wrap-up is done, set `next: done` in
    STATE.md.
 2. Write `wiki/how-this-wiki-works.md` for real: how the workspace works, in plain words, on one
    page, in the user's language.
-3. Give the user an overview in the chat itself, not as a pointer to a file: the folder tree two
+3. Give the user an overview in the chat itself, not as a pointer to a file, as two or three
+   short messages rather than one long one (never inside the text of a dialog): the folder tree two
    levels deep, one line per skill and agent with how to start it (and which ones only they can
    start, by typing the command),
    the three commands they will use most, what they maintain themselves (the context pages,

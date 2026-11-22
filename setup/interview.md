@@ -178,8 +178,11 @@ name, or an open question, never a fifth question in one message.
 - **D1** The wiki skills (inbox, ingest, query, maintenance) and the Obsidian skills. Recommended
   as a set, unless the user wants the backbone only (block C). A skill you leave out of a set is
   named with the reason; never drop one silently.
-- **D2** The Council (`idea`) and The Architects (`blueprint`). Two teams, two questions in one
-  dialog: the user can want one and not the other. For each team: no, **full** (more
+- **D2** The Council (`idea`) and The Architects (`blueprint`). They are two separate things and
+  get two separate questions, each with its own options: "The Council, which judges an idea:
+  no / light / full" and "The Architects, who work an idea out: no / light / full". Never one
+  question "do you want the teams": in two trials that gave the user a team they did not want.
+  For each team the sizes are **full** (more
   agents, a jury of three, checked sources, several minutes and more tokens per run) or **light**
   (four or five agents, one judge, faster and cheaper). Explain the trade-off in two lines and
   recommend full for someone who will use it for real decisions, light for curiosity. Use the

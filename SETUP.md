@@ -21,9 +21,10 @@ that fit their life. Everything comes from an interview; nothing is assumed.
 - **No `_setup/STATE.md` yet:** this is the first session. Read this file and
   `setup/check.md`, then start at section 4 (the language question) and Phase 0. Read
   `setup/interview.md` when Phase 0 is done.
-- **`_setup/STATE.md` exists:** the setup is running. Before your first word to the user, read
-  `language:` in `_setup/STATE.md`: everything you say in this session, from "I am reading where
-  we were" on, is in that language. Then read this file, `_setup/STATE.md`, and
+- **`_setup/STATE.md` exists:** the setup is running. Say nothing until you have read
+  `_setup/STATE.md`: your first words to the user come after it, in the language its
+  `language:` line names, and so does every line after ("I am reading where we were"). No
+  remark in English about a state file that already exists. Then read this file, `_setup/STATE.md`, and
   the parts named after `read:` in STATE.md. Then read what the earlier
   sessions left behind, because you have no memory of them: every file in `_setup/interview/`
   (the user's answers; the question IDs such as E5 or D8 are explained in
@@ -150,7 +151,10 @@ The principles that make the original work, and that you keep in every build:
   C, B2, B4) and working files (`STATE.md`, `_setup/`) never appear in a message or a dialog.
   Say what happens: "the wiki is next", not "continue with B2". The same for the words of the
   trade when the user is not technical: not "lint is at zero" but "the check of your wiki finds
-  nothing wrong"; not "nothing is committed yet" but "no snapshot has been saved yet".
+  nothing wrong"; not "nothing is committed yet" but "no snapshot has been saved yet". File
+  names (`docs/next-session.md`, `.claude/sensitive-terms.txt`), "README", "tokens", "agents",
+  "checksum" and the names of the seats of a team are such words too: say what the thing is
+  for, and give the name only when the user will have to find or type it.
 - **Try before you say you cannot.** Do not tell the user that Claude Code "may not" do
   something because this file or your memory says so. Try the action; when Claude Code asks the
   user for permission, tell them what the question is for; only a real refusal makes it a step

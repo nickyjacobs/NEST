@@ -22,7 +22,19 @@ workspace you can go back to"); never once per phase.
 The user watches most of the build. Keep them posted in their language, one short line per
 step, and in B3 one line per skill or agent as it is finished ("The routine that files your
 notes is ready."): twenty minutes of silence reads as a program that hangs. Save questions for
-what only they can answer.
+what only they can answer. Helper agents are fine for speed, but you stay in the turn while
+they work: never end your message with "I will let you know when it is done" and stop. Nothing
+wakes you up; the user would have to ask. Wait for the helpers, report per finished piece, and
+only then hand the turn back.
+
+**How often Claude Code asks is the user's own setting, and they should know before it
+starts.** In its default mode Claude Code asks before every file it writes and every command
+it runs; a trial counted 143 such questions in one build, half of them for writing a file.
+Before B1, say this in three plain lines: that these questions come from Claude Code and not
+from you, that each question has a choice that allows all file edits for the rest of the
+session, and that picking it once is reasonable here because they just approved the plan and
+the workspace's own guards check every file anyway. It is their choice: never change the
+permission mode yourself, and do not ask them to skip permissions altogether.
 
 **Everything for `.claude/` is built in a staging folder first.** Depending on how the user
 set Claude Code, every single write into `.claude/` can raise a permission question; a trial
@@ -174,7 +186,10 @@ stamp). The staging folder stays; `_setup/` is ignored by git.
    4. **The user opens the vault,** in three small steps you give one at a time: open the wiki
       folder as a vault (give the full path to paste, never "the folder wiki": people pick the
       folder above it), choose "Trust author and enable plugins", and quit and reopen Obsidian
-      once (until then the buttons on Home show as text).
+      once (until then the buttons on Home show as text). Give the steps for the user's own
+      system only (the key for pasting a path on theirs, not all three), and each button by the
+      name it has on screen, with what it means in their language next to it when Obsidian
+      shows it in English.
    5. **Check which folder Obsidian opened:** `uv run --script scripts/obsidian_setup.py vaults`
       must list the wiki folder itself, not the workspace folder above it. When it lists the
       folder above, follow "The wiki folder is not in the list?" in `PLUGINS.md`.
