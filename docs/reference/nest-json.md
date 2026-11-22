@@ -38,7 +38,7 @@ Read by `scripts/session_guard.py`.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `live_minutes` | `30` | How long after its last activity another session still counts as open |
+| `live_minutes` | `30` | How long after its last activity another session can still be named as a second session; it is named only when it was active while yours was already open |
 | `keep_days` | `14` | How long the files with your own messages stay in `.claude/.session/` |
 | `words_chars` | `8000` | How much of your own words is handed to a conversation summary: your first message and the newest ones, at most 9500 characters |
 | `plan_author` | `"claude"` | The author value on a plan note in the inbox; `""` leaves the field out |

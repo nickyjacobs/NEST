@@ -179,6 +179,59 @@ therefore run `uv run --script scripts/validate.py --self-test` once during inst
   pointed at another repository. And the guard judges the text of the command, not what the
   user's own shell makes of it: an alias or function of their own with the name of an allowed
   command, a zsh global alias, or `setopt extendedglob` in their `.zshenv` is outside it.
+- A pattern file (`grep -f`, `rg -f`, `--file`) is refused. Every line of such a file is a
+  pattern, and an empty line matches every line of every file: the first real user's reviewer ran
+  `rg -f` on the private terms file, which keeps the kit's comment lines and blank lines, got 758
+  KB of output and reported a problem that did not exist. The terms file has one reader,
+  `validate.py`, and the reviewer asks it: `uv run --quiet --script scripts/validate.py` (or
+  `-q`) with `--changed`, `--file <files>` or `--staged` is the one program the read-only guard
+  lets an agent start. Not `--hook` (the shell mode writes a state file) and not `--stdin` (it
+  would wait for input). Each option is a word of its own: `--file=<path>` is refused, because
+  the guard's path rules look at the start of a word and a network path glued on after an `=`
+  went past them. Names follow `--file` only, and each goes through the path checks of every
+  other command, in PowerShell through its network rules too. In Bash the script word must be `scripts/validate.py` or
+  `./scripts/validate.py` after the shell read it: a file name may hold a backslash there, so
+  `'scripts\validate.py'` is another file. The backslash spelling passes in PowerShell only.
+- git prints a file name with a character outside ASCII between double quotes with octal
+  numbers (`"wiki/caf\303\251.md"`), and a name can hold a space. A name copied from
+  `git diff --name-only` is therefore not always the name on disk, and `-c core.quotePath=false`
+  is a git option the read-only guard refuses. So the scanner takes the names from git itself:
+  `validate.py --changed` scans what `git status` lists as changed or untracked. And `--file`
+  names every path it did not scan with the reason (does not exist, is a folder, outside the
+  workspace, left out by a skip rule, over 2 MB, cannot be read) and then exits with 3 when no
+  finding makes it 2, so no output means scanned and clean. Three kinds are named in one line
+  each and do not change the exit status, because the user cannot do anything about them: files
+  that are not text (a scan of all tracked files meets images), symbolic links, and folders that
+  are a repository of their own (a submodule, a cloned project). argparse also exits with 2 for
+  a mistake in the options, with a `usage:` line.
+- What `--file` and `--changed` never do. They follow no symbolic link, also not one in a folder
+  name on the way to the file, and read nothing outside the workspace root; for the wiki backup
+  the wiki folder must lie inside the workspace too. With `CLAUDE_PROJECT_DIR` inside a larger
+  repository `--changed` scans the files under the project folder only. `--changed` calls
+  nothing clean after a `git status` that failed or did not answer, or when `nest.json` names a
+  backup that cannot be used (missing, not a repository, `git_dir` of the wrong type, a wiki
+  folder outside the workspace): each is named and the exit status is 3. And no file name is
+  printed as it is: a line end, a control character or a direction-changing character in a name
+  is shown as its escape (`\n`, `\x1b`, `\u202e`), in every line of the scanner that carries
+  a path, so a name cannot pose as a line of the report. The hook modes are as they were: the
+  scan after a shell command skips links already, and still reads the whole repository around a
+  project folder.
+- **Open, not tried on Windows:** a network path written with mixed separators. The guard
+  refuses a word that starts with `//` or `\\`. `cat '/\server/share/a.md'` passes, on
+  `develop` as well, and since a backslash inside double quotes is read as a shell reads it,
+  `cat "\/\/server/share/a.md"` passes too (it used to be refused by accident, as `//server`).
+  On macOS and Linux both are plain relative or local paths. Whether Windows, under Git Bash,
+  takes either as `\\server\share` is not known.
+- Inside double quotes a POSIX shell takes a backslash as an escape only before `$`, a backtick,
+  `"`, a backslash and a line break; before anything else the backslash stays in the word. The
+  guard reads it the same way, so `"a\b"` is `a\b` and not `ab`.
+- The guard strips blanks and line breaks around a command, nothing else. A vertical tab or a
+  form feed is no white space to a shell: it stays in the word and reaches the program.
+- Windows PowerShell 5.1 hands a double quote inside a word to the program as it stands, and the
+  program's own parsing then takes it as a quote: `git diff '"--output=x.txt"'` would reach git
+  as `--output=x.txt`, a word that starts with a dash after all. PowerShell 7.3 and later escape
+  it. The guard refuses, in PowerShell, every word that holds a double quote. **Found by reading;
+  not tried on a Windows machine.**
 - An unquoted `#` is refused wherever it stands in a word. In most shells it starts a comment;
   with zsh's EXTENDED_GLOB it makes what stands before it optional, so `a#-delete` can expand to
   a file named `-delete`. Inside quotes it is a plain character.
@@ -186,6 +239,39 @@ therefore run `uv run --script scripts/validate.py --self-test` once during inst
   at most 20 new commits, 50 files and 8 MB per run (what was left out is counted in the
   message), nothing git ignores apart from the wiki backup, nothing that changed more than two
   minutes ago.
+- A private term that occurs only inside the path of the user's own home folder is not a
+  finding. A user name often holds a surname (`C:\Users\m.okonkwo`), and with that surname on
+  the terms list every absolute path on the computer was reported. Exempt is that one folder, in
+  the spellings it has on this computer: either slash, backslashes escaped once or twice (JSON),
+  separators URL-encoded, any case; for a Windows folder also `/c/Users/<name>`,
+  `/mnt/c/Users/<name>` and `/cygdrive/c/Users/<name>`; any of these after `file://`; and
+  `~<name>`. It must stand on its own. In front of it: nothing, white space, a quote, an opening
+  bracket or one of `= , ; | >`; a colon only in a list of paths, which is when the entry before
+  the colon starts like a path or a variable itself (`PATH=/usr/bin:/Users/<name>/bin`,
+  `"$PATH:/Users/<name>/.local/bin"`) and the home folder starts with a slash. After it: a
+  separator, a quote, a closing bracket or the end of the line; and what ends it in ordinary
+  text: one of `. , ; : ! ?` followed by white space or the end of the line, white space
+  followed by a `|` or the end of the line, and a `|` itself (a table cell). So these are still
+  findings: the same folder names on another computer or share
+  (`host:/home/<name>`, `\\server\Users\<name>`), as the end of a longer path
+  (`/srv/clients/home/<name>`), in a web address with or without `https://`, relative
+  (`users/<name>`), as the target of a markdown link (unless it says `file://`), after a colon
+  that follows a name (`nas:/Users/<name>`; also `workspace:C:\Users\<name>`, because before a
+  drive letter a key and another computer look the same), and a folder that only starts with
+  the name (`<name> Backup`, `<name>-old`, `<name>~1`, `<name>.bak`). A space after the path
+  with more text behind it is also a finding ("home is /Users/<name> and ...",
+  `cd /Users/<name> && ls`), because it may be the rest of another folder's name: put the path
+  in quotes. A list of paths that follows another computer's name
+  (`host:/srv/x:/Users/<name>`) is not told apart from a local list. What follows the home folder on the line is never exempt, and every
+  match of a term on the line is judged, not the first. The check looks at a piece of the line no
+  longer than the home folder path around each match, so a long line costs no more per character
+  than a short one (the first version took 39 seconds for a line of 45,000 slashes). Only the
+  private terms work this way: the secret rules judge the shape of a value and never needed it,
+  and the soft `home_path` warning is about exactly these paths and stays. Not covered: the 8.3
+  short form of a folder name, a home folder on a network share, a user name with other
+  characters than a space URL-encoded, and Claude Code's own project folder name, in which the
+  path is written with dashes. A regex term is judged by where its match lies: one that looks
+  around itself (`(?=...)`) can match inside the path because of what stands after it.
 - Limits of secret recognition: a value that is an address (`https://...`) or names a password
   manager counts as a pointer, not a secret; a password without a digit, shorter than ten
   characters or with spaces passes; a line that gives `minimaal12tekens` (Dutch for "at least 12 characters") as the value of
@@ -215,6 +301,39 @@ therefore run `uv run --script scripts/validate.py --self-test` once during inst
   only, so the plan hook reads the approved plan from `tool_response` and saves nothing when
   that is not an object with a `plan`.
 - Whether SessionStart and UserPromptSubmit fire inside a subagent. The scripts work either way.
+- Open: whether SessionEnd runs, and finishes, when a conversation is closed or replaced by a new
+  one in the VS Code extension or the desktop app, and where it stands in time to the next
+  conversation's SessionStart. Seen in the first run by a real user (Windows, VS Code extension,
+  a new conversation in the same window, three times): the new session's SessionStart hook ran 2
+  and 8 seconds before the old session wrote its last message. Whether the old session's
+  SessionEnd hook ran at all is not known. `session_guard.py` therefore takes neither a
+  registration file nor recent activity as proof of a second session: another session counts
+  only when its last activity (a prompt, or a write to its transcript) is later than the moment
+  this session was opened plus one minute. A session that ended, crashed or is finishing its last
+  step never gets there; a session that works next to this one does, and is named on the next
+  prompt. Nothing is named at SessionStart itself, except after a compaction.
+- Open, same subject: whether anything writes to the transcript of a closed conversation more than
+  a minute after the next one opened (a title, a summary, a background task that finishes late).
+  If so, that conversation is named once as a second session. The guard keeps the transcript's
+  modification time as a sign of life all the same: leaving it out would hide a session that
+  works for a long time without a new prompt, which is the case the line exists for.
+- Open, same subject: what the app sends when the user goes back to an earlier conversation.
+  If that gives no SessionStart, the earlier conversation is still "open" from long ago, and its
+  next prompt names the conversation the user just left as a second session, once. And if a
+  resumed session gets a new id but keeps writing the old transcript file, the old id's file
+  shows activity and the session is told about itself, once. Both were replayed with state
+  files; neither was seen in an app. The line gives the time of the other session's last
+  activity and the first words of its last message, so the user can tell which conversation is
+  meant and that it is one they closed. Those words are what the scanner vouches for: secrets
+  and the private terms of the workspace are taken out with `validate.py`'s own rules, and when
+  that script is not next to `session_guard.py` no words are kept at all. What is shown holds
+  printable characters only, without `<`, `>`, a backtick or a quote, so text a user pasted at
+  the start of a message (a tag, an escape sequence, a direction-changing character) reaches
+  the other session as plain words; it is cleaned once more when it is read from the file.
+- Open: that `cwd` in a subagent's PreToolUse input is the folder in which its shell command
+  will run. `agent_git_readonly.py` lets the reviewer start one program, the workspace's own
+  `scripts/validate.py`, by a relative path, and only when `cwd` equals `CLAUDE_PROJECT_DIR`;
+  when either is missing the call is refused.
 - Starting `claude` in a subfolder: `${CLAUDE_PROJECT_DIR}` is "the project root where the
   session started" and `.claude/settings.json` is read from the session's primary working
   directory, so the workspace hooks load only when Claude Code is started in the workspace root.

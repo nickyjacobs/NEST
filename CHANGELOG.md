@@ -32,6 +32,12 @@ section in plain words: what it means if you already built a workspace with an e
   plugin has a newer version, when a file changed under the same version, when a name or a
   repository in the lock file differs, or when the list of plugins changed. The release steps
   ask for that check.
+- `validate.py --changed` scans the files git reports as changed or untracked under the
+  workspace folder, and those of the wiki's own backup repository when `nest.json` names one.
+  The names come from git, so none has to be typed, and a last line says how many files were
+  scanned. It calls nothing clean after a `git status` that failed or did not answer, or when
+  the backup `nest.json` names cannot be used (missing, not a repository, a wiki folder outside
+  the workspace): each is named and the exit status is 3.
 
 ### 🔧 Changed
 
@@ -54,6 +60,16 @@ section in plain words: what it means if you already built a workspace with an e
   every start. `STATE.md` names parts after `read:`, and the handover copies `setup/` along.
 - `tools/release_check.py` checks that every part `SETUP.md` names exists, that every file in
   `setup/` is named, and that none is larger than one read.
+- `validate.py --file` names every path it did not scan, with the reason: does not exist, is a
+  folder, outside the workspace, left out by a skip rule, over 2 MB, cannot be read. The exit
+  status is then 3 when no finding makes it 2, so no output means scanned and clean. It used to
+  say nothing and exit with 0 for a path that does not exist, which a name with a space or an
+  accent easily becomes. Files that are not text, symbolic links and folders that are a
+  repository of their own (a submodule, a cloned project) are named in one line each and change
+  nothing. The `checks.yml` workflow accepts the 3, so only a finding fails the check.
+- `validate.py --file` and `--changed` follow no symbolic link and read nothing outside the
+  workspace. No file name is printed as it is: a line end or a control character in a name is
+  shown as its escape, so a name cannot pose as a line of the scanner's report.
 
 ### 🐛 Fixed
 
@@ -63,6 +79,48 @@ section in plain words: what it means if you already built a workspace with an e
   colours were gone after the installs. Found in the first run by a real user, on Windows.
 - Headings showed in a different colour per level: "Colorful headings" was on in the Minimal
   settings while the kit's CSS does not colour headings.
+- `validate.py` reported a private term in every absolute path when the user's own user name
+  holds that term (a surname on the terms list, a home folder named after it). A term that occurs
+  only inside the path of the user's own home folder is no longer a finding. Exempt is that one
+  folder as this computer spells it (either slash, backslashes escaped, URL-encoded, any case,
+  the Git Bash and WSL form of a Windows folder, after `file://`, and `~name`), standing on its
+  own: after white space, a quote, a bracket or `=` (after a colon only in a list of paths such
+  as `PATH`), and followed by a separator, a quote, a closing bracket, the end of the line, or
+  what ends it in ordinary text: one of `. , ; : ! ?` before white space or the end of the line,
+  or a `|` of a table cell. The same names on another computer or share, at the end
+  of a longer path, in a web address, in a markdown link, and a folder that only starts with the
+  name are still found, as is the term anywhere else on the line; the secret rules are
+  untouched. The check looks at a short piece of the line around each match, so a long line costs
+  no more per character than a short one. Found in the first run by a real user, on Windows.
+- `session_guard.py` announced a second session at the start of every session that followed
+  another within half an hour: it counted every session file with recent activity, and a
+  session that has just ended, is writing its last message or never ran its SessionEnd hook has
+  one. Another session now counts only when it was active more than a minute after this one was
+  opened, so the line comes on the first prompt after a second session really showed itself and
+  no longer at the start. The line gives the time of that session's last activity and the first
+  words of its last message (secrets and private terms taken out, plain characters only, and no
+  words at all when `validate.py` is not there to take them out), says where the user would see it in a terminal
+  and in the VS Code extension or the desktop app, what to do once it is found, and what it
+  means when they find none. A damaged list of sessions already named no longer silences the
+  line.
+- The `security-reviewer` agent searched with the raw terms file (`rg -f`), where every comment
+  line and empty line is a pattern and an empty line matches everything. It now asks
+  `validate.py`, and `agent_git_readonly.py` lets it: `uv run --quiet --script
+  scripts/validate.py` (or `-q`) with `--changed`, `--file` or `--staged`, from the workspace
+  folder, is the one program the guard lets a read-only agent start, with each option as a word
+  of its own (no `--file=<path>`) and every name after `--file` checked as a path, and a pattern
+  file for
+  `grep` or `rg` (`-f`, `--file`) is refused. The agent scans with `--changed`, which takes the
+  file names from git itself, so a space or an accent in a name cannot lose a file; its
+  instructions say what an unscanned path looks like, what each exit code means, and how
+  PowerShell differs (no pipe, no variables, no double quote inside a word). A test runs every
+  command the agent file shows through the guard.
+- `agent_git_readonly.py` read a backslash inside double quotes as an escape before any
+  character, where a shell does so only before `$`, a backtick, `"` and a backslash; it took a
+  vertical tab off the end of a command, which the shell hands to the program; and in
+  PowerShell it let a word with a double quote in it pass, which Windows PowerShell 5.1 hands to
+  the program in a way that can turn `'"--output=x"'` into an option. All three are closed; the
+  last was found by reading and has not been tried on Windows.
 
 ---
 
