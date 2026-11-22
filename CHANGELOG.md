@@ -33,8 +33,10 @@ section in plain words: what it means if you already built a workspace with an e
   command to type, not a wall of code.
 - Before your assistant moves or cancels a meeting you organise, it now tells you that the
   people in it get a message.
-- The Council no longer stops halfway for a permission prompt once the update adds three
-  allow rules to your settings; you are asked before that happens.
+- The Council and The Architects could stop halfway to ask permission for their own scoring
+  and saving scripts. If that bothers you, ask your assistant to add the allow rules for
+  `council_score.py`, `idea_page.py` and `wiki.py` to your settings; a new workspace gets them
+  from the setup.
 
 ### ✨ Added
 
