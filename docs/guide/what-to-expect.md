@@ -12,7 +12,7 @@ proposes a workspace and builds it with you. Nothing is built without your yes.
 | You need | Why | If you do not have it |
 |---|---|---|
 | [Claude Code](https://code.claude.com/docs/en/overview) 2.1.295 or later | It runs the setup and your workspace | Install it first; NEST cannot do that for you |
-| [Obsidian](https://obsidian.md) | It opens your wiki | Install it first, or tell the setup you want it later |
+| [Obsidian](https://obsidian.md) | It opens your wiki | Install it first, or postpone it: the setup builds the wiki and you open it in Obsidian later |
 | git and [uv](https://docs.astral.sh/uv/) | History, backups and the scripts | The setup checks and gives you the install command for your system |
 | The GitHub CLI (optional) | A private repo and a backup for your wiki | Skip it; everything works locally |
 

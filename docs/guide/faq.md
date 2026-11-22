@@ -19,7 +19,7 @@ About five sessions of 30 to 60 minutes. You can spread them over days:
 **Do I need to be technical?**
 No. The setup asks your level first and explains at that level. It gives you the exact command
 when something needs installing. The one file you fill in yourself is a plain list of words
-that must stay private, and the setup opens it for you.
+that must stay private, and the setup gives you the command that opens it.
 
 **Does it work on Windows and Linux?**
 Yes. The scripts are tested on macOS, Windows and Linux on every change. A complete setup run by
@@ -46,8 +46,9 @@ Say "don't know yet". It becomes an open question and nothing waits on it.
 Any time. The setup saves its progress after every step and continues in the next session.
 
 **Will it install things without asking?**
-No. Every install and every build step waits for your yes. Commands that need your own login
-are yours to run.
+No. Every install and every build step waits for your yes, and commands that need your own
+login are yours to run. One thing happens with only a notice: the first time a script runs,
+uv fetches the Python version it needs.
 
 **Do I have to take everything?**
 No. The assistant, the wiki and the guards are the base; how big the wiki is, is up to you.

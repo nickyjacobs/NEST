@@ -99,7 +99,8 @@ The principles that make the original work, and that you keep in every build:
   action other than reading docs and searching, before any git commit, and before anything on
   GitHub. One yes covers exactly what you showed, nothing more. Two look-ups need no question
   of their own, because the user answers for them elsewhere: uv fetching Python the first time
-  a script runs (tell them in one line), and the check for a newer NEST release (D8).
+  a script runs (tell them in one line), and the check for a newer NEST release (D8). With a no to
+  D8.4, skip that check in B1 step 11 and B4 step 6 and note it.
 - **Commits** only after a yes, with an explicit list of files. No `Co-Authored-By` lines and no
   "Generated with" footers: the commits are the user's. Never `--no-verify`, never force-push.
 - **Secrets never pass through the chat.** If the user is about to paste a password, token or key,
@@ -150,7 +151,7 @@ level: <beginner | intermediate | technical>
 os: <macOS | Windows | Linux> <version>
 workspace: <fill in at F1>            # absolute path once known
 assistant: <fill in at F3>            # the name; written at F3
-teams: <fill in at D2>                # for example "council: light, architects: none"
+teams: <fill in at D2 and D7>         # for example "council: light, architects: none, ideas: 50-ideas"
 nest_version: 1.0.0
 started: <YYYY-MM-DD>
 ---
@@ -414,8 +415,8 @@ deleted.
 - **C6** **Plugins and snippets.** Present the recommended set from
   `kit/wiki/obsidian/PLUGINS.md` (Minimal and Minimal Settings, Style Settings, Templater, Meta
   Bind, Notebook Navigator; Bases is built in), one line each: what it does here and why. Ask
-  once: all of them (recommended), or which to leave out. The same for the two CSS snippets
-  (the base look, the idea pages). Mention the safety settings (Templater does not run on file
+  once: all of them (recommended), or which to leave out. The same for the base look CSS
+  snippet (the snippet for idea pages is asked in D2, with the teams). Mention the safety settings (Templater does not run on file
   creation; Meta Bind has JavaScript off) and why.
 - **C7** **Existing notes.** The wiki is always a new vault inside the workspace; NEST never
   writes into a vault the user already has, and never changes its settings. Do they have notes
@@ -439,14 +440,16 @@ proposals first). Read the `<!-- customise: ... -->` markers in the skill's refe
 `kit/skills/<name>/` to make sure every marker gets an answer.
 
 - **D1** The wiki skills (inbox, ingest, query, maintenance) and the Obsidian skills. Recommended
-  as a set when there is a wiki.
+  as a set, unless the user wants the backbone only (block C).
 - **D2** The Council (`idea`) and The Architects (`blueprint`). For each team: **full** (more
   agents, a jury of three, checked sources, several minutes and more tokens per run) or **light**
   (four or five agents, one judge, faster and cheaper). Explain the trade-off in two lines and
   recommend full for someone who will use it for real decisions, light for curiosity. Use the
   names The Council and The Architects (and the seat names) as they are, in every language,
   unless the user asks for a translation here; then use that translation everywhere from then on.
-  Record the choice in STATE.md (`teams:`), with the name of the ideas section in the wiki.
+  Record the choice in STATE.md (`teams:`); the name of the ideas section is added there in D7.
+  With a team chosen, ask here whether the idea pages get the styled look (the idea snippet
+  from C6's list) or the plain one.
 - **D3** career, study-inbox, research, session-end, writing-style, release, skill-builder: per
   skill yes or no and its customise questions.
 - **D4** **Integration skills** (calendar, mail, mail-organizer, morning-briefing). These touch the
@@ -487,7 +490,8 @@ proposals first). Read the `<!-- customise: ... -->` markers in the skill's refe
   research section; wiki-ingest needs a references section with a raw sources folder; idea and
   blueprint need an ideas section; career and study-inbox need a projects section, and study-inbox
   needs the inbox folder name in `raw_folders`. Propose what is missing in one message, update
-  `_setup/interview/C.md` after the yes.
+  `_setup/interview/C.md` after the yes, and write the name of the ideas section into `teams:`
+  in STATE.md.
 
 - **D8** **Session guards and updates.** Two things always run and need no answer, so only tell
   the user in two lines: their own messages are kept word for word in a local file, so a long
@@ -495,7 +499,7 @@ proposals first). Read the `<!-- customise: ... -->` markers in the skill's refe
   a second session is open in the same folder. Then ask, with a recommendation each:
   1. **Lessons** (recommended yes): when something goes wrong, the assistant records a one-line
      lesson and is reminded of it the next time the same kind of step comes up.
-  2. **Plans into the inbox** (yes when they have a wiki and use plan mode): an approved plan is
+  2. **Plans into the inbox** (yes when they use plan mode): an approved plan is
      copied into the wiki inbox, so it is not lost with the session.
   3. **Morning nudge** (only with morning-briefing): before which hour a new session may end its
      start line with a reminder, and the wording in their language.
@@ -511,7 +515,8 @@ proposals first). Read the `<!-- customise: ... -->` markers in the skill's refe
 Explain in two lines what git and GitHub add for this workspace (history, a backup off the
 machine, undo). Then:
 
-- **E1** Do you have a GitHub account? (yes / no, I want one / no GitHub). No GitHub, or "later":
+- **E1** Do you have a GitHub account? (yes / no, I want one / no GitHub). "I want one": they
+  make it themselves on github.com (free), then go on with E2. No GitHub, or "later":
   the workspace still gets local git, so skip E2, E3 and E6 and ask only what local git needs:
   E5 (a name and an address for the commits; any address works locally), E7 (the pre-commit
   scan only) and E8. E4 is then (b): the wiki lives inside the local repo, so it has a history;
@@ -528,7 +533,8 @@ machine, undo). Then:
   a short tagline, a feature table with one emoji per row, a "what it is not" section). Show a
   small example. Optional.
 - **E7** Protections: a pre-commit secret scan (recommended), a gitleaks workflow on GitHub
-  (recommended), Dependabot for workflow updates. Rulesets and branch protection: explain that on
+  (recommended), a checks workflow that runs the skills catalogue check and the secret scan on
+  every push (recommended), Dependabot for workflow updates. Rulesets and branch protection: explain that on
   a private repo they need a paid plan, so they are optional.
 - **E8** Who commits: the assistant commits only when the user asks, with a short imperative
   message and a prefix (`Add:`, `Fix:`, `Update:`, `Docs:`). Confirm.
@@ -671,20 +677,22 @@ cause; never tick around it. Commits stay separate questions.
    guard failing safe, not a broken workspace: start Claude Code from a terminal where
    `uv --version` works.
 7. `.claude/settings.json` from `kit/claude/settings.reference.json`: the hooks, permissions from
-D6, the `attribution` block as the reference has it (it keeps "Co-Authored-By" lines out of
+   D6, the `attribution` block exactly as the reference has it (it keeps "Co-Authored-By" lines out of
    the user's commits), with idea or blueprint the three allow rules their scripts need
    (`Bash(uv run scripts/council_score.py *)`, `Bash(uv run --script scripts/idea_page.py *)`,
    `Bash(uv run scripts/wiki.py *)`, so a run is not stopped by a prompt halfway), and nothing
    else yet. Always: the secret scan before and after writes and after shell commands, the session-start
    line, and the `session_guard.py` hooks for `start`, `prompt`, `precompact` and `end`. From D8:
    the `lesson` hook and the `plan` hook, each only on a yes: on a no, take that entry out of the
-   file, and take out keys the reference leaves empty. Leave out the `check_style.py` hook
+   file. Take out the lists the reference leaves empty (`permissions.ask`, `permissions.deny`,
+   `claudeMdExcludes`) when you have nothing to put in them; never the `attribution` block: its
+   empty strings are the setting. Leave out the `check_style.py` hook
    unless writing-style was chosen. Keep the exec form the reference uses (`"command": "uv"` with
    `args`, and `${CLAUDE_PROJECT_DIR}` in braces): it runs the same on macOS, Linux and Windows
    without depending on a shell. Compare with FACTS.md (check: valid JSON; the paths in the
    commands exist).
-8. `.claude/sensitive-terms.txt`, from `kit/claude/sensitive-terms.example.txt` (its comment
-   lines explain the format): the user fills it themselves, in an editor, not in the chat:
+8. `.claude/sensitive-terms.txt`, from `kit/claude/sensitive-terms.example.txt` (keep its
+   comment lines, which explain the format, and remove the example lines with `<fill in`): the user fills it themselves, in an editor, not in the chat:
    names, domains, IP ranges or words that must never land in a committed file. One per line.
    The folder is hidden in most file explorers, so give the command that opens the file in
    their editor (macOS `open -e .claude/sensitive-terms.txt`, Windows
@@ -767,7 +775,7 @@ Do this in the new folder, in a fresh session (the hooks are now active).
    variant that was not chosen. Idea pages come in two looks: styled (own callout types, needs the
    `idea-note.css` snippet) or plain (standard callouts only). Resolve the `callout` customise
    markers in both skills and the `idea-note` entry in `.obsidian/appearance.json` the same way:
-   styled when the user said yes to the Minimal theme and to the idea snippet in C6, else plain.
+   styled when the user said yes to the Minimal theme in C6 and to the styled look in D2, else plain.
    Add `.runs/` to `.gitignore` if it is not there.
 2. The agents those skills need, from `kit/agents/full/` or `kit/agents/light/`, plus `researcher`
    with research and `security-reviewer` always. Adjust names, output language and the user
@@ -824,17 +832,20 @@ connection was postponed has nothing to do here: its open item stays.
 
 ### B4. Test
 
-In a fresh session. Record every outcome in `_setup/log.md`.
+In a session that started after B3 (and after B3b step 5 when a server or connector was added).
+Record every outcome in `_setup/log.md`.
 
 1. **Secret guard:** `uv run --script scripts/validate.py --self-test` passes; then try to write a
    file containing a fake key in the shape of a real one (for example a GitHub token prefix with
    random characters): the write is blocked. Never use a real key. With the pre-commit scan
-   (E7): put the same fake key in a new file `guard-test.txt` with a shell command, `git add`
-   it and try to commit: the commit is refused. Then take the file out again
+   (E7): put the same fake key in a new file `guard-test.txt` with a shell command (the one
+   place a shell write is meant; the scan after the command reports the key, which is the
+   guard working), `git add` it and try to commit: the commit is refused. Then take the file out again
    (`git rm --cached guard-test.txt`, and remove this test file you made yourself).
 2. **Session start:** the session-start line appeared at the start of this session. After the
    first message, `.claude/.session/` holds a words file with that message in it.
-3. **Wiki:** ask the user for a small real note for the inbox (a thought, a link, a question);
+3. **Wiki:** without the wiki skills (the backbone only): lint is zero and the context pages
+   open; go on to step 4. With them: ask the user for a small real note for the inbox (a thought, a link, a question);
    write a sample yourself only if they would rather not. Run the inbox skill, check it is filed,
    linked, logged, and the original is in the archive unchanged. Ask one question with the query skill. Lint is zero.
 4. **One run per chosen team:** a small, real idea of the user's through `idea` (light or full),
@@ -867,7 +878,8 @@ user wants a README, and go on to the final check.
    same folder name can never share it. The first backup scans every page for secrets; when it
    stops on one, show the user the line: they replace the value, or say it is a false alarm
    (then `--no-scan`, once). The backup uses git's own identity settings: when the
-   script says name and address are missing, set the ones from E5 the way its message says
+   script says name and address are missing, set the ones from E5 for the backup only
+   (`git --git-dir <its git dir> config user.name ...` and `user.email`), not with `--global`
    (check: the session-start line shows the backup state).
 6. `uv run --script scripts/nest_update.py stamp` again, so the files under `.github/` are in
    the stamp. STATE.md: `next: section 9 (final check)`.
