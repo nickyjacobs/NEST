@@ -17,6 +17,16 @@ section in plain words: what it means if you already built a workspace with an e
 
 ## [Unreleased]
 
+### 🔧 Changed
+
+- The setup prompt comes in parts. `SETUP.md` keeps what every session needs (sections 0 to 4)
+  and a table of the parts; the phases moved to `setup/`: `check.md`, `interview.md`,
+  `routing.md`, `build.md`, `finish.md` and `catalogue.md`. The text itself is unchanged. A
+  session reads the part its phase needs, where it used to read 1011 lines in two pieces at
+  every start. `STATE.md` names parts after `read:`, and the handover copies `setup/` along.
+- `tools/release_check.py` checks that every part `SETUP.md` names exists, that every file in
+  `setup/` is named, and that none is larger than one read.
+
 ---
 
 ## [1.1.0] - 2026-11-22

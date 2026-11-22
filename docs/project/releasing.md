@@ -141,7 +141,7 @@ Preview it before tagging: `uv run --script tools/release_check.py --notes <x.y.
    uv run --script tools/release_check.py
    uv run --project kit/scripts pytest -q kit/scripts/tests
    ```
-   and do a trial run of the setup when `SETUP.md` or a build step changed (`CLAUDE.md`
+   and do a trial run of the setup when `SETUP.md`, a file in `setup/` or a build step changed (`CLAUDE.md`
    describes how).
 5. Commit as `Docs: changelog and version for <x.y.z>`, push, and open a pull request into
    `main` titled `Release: v<x.y.z>`.
