@@ -208,7 +208,8 @@ More questions: [docs/guide/faq.md](docs/guide/faq.md).
 
 NEST is new. If the setup confused you, asked something odd or broke on your system, please
 [open an issue](https://github.com/nickyjacobs/NEST/issues): that is exactly what makes it
-better. Ideas for skills are welcome too.
+better. Questions, ideas for skills and what you built with it belong in
+[Discussions](https://github.com/nickyjacobs/NEST/discussions).
 
 ## Credits
 

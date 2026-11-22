@@ -90,5 +90,6 @@ tool keeps in its own place; disconnect it there. The tools you installed (Claud
 Obsidian, git, uv) stay; remove those the usual way if you want.
 
 **Something broke. Where do I go?**
-Open an [issue](https://github.com/nickyjacobs/NEST/issues). For a security problem, use a
+Open an [issue](https://github.com/nickyjacobs/NEST/issues); a question fits better in
+[Discussions](https://github.com/nickyjacobs/NEST/discussions). For a security problem, use a
 [private report](https://github.com/nickyjacobs/NEST/security/advisories/new) instead.
