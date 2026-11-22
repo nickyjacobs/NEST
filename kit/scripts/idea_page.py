@@ -139,6 +139,7 @@ DEFAULT_LABELS: dict[str, dict[str, str]] = {
     "text": {"not_reviewed": "not reviewed yet",
              "no_open_points": "_No open points: there is no blueprint yet._",
              "no_reviews": "_Not reviewed yet. Say \"put it to the council\"._",
+             "no_reviews_plain": "_Not reviewed._",
              "no_blueprint": "No blueprint yet. The Architects can work it out: \"work this idea out\".",
              "full_blueprint": "Full blueprint", "updated": "Updated", "blueprints": "Blueprints",
              "reviews": "Reviews", "blueprint_link": "Blueprint", "review_link": "Review",
@@ -410,6 +411,22 @@ def first_sentences(text: str, n: int = 1) -> str:
             start = m.end()
     parts.append(para[start:])
     return " ".join(parts[:n]).strip()
+
+
+def council_installed() -> bool:
+    """Is the idea skill (The Council) part of this workspace? Unknown counts as yes: the script
+    runs from the workspace root, and a folder without `.claude/skills` is a test or a kit copy."""
+    skills = Path.cwd() / ".claude" / "skills"
+    return not skills.is_dir() or (skills / "idea").is_dir()
+
+
+def lead_item(text: str) -> str:
+    """What a block opens with: its first line, without a list marker. The format asks for "the
+    load-bearing assumption first"; some desks write it as a sentence above the list."""
+    for line in text.splitlines():
+        if line.strip():
+            return re.sub(r"^\s*(?:[-*+]|\d+\.) ", "", line).strip()
+    return ""
 
 
 def first_item(text: str) -> str:
@@ -715,7 +732,7 @@ def build_idea(s: Settings, f: Folder, title: str, existing_text: str) -> tuple[
         first: list[str] = []
         add(first, C["one_liner"], strip_labels(first_sentences(section(bp_text, 2, "One-liner"))))
         add(first, C["line"], field_value(eng, "Direction"))
-        load = field_value(insp, "Load-bearing") or first_item(section(bp_text, 2, "Assumptions and risks"))
+        load = field_value(insp, "Load-bearing") or lead_item(section(bp_text, 2, "Assumptions and risks"))
         add(first, C["load_bearing"], load)
         groups.append(first)
         second: list[str] = []
@@ -780,7 +797,7 @@ def build_idea(s: Settings, f: Folder, title: str, existing_text: str) -> tuple[
             rev.append(f"| {r.when} | v{r.version} | **{r.fm.get('verdict', '')}** | {r.fm.get('score', '')} | "
                        f"{cell(risk)} | [[{link(r)}\\|{T['review']}]] |")
     else:
-        rev = [T["no_reviews"]]
+        rev = [T["no_reviews"] if council_installed() else T["no_reviews_plain"]]
 
     # Blueprint
     if bp:

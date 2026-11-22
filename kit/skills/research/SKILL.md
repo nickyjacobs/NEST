@@ -75,6 +75,7 @@ empty. A page that does not load is not a source: open another one. Mark a too-o
 
 ## Jobs
 
+<!-- customise: keep this section and profile.md only when the user looks for work or wants vacancies followed; otherwise remove the section and do not install profile.md -->
 - Read `profile.md` in this folder once: what the user looks for and what they bring.
 - Search with the month and year in the words, then open the posting itself, on the employer's
   own site when possible. A job board's copy is `single`.
@@ -87,6 +88,7 @@ empty. A page that does not load is not a source: open another one. Mark a too-o
 
 ## Own setup
 
+<!-- customise: keep this section and stack.md only when the user wants news checked against their own devices and software; otherwise remove the section and do not install stack.md -->
 Only for vulnerabilities or questions about the user's own things: read `stack.md` in this
 folder once. Verdict per item: `affected` only when product and version range both match;
 `check` when the version is close, unknown, or the inventory may be out of date; `not affected`

@@ -805,7 +805,9 @@ def lint(cfg: Config, all_pages: bool = False) -> LintResult:
                         age = -1
                     if age > stale_days:
                         res.warn("stale-active", f"{cfg['status_roles']['active']} but not updated for {age} days: {rel}")
-                if (sec["sourced"] and set(named) & set(cfg["unsourced_authors"])
+                # The section's own index and its ingest log are catalogue pages, not claims.
+                catalogue = own_index or rel == f"{name}/{sec['ingest_log']}"
+                if (sec["sourced"] and not catalogue and set(named) & set(cfg["unsourced_authors"])
                         and not any(fm.get(k) for k in cfg["source_fields"])):
                     res.warn("unsourced", f"by {author} without sources: {rel}")
                 kind = fm.get("kind")

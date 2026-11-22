@@ -60,6 +60,8 @@ Rules that hold the whole way through:
    `uv run scripts/skills_catalog.py` and `uv run scripts/skills_catalog.py --check`. A problem:
    show the fix as a new draft and ask again. New ask-first actions: show the `permissions.ask`
    lines for `.claude/settings.json` and add them after a yes.
+   A new skill also gets its line in the skills list of `CLAUDE.md` (one line: the name and what
+   it does); show the line and add it after a yes, so the list and `docs/skills.md` stay equal.
 10. **Test.** Give the test phrases (reference.md section 8). The skill is live in this session;
    if it doesn't show up, `/reload-skills`.
 
