@@ -816,7 +816,10 @@ def test_a_restore_that_fails_halfway_can_be_run_again(ws, capsys):
         assert (ws / "scripts/validate.py").read_text(encoding="utf-8") == V100["kit/scripts/validate.py"]
     finally:
         blocked.chmod(0o644)
+    capsys.readouterr()
     assert run("restore") == 0
+    assert "Left alone" not in capsys.readouterr().out      # the file put back in the first try is not "changed"
+    assert json.loads((folder / "left.json").read_text(encoding="utf-8")) == {"left": []}
     assert (ws / "scripts/wiki.py").read_text(encoding="utf-8") == kept_text
     # the version the update had written is still the one kept aside, not the file put back in the first try
     assert (folder / "undone/scripts/validate.py").read_text(encoding="utf-8") == V110["kit/scripts/validate.py"]
@@ -1002,3 +1005,23 @@ def test_the_fetch_cache_follows_the_source(ws, nest_repo, tmp_path):
 
 def test_a_run_name_with_a_suffix_keeps_its_time():
     assert nu.run_started("nest-update-20261122-101500.2") == nu.run_started("nest-update-20261122-101500")
+
+
+def test_a_dropped_file_that_is_gone_here_has_nothing_to_bring_back(ws, capsys):
+    (ws / "scripts/old_tool.py").unlink()
+    assert run("plan", "--json") == 0
+    capsys.readouterr()
+    assert run("apply", "scripts/old_tool.py") == 1
+    assert "nothing to bring back" in capsys.readouterr().err
+
+
+def test_the_dry_run_says_what_happens_to_the_stamp(ws, capsys):
+    assert run("plan", "--json") == 0
+    assert run("decline", "kit/skills/study") == 0
+    assert run("finish", "--skip") == 0
+    capsys.readouterr()
+    assert run("restore", "--dry-run") == 0
+    out = capsys.readouterr().out
+    assert "declined change(s) again" in out and "at session start again" in out
+    finished = stamp(ws)
+    assert finished["declined"] and finished["skipped_version"] == "1.1.0"

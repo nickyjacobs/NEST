@@ -177,9 +177,7 @@ def run_bounded(cmd: list[str], timeout: float, cwd: Path | None = None,
         {"creationflags": getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)}
     proc = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
                             encoding="utf-8", errors="replace", cwd=cwd, env=env, **options)
-    try:
-        out, err = proc.communicate(timeout=timeout)
-    except subprocess.TimeoutExpired:
+    def stop_group() -> None:
         if os.name == "nt":
             try:
                 subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)], capture_output=True, timeout=5, check=False)
@@ -194,15 +192,18 @@ def run_bounded(cmd: list[str], timeout: float, cwd: Path | None = None,
             proc.kill()
         except OSError:
             pass
+
+    try:
+        out, err = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        stop_group()
         try:
             proc.communicate(timeout=1)
         except (subprocess.TimeoutExpired, OSError, ValueError):
-            for pipe in (proc.stdout, proc.stderr):
-                try:
-                    if pipe:
-                        pipe.close()
-                except OSError:
-                    pass
+            pass  # something outside the group holds the pipes: let them go, never wait on them
+        raise
+    except KeyboardInterrupt:
+        stop_group()  # the command has its own session, so Ctrl-C would not reach it
         raise
     return subprocess.CompletedProcess(cmd, proc.returncode, out, err)
 
@@ -972,6 +973,9 @@ def cmd_apply(root: Path, args) -> int:
             continue
         entry = stamp["files"][ws_rel]
         if not os.path.lexists(root / ws_rel):
+            if found["kit"] not in new_files:
+                raise Problem(f"{ws_rel} is no longer part of NEST and is not in this workspace either: there is "
+                              "nothing to bring back.")
             if entry.get("kind") != "copy":
                 raise Problem(f"{ws_rel} was deleted in this workspace and was adapted for it, so there is no file to "
                               f"copy. To bring it back: `backup {ws_rel}`, write it again from {found['kit']} the way "
@@ -1199,6 +1203,16 @@ def cmd_restore(root: Path, args) -> int:
         print(f"Would take away {len(away)} file(s) the update added: {', '.join(away) or 'none'}")
         if stay:
             print(f"Would leave alone, because they were changed after the update finished: {', '.join(stay)}")
+        before = read_json(folder / "nest.json").get("nest") if only is None else None
+        if isinstance(before, dict):
+            now = load_stamp(root)
+            if before.get("version") != now.get("version"):
+                print(f"Would set the workspace back from NEST {now.get('version')} to NEST {before.get('version')}.")
+            undone = len(set(now.get("declined") or {}) - set(before.get("declined") or {}))
+            if undone:
+                print(f"Would offer {undone} declined change(s) again.")
+            if now.get("skipped_version") and now.get("skipped_version") != before.get("skipped_version"):
+                print(f"Would mention NEST {now['skipped_version']} at session start again.")
         print("Nothing was changed.")
         return 0
 
@@ -1225,6 +1239,9 @@ def cmd_restore(root: Path, args) -> int:
     restored, moved, left, failed = [], [], [], []
     for ws_rel in kept:
         no_symlink(root, ws_rel)
+        if sha(root / ws_rel) is not None and sha(root / ws_rel) == sha(folder / "files" / ws_rel):
+            restored.append(ws_rel)  # put back by an earlier try that stopped halfway
+            continue
         if changed_since(ws_rel):
             left.append(ws_rel)
             continue
