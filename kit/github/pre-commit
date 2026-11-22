@@ -10,4 +10,8 @@
 # Do not skip it with --no-verify: fix the file instead.
 
 cd "$(git rev-parse --show-toplevel)" || exit 1
+if ! command -v uv >/dev/null 2>&1; then
+  echo "pre-commit: uv is not on PATH, so the secret scan cannot run and this commit is stopped. Install uv (https://docs.astral.sh/uv/), or commit from a terminal where the command uv works: an app started from the dock or the Start menu may not see it." >&2
+  exit 1
+fi
 exec uv run --quiet --script scripts/validate.py --staged

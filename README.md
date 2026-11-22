@@ -74,7 +74,7 @@ you use. It builds only what fits, in your own language.
 | 📚 | **A wiki that keeps itself tidy** | An Obsidian vault in your structure. You drop raw notes; the assistant files, links and indexes them |
 | 🧩 | **Skills you choose, one by one** | Routines for your notes, research, studying, writing, mail, calendar and your morning. Take what you need |
 | 🏛️ | **Two agent teams, if you want them** | The Council judges an idea with a jury. The Architects turn a rough idea into a blueprint |
-| 🛡️ | **Guards that always run** | A secret is stopped before it lands in a file, and your own words survive a long conversation |
+| 🛡️ | **Guards that run by themselves** | A secret in a shape the scan knows is stopped before your assistant writes it into a file, or found right after a shell command wrote it, and your own words are kept through a long conversation: the first message and the latest ones go into every summary, all of them into a file. What the guards cover and what they do not: [SECURITY.md](SECURITY.md) |
 | 🔄 | **Updates you control** | When NEST improves, your workspace tells you. You pick what comes in; your own changes stay |
 | 🐙 | **GitHub, if you want it** | A private repo for the workspace and a separate backup for your wiki |
 
@@ -107,8 +107,10 @@ More: [what to expect from the setup](docs/guide/what-to-expect.md).
   machine. NEST has no server and collects nothing.
 - **No passwords.** NEST never asks for one. Mail and calendar sign in through their own login
   flow, and your assistant can draft a reply but never send one.
-- **Private stays private.** Personal context goes in a file git ignores, and a scan runs
-  before every write and every commit.
+- **Private stays private.** Personal context goes in a file git ignores. A scan for secrets
+  runs before and after every file your assistant writes with its edit tools, and after every
+  shell command it runs. With the pre-commit hook installed (the setup offers it), it also runs
+  before every commit in the workspace repository.
 
 Details: [SECURITY.md](SECURITY.md).
 

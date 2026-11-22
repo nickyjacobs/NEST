@@ -14,21 +14,26 @@ enforces it. Wire it in the agent's own frontmatter, so it runs only while that 
         hooks:
           - type: command
             command: uv
-            args: ["run", "--quiet", "--script", "${CLAUDE_PROJECT_DIR}/scripts/blind_seat_guard.py"]
+            args: ["run", "--quiet", "--script", "${CLAUDE_PROJECT_DIR}/scripts/blind_seat_guard.py",
+                   "--seat", "council-outsider"]
             onFailure: block
 
 What passes: a Read of a file named after the seat (`outsider.md` for `council-outsider`) inside
 the run folder. Everything else is refused: any other file, and every Grep or Glob. An agent type
 that is not a blind seat is left alone, so the hook is also safe at settings level.
 
-The seat is the `agent_type` field of the hook input, or `--seat <agent-name>` when the hook input
-has none. Configuration (optional), in nest.json at the workspace root:
+The seat is `--seat <agent-name>` when the hook is wired with one (in a seat's own frontmatter that
+is the safe choice: the hook then guards that seat whatever name the session reports), else the
+`agent_type` field of the hook input. Seat names are matched without regard to case; an unknown
+name in `agent_type` is not a blind seat and passes; an unknown name in `--seat` is refused,
+because a hook wired for a seat must not fall open on a typing mistake. Configuration (optional), in nest.json at the workspace root:
   {"blind_seats": {
       "run_dir": ".runs",                                  the run folder, relative to the root
       "seats": {"council-outsider": ["outsider.md"]}       replaces the built-in table
   }}
 
 The workspace root is $CLAUDE_PROJECT_DIR, else the hook's cwd, else the current directory.
+The hook input is read as UTF-8 bytes, whatever the console code page is.
 Exit 2 blocks the call (stderr is the reason Claude sees); exit 0 leaves it to the normal flow.
 """
 
@@ -57,7 +62,7 @@ def workspace_root(hook_cwd: str | None) -> Path:
 
 def load_config(root: Path) -> tuple[str, dict[str, list[str]]]:
     try:
-        data = json.loads((root / "nest.json").read_text(encoding="utf-8"))
+        data = json.loads((root / "nest.json").read_text(encoding="utf-8-sig"))
         conf = data.get("blind_seats") if isinstance(data, dict) else None
     except (OSError, ValueError):
         conf = None
@@ -81,10 +86,18 @@ def inside(path: Path, folder: Path) -> bool:
 
 def check(data: dict, seat_arg: str | None = None) -> str | None:
     """Why the call is refused, or None when it may run."""
-    seat = str(data.get("agent_type") or seat_arg or "")
     root = workspace_root(data.get("cwd") if isinstance(data.get("cwd"), str) else None)
-    run_dir, seats = load_config(root)
+    run_dir, table = load_config(root)
+    seats = {name.lower(): files for name, files in table.items()}
+    # --seat comes from the agent's own frontmatter, so it wins: a hook wired into a seat's file
+    # guards that seat whatever name the session reports.
+    agent_type = data.get("agent_type")
+    seat = str(seat_arg or (agent_type if isinstance(agent_type, str) else "") or "").strip().lower()
     if seat not in seats:
+        if seat_arg:
+            # Wired for a seat the table does not know: a typing mistake must not open the door.
+            return (f"{seat_arg} is not a blind seat this guard knows (known: {', '.join(sorted(seats))}); "
+                    "add it under blind_seats in nest.json or correct --seat")
         return None
     names = {n.lower() for n in seats[seat]}
     tool = str(data.get("tool_name") or "")
@@ -97,7 +110,13 @@ def check(data: dict, seat_arg: str | None = None) -> str | None:
     path = Path(raw)
     if not path.is_absolute():
         path = root / path
-    if path.name.lower() in names and inside(path, root / run_dir):
+    # The name is tested twice: as asked for, and as the file it leads to. A link named after the
+    # seat's own file that points at another seat's report is not the seat's own file.
+    try:
+        real_name = path.resolve().name.lower()
+    except (OSError, ValueError):
+        real_name = ""
+    if path.name.lower() in names and real_name in names and inside(path, root / run_dir):
         return None
     return (f"{seat} reads its own run file and nothing else: {path.name} is not it. "
             f"Its run file is {' or '.join(sorted(seats[seat]))} inside {run_dir}/")
@@ -108,9 +127,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--seat", help="Agent name, used when the hook input has no agent_type")
     args = ap.parse_args(argv)
     try:
-        raw = sys.stdin.read()
+        raw = sys.stdin.buffer.read().decode("utf-8", errors="replace")
         data = json.loads(raw) if raw.strip() else {}
-    except ValueError:
+    except (ValueError, OSError):
         print("blind_seat_guard: the hook input is not valid JSON", file=sys.stderr)
         return 2
     if not isinstance(data, dict):
