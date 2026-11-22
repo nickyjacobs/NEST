@@ -14,12 +14,15 @@ The stamp. `nest.json` at the workspace root records what the workspace was buil
       "version": "1.0.0",                       the NEST release this workspace is level with
       "source": "https://github.com/...",       where releases come from (git URL or local path)
       "update_check": true,                     false silences the session-start line
-      "files": {"scripts/wiki.py": {"kit": "kit/scripts/wiki.py", "kind": "copy", "sha256": "..."}},
+      "files": {"scripts/wiki.py": {"kit": "kit/scripts/wiki.py", "kind": "copy", "sha256": "...",
+                                    "version": "1.0.0"}},
       "declined": {"kit/skills/mail/SKILL.md": "<sha256>"}
   }}
 
 `kind` is "copy" (the file is the kit file, byte for byte) or "adapted" (rewritten for this user).
 `sha256` is the hash of the kit file the workspace file was made from, never of the user's file.
+`version` is the release that kit file came from; `diff` starts there, so a file that was already
+brought over is never compared from an older release again.
 
 Commands:
   stamp     Write the stamp by comparing the workspace with a kit copy (default `_setup/nest`).
@@ -33,6 +36,7 @@ Commands:
               new       new in NEST
               removed   no longer part of NEST
               wiki      a wiki reference file changed (wiki files are never mapped one to one)
+              reference an example or reference file without a fixed place here changed
               missing   changed in NEST, deleted here
             A `new` item carries `exists`: true means a file is already at that place, and it
             may be the user's own.
@@ -40,8 +44,9 @@ Commands:
   diff      The change NEST made to one kit file, as a unified diff.
   backup    Keep the current version of workspace files in this update's history folder. Always
             before a file is written; a file that does not exist yet is noted as new.
-  apply     Replace `replace` files with the new kit file, or add a new copy file with
-            `--new KIT=PATH`. Refuses a file the user changed, and never overwrites a file.
+  apply     Replace `replace` files with the new kit file, bring back a deleted copy file, or add
+            a new copy file with `--new KIT=PATH`. Refuses a file the user changed, and never
+            overwrites a file.
   mark      After a merge or a new adapted file: record that PATH now reflects the new kit file.
             Refuses a file that was not backed up in this update.
   decline   Remember that the user does not want a change, so it is not offered again.
@@ -51,6 +56,8 @@ Commands:
             session-start line for this release.
   restore   Put back what the last update changed. Files the user changed after the update
             finished are left alone unless `--force`; what it replaces is kept in `undone/`.
+            `--list` shows the updates in the history, `--dry-run` what would be put back. An
+            older update is only ever put back by name, with `--run`.
 
 Backups go to `.claude/.history/nest-update-<time>/`; fetched releases to `.claude/.nest-update/`;
 the check cache to `.claude/.nest-update.json`. All three are gitignored and local.
@@ -85,8 +92,10 @@ FETCH_TIMEOUT = 120.0
 VERSION_RE = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)$")
 SKIP_NAMES = {"README.md", ".gitkeep", "uv.lock", "pyproject.toml", ".DS_Store"}
 SKIP_PARTS = {"tests", "__pycache__", ".venv", ".pytest_cache", ".ruff_cache"}
-OPEN_STATUSES = ("replace", "merge", "new", "removed", "wiki", "missing")
+OPEN_STATUSES = ("replace", "merge", "new", "removed", "wiki", "reference", "missing")
 RUN_HOURS = 12
+RETRY_DAYS = 1.0  # after a check that could not reach the source, look again this soon
+SIZE_FILES = ("SKILL.md", "SKILL.light.md", "formats.md", "formats.light.md")
 
 
 class Problem(Exception):
@@ -101,11 +110,33 @@ def workspace_root() -> Path:
 
 
 def read_json(path: Path) -> dict:
+    """A JSON object from a file, or {} when it is missing or unreadable. For caches and records."""
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
         return data if isinstance(data, dict) else {}
     except (OSError, ValueError):
         return {}
+
+
+def read_stamp_file(root: Path) -> dict:
+    """nest.json as a dict; {} when there is none. A file that is there but broken is a Problem:
+    treating it as empty would make the next write wipe every other setting in it."""
+    path = root / STAMP_FILE
+    try:
+        text = path.read_text(encoding="utf-8-sig")
+    except FileNotFoundError:
+        return {}
+    except (OSError, UnicodeError) as exc:
+        raise Problem(f"{STAMP_FILE} could not be read ({exc.__class__.__name__}). Nothing was changed.") from exc
+    try:
+        data = json.loads(text)
+    except ValueError as exc:
+        where = f" (line {exc.lineno}, column {exc.colno})" if isinstance(exc, json.JSONDecodeError) else ""
+        raise Problem(f"{STAMP_FILE} is not valid JSON{where}: {getattr(exc, 'msg', exc)}. Fix that spot (often a "
+                      "missing or extra comma or quote) and run this again. Nothing was changed.") from exc
+    if not isinstance(data, dict):
+        raise Problem(f"{STAMP_FILE} does not hold a JSON object. Nothing was changed.")
+    return data
 
 
 def write_json(path: Path, data: dict) -> None:
@@ -132,10 +163,63 @@ def show(version: tuple[int, int, int]) -> str:
     return ".".join(str(n) for n in version)
 
 
+def run_bounded(cmd: list[str], timeout: float, cwd: Path | None = None,
+                env: dict | None = None) -> subprocess.CompletedProcess:
+    """Run a command and be back within about `timeout` seconds, whatever its children do.
+
+    `subprocess.run(timeout=...)` kills only the direct child and then waits for the pipes to
+    close. A helper the child started (git's remote helper) can keep them open, which on Windows
+    stretches the wait far past the timeout and elsewhere leaves that helper running. So the
+    command gets its own process group, the whole group is stopped, and the pipes get one more
+    second at most. Raises subprocess.TimeoutExpired like `subprocess.run`.
+    """
+    options: dict = {"start_new_session": True} if os.name != "nt" else \
+        {"creationflags": getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)}
+    proc = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                            encoding="utf-8", errors="replace", cwd=cwd, env=env, **options)
+    def stop_group() -> None:
+        if os.name == "nt":
+            try:
+                subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)], capture_output=True, timeout=5, check=False)
+            except (OSError, subprocess.SubprocessError):
+                pass
+        else:
+            try:
+                os.killpg(proc.pid, 9)
+            except OSError:
+                pass
+        try:
+            proc.kill()
+        except OSError:
+            pass
+
+    try:
+        out, err = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        stop_group()
+        try:
+            proc.communicate(timeout=1)
+        except (subprocess.TimeoutExpired, OSError, ValueError):
+            pass  # something outside the group holds the pipes: let them go, never wait on them
+        raise
+    except KeyboardInterrupt:
+        stop_group()  # the command has its own session, so Ctrl-C would not reach it
+        raise
+    return subprocess.CompletedProcess(cmd, proc.returncode, out, err)
+
+
 def git(*args: str, timeout: float, cwd: Path | None = None) -> subprocess.CompletedProcess:
     env = dict(os.environ, GIT_TERMINAL_PROMPT="0")
-    return subprocess.run(["git", *args], capture_output=True, text=True, encoding="utf-8", errors="replace",
-                          timeout=timeout, check=False, cwd=cwd, env=env)
+    return run_bounded(["git", *args], timeout, cwd=cwd, env=env)
+
+
+def git_trouble(exc: BaseException) -> str:
+    """Why a git call did not come back, in words a user can act on."""
+    if isinstance(exc, FileNotFoundError):
+        return "git was not found on this computer (NEST needs git to look for releases)"
+    if isinstance(exc, subprocess.TimeoutExpired):
+        return "no answer in time (no internet, or a slow connection)"
+    return exc.__class__.__name__
 
 
 def check_source(source: str) -> str:
@@ -180,7 +264,7 @@ def safe_rel(text: str) -> str:
 # --- the stamp -----------------------------------------------------------------------------------
 
 def load_stamp(root: Path) -> dict:
-    stamp = read_json(root / STAMP_FILE).get("nest")
+    stamp = read_stamp_file(root).get("nest")
     stamp = stamp if isinstance(stamp, dict) else {}
     stamp.setdefault("files", {})
     stamp.setdefault("declined", {})
@@ -188,7 +272,7 @@ def load_stamp(root: Path) -> dict:
 
 
 def save_stamp(root: Path, stamp: dict) -> None:
-    data = read_json(root / STAMP_FILE)
+    data = read_stamp_file(root)
     stamp["files"] = dict(sorted(stamp.get("files", {}).items()))
     stamp["declined"] = dict(sorted(stamp.get("declined", {}).items()))
     data["nest"] = stamp
@@ -348,13 +432,14 @@ def cmd_stamp(root: Path, args) -> int:
             raise Problem(f"--map {item}: {ws_rel} does not exist in the workspace.")
         pairs[stamp_key(stamp, ws_rel)] = kit_rel
     explicit = {stamp_key(stamp, safe_rel(item.partition("=")[0])) for item in args.map or []}
+    made_from = kit_version(kit_root) or version  # the release the kit copy on disk really is
     copies = adapted = 0
     for ws_rel, kit_rel in pairs.items():
         if ws_rel in stamp["files"] and ws_rel not in explicit:
             continue  # already recorded: a later run must not reset it to an older kit copy
         kit_sha = sha(files[kit_rel])
         kind = "copy" if sha(root / ws_rel) == kit_sha else "adapted"
-        stamp["files"][ws_rel] = {"kit": kit_rel, "kind": kind, "sha256": kit_sha}
+        stamp["files"][ws_rel] = {"kit": kit_rel, "kind": kind, "sha256": kit_sha, "version": made_from}
         copies += kind == "copy"
         adapted += kind == "adapted"
     stamp["version"] = version
@@ -373,7 +458,7 @@ def remote_versions(source: str, timeout: float) -> list[tuple[int, int, int]]:
     try:
         out = git("ls-remote", "--tags", "--refs", "--", check_source(source), timeout=timeout)
     except (OSError, subprocess.SubprocessError) as exc:
-        raise Problem(f"Could not reach {source}: {exc.__class__.__name__}.") from exc
+        raise Problem(f"Could not reach {source}: {git_trouble(exc)}.") from exc
     if out.returncode != 0:
         raise Problem(f"Could not reach {source}: {out.stderr.strip().splitlines()[-1] if out.stderr.strip() else 'git failed'}")
     versions = []
@@ -388,9 +473,11 @@ def latest_version(root: Path, stamp: dict, max_age_days: float | None, timeout:
     """The newest release tag. With `max_age_days` a recent answer comes from the cache."""
     cache = read_json(root / CACHE_FILE)
     now = time.time()
-    if max_age_days is not None and isinstance(cache.get("checked"), (int, float)) \
-            and now - cache["checked"] < max_age_days * 86400:
-        return parse_version(cache.get("latest") or "")
+    if max_age_days is not None and isinstance(cache.get("checked"), (int, float)):
+        # A check that failed (offline, a slow line) must not silence the notice for a whole week.
+        window = min(max_age_days, RETRY_DAYS) if cache.get("failed") else max_age_days
+        if now - cache["checked"] < window * 86400:
+            return parse_version(cache.get("latest") or "")
     try:
         versions = remote_versions(str(stamp.get("source") or DEFAULT_SOURCE), timeout)
     except Problem:
@@ -398,8 +485,10 @@ def latest_version(root: Path, stamp: dict, max_age_days: float | None, timeout:
             raise
         versions = []
         latest = parse_version(cache.get("latest") or "")
+        cache["failed"] = True
     else:
         latest = versions[-1] if versions else None
+        cache.pop("failed", None)
     cache["checked"] = now
     if latest:
         cache["latest"] = show(latest)
@@ -412,7 +501,10 @@ def latest_version(root: Path, stamp: dict, max_age_days: float | None, timeout:
 
 def notice(root: Path, max_age_days: float = 7, timeout: float = CHECK_TIMEOUT) -> str:
     """One line when a newer release exists and the user did not skip it; else an empty string."""
-    stamp = load_stamp(root)
+    try:
+        stamp = load_stamp(root)
+    except Problem:
+        return f"{STAMP_FILE} cannot be read (it is not valid JSON), so its settings and the NEST update check are off"
     installed = parse_version(stamp.get("version", ""))
     if not installed or stamp.get("update_check") is False:
         return ""
@@ -437,11 +529,18 @@ def cmd_check(root: Path, args) -> int:
     latest = latest_version(root, stamp, None, FETCH_TIMEOUT)
     if not latest:
         print(f"No release found at {stamp.get('source') or DEFAULT_SOURCE}. This workspace is on NEST {show(installed)}.")
-    elif latest <= installed:
+    elif latest < installed:
+        print(ahead_line(installed, latest))
+    elif latest == installed:
         print(f"Up to date: this workspace is on NEST {show(installed)}, the newest release.")
     else:
         print(f"NEST {show(latest)} is available. This workspace is on {show(installed)}.")
     return 0
+
+
+def ahead_line(installed: tuple[int, int, int], latest: tuple[int, int, int]) -> str:
+    return (f"Up to date: this workspace is on NEST {show(installed)}, which is newer than the newest release "
+            f"({show(latest)}). It was built from a version that is not released yet; there is nothing to bring over.")
 
 
 # --- comparing releases --------------------------------------------------------------------------
@@ -453,8 +552,12 @@ def fetch_release(root: Path, source: str, version: tuple[int, int, int]) -> Pat
     needed, and files such as a CLAUDE.md must not sit where a session could load them.
     """
     dest = root / WORK_DIR / show(version)
-    if (dest / ".fetched").is_file():
-        return dest
+    marker = f"{show(version)}\n{check_source(source)}\n"
+    try:
+        if (dest / ".fetched").read_text(encoding="utf-8") == marker:
+            return dest
+    except OSError:
+        pass
     if dest.exists():
         force_rmtree(dest)
     dest.parent.mkdir(parents=True, exist_ok=True)
@@ -463,7 +566,7 @@ def fetch_release(root: Path, source: str, version: tuple[int, int, int]) -> Pat
                   "--quiet", "--depth", "1", "--branch", f"v{show(version)}", "--", check_source(source), str(dest),
                   timeout=FETCH_TIMEOUT)
     except (OSError, subprocess.SubprocessError) as exc:
-        raise Problem(f"Could not fetch NEST {show(version)} from {source}: {exc.__class__.__name__}.") from exc
+        raise Problem(f"Could not fetch NEST {show(version)} from {source}: {git_trouble(exc)}.") from exc
     if out.returncode != 0:
         if dest.exists():
             force_rmtree(dest)
@@ -489,11 +592,14 @@ def fetch_release(root: Path, source: str, version: tuple[int, int, int]) -> Pat
         else:
             child.unlink()
     for path in sorted(dest.rglob("*"), reverse=True):
-        if path.is_symlink() or path.name in ("CLAUDE.md", "CLAUDE.local.md"):
+        if not os.path.lexists(path):
+            continue  # went with a folder that was removed just before
+        if path.is_dir() and not path.is_symlink():
+            if path.name in (".claude", "CLAUDE.md", "CLAUDE.local.md"):
+                force_rmtree(path)
+        elif path.is_symlink() or path.name in ("CLAUDE.md", "CLAUDE.local.md"):
             path.unlink()
-        elif path.is_dir() and path.name == ".claude":
-            force_rmtree(path)
-    (dest / ".fetched").write_text(show(version) + "\n", encoding="utf-8")
+    (dest / ".fetched").write_text(marker, encoding="utf-8")
     return dest
 
 
@@ -559,7 +665,8 @@ def build_plan(root: Path, stamp: dict, latest: tuple[int, int, int]) -> dict:
             add("unchanged", kit_rel, ws_rel, kind)
         elif not (root / ws_rel).is_file():
             add("missing", kit_rel, ws_rel, kind)
-        elif kind == "copy" and sha(root / ws_rel) == recorded:
+        elif sha(root / ws_rel) in (sha(new_files[kit_rel]), recorded if kind == "copy" else None):
+            # Untouched, or already the new kit file (an update that stopped before it was recorded).
             add("replace", kit_rel, ws_rel, kind)
         else:
             add("merge", kit_rel, ws_rel, kind)
@@ -574,6 +681,17 @@ def build_plan(root: Path, stamp: dict, latest: tuple[int, int, int]) -> dict:
                 add("wiki", kit_rel, None, None)
             continue
         target = target_for(kit_rel, light)
+        parts = kit_rel.split("/")
+        other_size = target is None and ((parts[1] == "agents" and len(parts) == 4)
+                                         or (parts[1] == "skills" and parts[-1] in SIZE_FILES))
+        if other_size:
+            continue  # the full file of a team this workspace has in light, or the other way round
+        if target is None and kit_rel in base_files:
+            # An example or reference file with no fixed place here (the setup made something of
+            # its own from it): say that it changed, for the parts this workspace has.
+            if group in have_groups and sha(new_files[kit_rel]) != sha(base_files[kit_rel]):
+                add("reference", kit_rel, None, None)
+            continue
         if kit_rel in declined and declined[kit_rel] != sha(new_files[kit_rel]):
             add("new", kit_rel, target, "copy" if group == "scripts" else "adapted")  # declined before, changed since
             continue
@@ -591,11 +709,13 @@ def open_items(plan: dict) -> list[dict]:
     return [item for item in plan["items"] if item["status"] in OPEN_STATUSES]
 
 
-def current_plan(root: Path, stamp: dict, fresh: bool = False) -> dict:
-    """The plan against the release this update was started for; `fresh` looks for a newer one."""
+def current_plan(root: Path, stamp: dict, fresh: bool = False, latest: tuple[int, int, int] | None = None) -> dict:
+    """The plan against the release this update was started for; `fresh` looks for a newer one
+    (or takes `latest` when the caller looked already)."""
     installed = parse_version(stamp["version"])
     cache = read_json(root / CACHE_FILE)
-    latest = None if fresh else parse_version(cache.get("planned") or "")
+    if latest is None and not fresh:
+        latest = parse_version(cache.get("planned") or "")
     if latest is None:
         latest = latest_version(root, stamp, None, FETCH_TIMEOUT)
     if not latest:
@@ -608,7 +728,7 @@ def current_plan(root: Path, stamp: dict, fresh: bool = False) -> dict:
 
 def run_started(name: str) -> float | None:
     try:
-        return datetime.strptime(name.removeprefix("nest-update-"), "%Y%m%d-%H%M%S").timestamp()
+        return datetime.strptime(name.removeprefix("nest-update-").split(".")[0], "%Y%m%d-%H%M%S").timestamp()
     except ValueError:
         return None
 
@@ -664,7 +784,18 @@ def end_run(root: Path) -> None:
 
 def cmd_plan(root: Path, args) -> int:
     stamp = need_stamp(root)
-    plan = current_plan(root, stamp, fresh=True)
+    installed = parse_version(stamp["version"])
+    newest = latest_version(root, stamp, None, FETCH_TIMEOUT)
+    if newest and newest < installed:
+        # Built from a version that has no release yet: nothing to compare, and nothing to fetch.
+        line = ahead_line(installed, newest)
+        if args.json:
+            print(json.dumps({"installed": show(installed), "latest": show(newest), "source": stamp.get("source"),
+                              "items": [], "notes": [], "note": line, "ahead": True, "up_to_date": True}, indent=2))
+        else:
+            print(line)
+        return 0
+    plan = current_plan(root, stamp, fresh=True, latest=newest)
     plan["run"] = current_run(root, begin=True)
     cache = read_json(root / CACHE_FILE)
     cache["planned"] = plan["latest"]
@@ -683,7 +814,8 @@ def cmd_plan(root: Path, args) -> int:
     for note in plan["notes"]:
         print(f"\n{note['version']}: {note['in_short'] or '(no summary)'}")
     labels = {"replace": "safe to replace", "merge": "needs a merge", "new": "new", "removed": "no longer in NEST",
-              "wiki": "wiki reference changed", "missing": "changed in NEST, deleted here"}
+              "wiki": "wiki reference changed", "reference": "example or reference file changed",
+              "missing": "changed in NEST, deleted here"}
     for status in OPEN_STATUSES:
         rows = [item for item in todo if item["status"] == status]
         if rows:
@@ -693,11 +825,47 @@ def cmd_plan(root: Path, args) -> int:
     return 0
 
 
+def diff_base(root: Path, stamp: dict, plan: dict, kit_rel: str) -> tuple[str | None, str, str]:
+    """Where the diff of one kit file starts: (folder, version label, warning).
+
+    Normally the installed release. A file that was already brought over while other parts stayed
+    open is level with a newer release than the stamp's version; comparing it from the old one
+    would show changes that are in the user's file already, and a merge would add them twice.
+    """
+    base_dir, label = plan["base_dir"], plan["installed"]
+    entries = [entry for entry in stamp["files"].values() if entry.get("kit") == kit_rel]
+    if not entries:
+        return base_dir, label, ""
+    recorded = entries[0].get("sha256")
+    if base_dir and sha(Path(base_dir) / kit_rel) == recorded:
+        return base_dir, label, ""
+    made_from = parse_version(entries[0].get("version") or "")
+    candidates = [made_from] if made_from else []
+    if not candidates:  # a stamp from before `version` was recorded: look through the releases in between
+        try:
+            between = remote_versions(plan["source"], FETCH_TIMEOUT)
+        except Problem:
+            between = []
+        low, high = parse_version(plan["installed"]), parse_version(plan["latest"])
+        candidates = [v for v in between if low < v < high]
+    for version in candidates:
+        try:
+            folder = fetch_release(root, plan["source"], version)
+        except Problem:
+            folder = None
+        if folder and sha(folder / kit_rel) == recorded:
+            return folder.as_posix(), show(version), ""
+    return base_dir, label, (f"Note: the file in this workspace was made from a later version of {kit_rel} than "
+                             f"NEST {label}, and that version could not be fetched. Part of this diff may be in "
+                             "the user's file already: compare before you merge.\n")
+
+
 def cmd_diff(root: Path, args) -> int:
     stamp = need_stamp(root)
     plan = current_plan(root, stamp)
     kit_rel = args.kit.replace("\\", "/")
-    if plan["base_dir"] is None:
+    base_dir, label, warning = diff_base(root, stamp, plan, kit_rel)
+    if base_dir is None:
         print(f"There is no copy of release {plan['installed']} to compare with; read the new file instead: "
               f"{plan['latest_dir']}/{kit_rel}")
         return 0
@@ -708,11 +876,11 @@ def cmd_diff(root: Path, args) -> int:
         except OSError:
             return []
 
-    old, new = lines(plan["base_dir"]), lines(plan["latest_dir"])
+    old, new = lines(base_dir), lines(plan["latest_dir"])
     if not old and not new:
         raise Problem(f"{kit_rel} is in neither release.")
-    out = "".join(difflib.unified_diff(old, new, f"NEST {plan['installed']}/{kit_rel}", f"NEST {plan['latest']}/{kit_rel}"))
-    sys.stdout.buffer.write((out or "No difference.\n").encode("utf-8"))
+    out = "".join(difflib.unified_diff(old, new, f"NEST {label}/{kit_rel}", f"NEST {plan['latest']}/{kit_rel}"))
+    sys.stdout.buffer.write((warning + (out or "No difference.\n")).encode("utf-8"))
     return 0
 
 
@@ -752,13 +920,14 @@ def backup(root: Path, ws_rel: str) -> str:
 def backed_up(root: Path, ws_rel: str) -> bool:
     folder = root / HISTORY_DIR / current_run(root)
     kept, made = run_paths(folder)
-    return ws_rel in kept or ws_rel in made
+    return ws_rel.lower() in {rel.lower() for rel in [*kept, *made]}
 
 
 def cmd_backup(root: Path, args) -> int:
     results = {"kept": [], "already": [], "new": []}
+    stamp = load_stamp(root)
     for item in args.paths:
-        ws_rel = safe_rel(item)
+        ws_rel = stamp_key(stamp, safe_rel(item))
         results[backup(root, ws_rel)].append(ws_rel)
     where = run_dir(root).relative_to(root).as_posix()
     if results["kept"]:
@@ -777,6 +946,17 @@ def split_pair(item: str) -> tuple[str, str]:
     return left.strip().replace("\\", "/"), right.strip().replace("\\", "/")
 
 
+def copy_exec_bit(kit_file: Path, target: Path) -> None:
+    """A kit file that is executable (the pre-commit hook) stays so; git skips a hook that is not."""
+    if os.name == "nt":
+        return
+    try:
+        if kit_file.stat().st_mode & 0o111:
+            target.chmod(target.stat().st_mode | 0o755)
+    except OSError:
+        pass
+
+
 def cmd_apply(root: Path, args) -> int:
     stamp = need_stamp(root)
     plan = current_plan(root, stamp)
@@ -791,8 +971,19 @@ def cmd_apply(root: Path, args) -> int:
             raise Problem(f"{ws_rel} is not a file NEST installed here.")
         if found["status"] == "unchanged":
             continue
-        if found["status"] not in ("replace", "declined") or stamp["files"][ws_rel].get("kind") != "copy" \
-                or sha(root / ws_rel) != stamp["files"][ws_rel].get("sha256"):
+        entry = stamp["files"][ws_rel]
+        if not os.path.lexists(root / ws_rel):
+            if found["kit"] not in new_files:
+                raise Problem(f"{ws_rel} is no longer part of NEST and is not in this workspace either: there is "
+                              "nothing to bring back.")
+            if entry.get("kind") != "copy":
+                raise Problem(f"{ws_rel} was deleted in this workspace and was adapted for it, so there is no file to "
+                              f"copy. To bring it back: `backup {ws_rel}`, write it again from {found['kit']} the way "
+                              f"the setup would, then `mark {ws_rel}={found['kit']}`. To leave it out: `done {found['kit']}`.")
+        elif sha(root / ws_rel) == sha(new_files.get(found["kit"], Path())):
+            pass  # already the new kit file: only the record is behind
+        elif found["status"] not in ("replace", "declined") or entry.get("kind") != "copy" \
+                or sha(root / ws_rel) != entry.get("sha256"):
             raise Problem(f"{ws_rel} was changed in this workspace or was adapted for it: it needs a merge, not a replace.")
         jobs.append((ws_rel, found["kit"]))
     for item in args.new or []:
@@ -811,7 +1002,9 @@ def cmd_apply(root: Path, args) -> int:
             backup(root, ws_rel)
             (root / ws_rel).parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(new_files[kit_rel], root / ws_rel)
-            stamp["files"][ws_rel] = {"kit": kit_rel, "kind": "copy", "sha256": sha(new_files[kit_rel])}
+            copy_exec_bit(new_files[kit_rel], root / ws_rel)
+            stamp["files"][ws_rel] = {"kit": kit_rel, "kind": "copy", "sha256": sha(new_files[kit_rel]),
+                                      "version": plan["latest"]}
             stamp["declined"].pop(kit_rel, None)
             done += 1
             print(f"Updated {ws_rel}")
@@ -843,7 +1036,7 @@ def cmd_mark(root: Path, args) -> int:
                           "so an undo knows what was there; then `mark` it.")
         kit_sha = sha(new_files[kit_rel])
         kind = args.kind or ("copy" if sha(root / ws_rel) == kit_sha else "adapted")
-        stamp["files"][ws_rel] = {"kit": kit_rel, "kind": kind, "sha256": kit_sha}
+        stamp["files"][ws_rel] = {"kit": kit_rel, "kind": kind, "sha256": kit_sha, "version": plan["latest"]}
         stamp["declined"].pop(kit_rel, None)
         print(f"Recorded {ws_rel} as level with NEST {plan['latest']} ({kind}).")
     save_stamp(root, stamp)
@@ -864,6 +1057,7 @@ def cmd_decline(root: Path, args) -> int:
         for item in hits:
             stamp["declined"][item["kit"]] = sha(new_files[item["kit"]]) if item["kit"] in new_files else "removed"
             count += 1
+    run_dir(root)  # keeps the stamp as it was, so an undo of this update puts these choices back too
     save_stamp(root, stamp)
     if args.command == "done":
         print(f"Noted: {count} change(s) are dealt with.")
@@ -900,6 +1094,7 @@ def cmd_finish(root: Path, args) -> int:
     plan = current_plan(root, stamp)
     todo = open_items(plan)
     if args.skip:
+        run_dir(root)
         end_run(root)
         stamp["skipped_version"] = plan["latest"]
         save_stamp(root, stamp)
@@ -908,6 +1103,8 @@ def cmd_finish(root: Path, args) -> int:
     if not stamp["files"]:
         raise Problem("The stamp records no files, so NEST cannot know whether this workspace is level with a "
                       "release. Run `stamp` again (online, or with the kit copy in _setup/nest) before finishing.")
+    if not todo and plan["installed"] != plan["latest"]:
+        run_dir(root)  # the version is about to change: an undo must be able to put it back
     end_run(root)
     if todo:
         print(f"{len(todo)} change(s) are still open, so the workspace stays on NEST {plan['installed']}:")
@@ -924,46 +1121,136 @@ def cmd_finish(root: Path, args) -> int:
     return 0
 
 
-def cmd_restore(root: Path, args) -> int:
+def history_runs(root: Path) -> list[Path]:
+    """The update folders in the history, oldest first."""
     history = root / HISTORY_DIR
-    runs = sorted((p for p in history.glob("nest-update-*") if p.is_dir()), key=lambda p: (run_started(p.name) or 0, p.name)) \
-        if history.is_dir() else []
-    runs = [p for p in runs if p.name == args.run] if args.run else [p for p in runs if not (p / "restored").is_file()]
+    if not history.is_dir():
+        return []
+    return sorted((p for p in history.glob("nest-update-*") if p.is_dir()), key=lambda p: (run_started(p.name) or 0, p.name))
+
+
+def describe_run(root: Path, folder: Path) -> str:
+    kept, made = run_paths(folder)
+    before = read_json(folder / "nest.json").get("nest")
+    was_on = before.get("version") if isinstance(before, dict) else None
+    started = run_started(folder.name)
+    when = datetime.fromtimestamp(started).strftime("%Y-%m-%d %H:%M") if started else "unknown time"
+    if (folder / "restored").is_file():
+        left = read_json(folder / "left.json").get("left") or []
+        state = "put back" + (f", {len(left)} file(s) left alone" if left else "")
+    elif read_json(root / CACHE_FILE).get("run") == folder.name:
+        state = "in progress"
+    else:
+        state = "finished"
+    return (f"{folder.name}  {when}  {state}; the workspace was on NEST {was_on or '?'} before it; "
+            f"{len(kept)} file(s) changed, {len(made)} added")
+
+
+def prune_empty(root: Path, folder: Path) -> None:
+    """Remove folders an undo left empty, never the workspace root or anything outside it."""
+    while folder != root and root in folder.parents:
+        try:
+            folder.rmdir()
+        except OSError:
+            return
+        folder = folder.parent
+
+
+def cmd_restore(root: Path, args) -> int:
+    runs = history_runs(root)
+    if args.list:
+        if not runs:
+            print("There is no update in the history.")
+        for folder in reversed(runs):
+            print(describe_run(root, folder))
+        return 0
+    if args.run:
+        runs = [p for p in runs if p.name == args.run]
+        if not runs:
+            raise Problem(f"There is no update named {args.run}. `restore --list` shows the ones there are.")
     if not runs:
         raise Problem("There is no update to put back.")
+    # Always the newest update, never silently an older one: putting back an update that was
+    # followed by another would also undo choices and edits made since.
     folder = runs[-1]
+    only: list[str] | None = None
     if (folder / "restored").is_file():
-        raise Problem(f"{folder.name} was already put back.")
+        left_before = [rel for rel in read_json(folder / "left.json").get("left") or [] if isinstance(rel, str)]
+        if args.force and left_before:
+            only = left_before  # the files a first `restore` left alone, and nothing else
+        else:
+            older = "" if args.run or len(runs) < 2 else \
+                " An older update is only put back by name: `restore --list` shows them, `restore --run <name>` picks one."
+            raise Problem(f"{folder.name} was already put back.{older}")
     cache = read_json(root / CACHE_FILE)
-    if cache.get("run") == folder.name:  # an update in progress: everything in it is the update's own work
-        cache.pop("run", None)
-        cache.pop("planned", None)
-        write_json(root / CACHE_FILE, cache)
-        written = None
-    else:
-        written = read_json(folder / "written.json") if (folder / "written.json").is_file() else None
+    in_progress = cache.get("run") == folder.name
+    # An update in progress: everything in it is the update's own work.
+    written = None if in_progress or not (folder / "written.json").is_file() else read_json(folder / "written.json")
     kept, made = run_paths(folder)
+    if only is not None:
+        kept, made = [rel for rel in kept if rel in only], [rel for rel in made if rel in only]
 
     def changed_since(ws_rel: str) -> bool:
         """Did the user change this file after the update finished?"""
         return written is not None and not args.force and ws_rel in written and sha(root / ws_rel) != written[ws_rel]
 
-    def keep_current(ws_rel: str) -> None:
-        if (root / ws_rel).is_file():
-            aside = folder / "undone" / ws_rel
-            aside.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(root / ws_rel, aside)
+    if args.dry_run:
+        print(describe_run(root, folder))
+        back = [rel for rel in kept if not changed_since(rel)]
+        away = [rel for rel in made if (root / rel).is_file() and not changed_since(rel)]
+        stay = [rel for rel in [*kept, *made] if changed_since(rel)]
+        print(f"Would put back {len(back)} file(s): {', '.join(back) or 'none'}")
+        print(f"Would take away {len(away)} file(s) the update added: {', '.join(away) or 'none'}")
+        if stay:
+            print(f"Would leave alone, because they were changed after the update finished: {', '.join(stay)}")
+        before = read_json(folder / "nest.json").get("nest") if only is None else None
+        if isinstance(before, dict):
+            now = load_stamp(root)
+            if before.get("version") != now.get("version"):
+                print(f"Would set the workspace back from NEST {now.get('version')} to NEST {before.get('version')}.")
+            undone = len(set(now.get("declined") or {}) - set(before.get("declined") or {}))
+            if undone:
+                print(f"Would offer {undone} declined change(s) again.")
+            if now.get("skipped_version") and now.get("skipped_version") != before.get("skipped_version"):
+                print(f"Would mention NEST {now['skipped_version']} at session start again.")
+        print("Nothing was changed.")
+        return 0
 
-    restored, moved, left = [], [], []
+    if in_progress:
+        cache.pop("run", None)
+        cache.pop("planned", None)
+        write_json(root / CACHE_FILE, cache)
+
+    def keep_current(ws_rel: str) -> None:
+        """Today's version goes to `undone/` once: a second try must not overwrite it with a file
+        that was put back in the first."""
+        aside = folder / "undone" / ws_rel
+        if (root / ws_rel).is_file() and not aside.exists():
+            aside.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(root / ws_rel, aside)
+
+    def put_back(ws_rel: str) -> None:
+        target = root / ws_rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if target.is_file() and not os.access(target, os.W_OK):
+            target.chmod(target.stat().st_mode | 0o200)
+        shutil.copy2(folder / "files" / ws_rel, target)
+
+    restored, moved, left, failed = [], [], [], []
     for ws_rel in kept:
         no_symlink(root, ws_rel)
+        if sha(root / ws_rel) is not None and sha(root / ws_rel) == sha(folder / "files" / ws_rel):
+            restored.append(ws_rel)  # put back by an earlier try that stopped halfway
+            continue
         if changed_since(ws_rel):
             left.append(ws_rel)
             continue
-        keep_current(ws_rel)
-        (root / ws_rel).parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(folder / "files" / ws_rel, root / ws_rel)
-        restored.append(ws_rel)
+        try:
+            keep_current(ws_rel)
+            put_back(ws_rel)
+            restored.append(ws_rel)
+        except OSError as exc:
+            failed.append(f"{ws_rel} ({exc.strerror or exc})")
     for ws_rel in made:
         if not (root / ws_rel).is_file() or (root / ws_rel).is_symlink():
             continue
@@ -971,28 +1258,48 @@ def cmd_restore(root: Path, args) -> int:
             left.append(ws_rel)
             continue
         target = folder / "created" / ws_rel
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.move(str(root / ws_rel), str(target))
-        moved.append(ws_rel)
+        try:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if target.exists():
+                target = target.with_name(f"{target.name}.{int(time.time())}")
+            shutil.move(str(root / ws_rel), str(target))
+            prune_empty(root, (root / ws_rel).parent)
+            moved.append(ws_rel)
+        except OSError as exc:
+            failed.append(f"{ws_rel} ({exc.strerror or exc})")
+    failed_paths = {item.rsplit(" (", 1)[0] for item in failed}
     before = read_json(folder / "nest.json").get("nest") if (folder / "nest.json").is_file() else None
     if isinstance(before, dict):
         now = load_stamp(root)
         stamp = dict(now)  # settings such as source and update_check stay as they are today
-        for key in ("version", "files", "declined", "skipped_version"):
-            if key in before:
-                stamp[key] = before[key]
-            else:
-                stamp.pop(key, None)
-        stamp["files"] = dict(before.get("files") or {})
-        for ws_rel in left:  # a file that was left alone keeps today's record
-            if ws_rel in now["files"]:
-                stamp["files"][ws_rel] = now["files"][ws_rel]
-        stamp["declined"] = dict(before.get("declined") or {})
+        if only is None:
+            for key in ("version", "files", "declined", "skipped_version"):
+                if key in before:
+                    stamp[key] = before[key]
+                else:
+                    stamp.pop(key, None)
+            stamp["files"] = dict(before.get("files") or {})
+            for ws_rel in [*left, *failed_paths]:  # a file that was not put back keeps today's record
+                if ws_rel in now["files"]:
+                    stamp["files"][ws_rel] = now["files"][ws_rel]
+            stamp["declined"] = dict(before.get("declined") or {})
+        else:  # the second pass: only the records of the files that are put back now
+            stamp["files"] = dict(now["files"])
+            for ws_rel in [*restored, *moved]:
+                if ws_rel in (before.get("files") or {}):
+                    stamp["files"][ws_rel] = before["files"][ws_rel]
+                else:
+                    stamp["files"].pop(ws_rel, None)
         save_stamp(root, stamp)
-    (folder / "restored").write_text(datetime.now().isoformat(timespec="seconds") + "\n", encoding="utf-8")
     where = folder.relative_to(root).as_posix()
     print(f"Put back {len(restored)} file(s) from {where}; {len(moved)} file(s) the update had added were moved "
           f"into that folder. The versions that were replaced just now are in {where}/undone/.")
+    if failed:
+        # No marker: the same command can be run again once the cause is gone, and it picks up here.
+        raise Problem(f"Could not put back: {', '.join(failed)}. Everything else was put back. Close the program "
+                      "that has the file open (or make it writable) and run `restore` again.")
+    write_json(folder / "left.json", {"left": left})
+    (folder / "restored").write_text(datetime.now().isoformat(timespec="seconds") + "\n", encoding="utf-8")
     if left:
         print(f"Left alone, because they were changed after the update finished: {', '.join(left)}. "
               "`restore --force` puts those back too (today's versions are kept in the history folder first).")
@@ -1046,8 +1353,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--skip", action="store_true", help="Leave this release for now and silence the session-start line")
 
     p = sub.add_parser("restore", help="Put back what the last update changed")
-    p.add_argument("--run", help="A history folder name, default the newest that was not put back yet")
+    p.add_argument("--run", help="A history folder name (see --list); default the newest update")
     p.add_argument("--force", action="store_true", help="Also put back files the user changed after the update")
+    p.add_argument("--list", action="store_true", help="Show the updates in the history, newest first; changes nothing")
+    p.add_argument("--dry-run", action="store_true", help="Say what would be put back; changes nothing")
 
     args = ap.parse_args(argv)
     for stream in (sys.stdout, sys.stderr):
@@ -1062,6 +1371,10 @@ def main(argv: list[str] | None = None) -> int:
         return commands[args.command](workspace_root(), args)
     except Problem as exc:
         print(str(exc), file=sys.stderr)
+        return 1
+    except OSError as exc:  # a full disk, a read-only folder, a file another program holds open
+        print(f"Stopped: {exc.strerror or exc}{f' ({exc.filename})' if exc.filename else ''}. Run the command again "
+              "once that is solved; `restore` puts back what this update changed so far.", file=sys.stderr)
         return 1
 
 
