@@ -103,3 +103,75 @@ def test_cli_exit_codes(ws):
     bad = subprocess.run([sys.executable, str(SCRIPT)], input="{not json", capture_output=True, text=True,
                          encoding="utf-8", check=False)
     assert bad.returncode == 2
+
+
+# --- findings from the hooks audit -----------------------------------------------------------
+
+@pytest.mark.parametrize("agent", ["Council-Outsider", "COUNCIL-OUTSIDER", " council-outsider "])
+def test_seat_names_match_without_regard_to_case(ws, agent):
+    assert guard.check(call(ws, agent, "Read", file_path=str(ws / "CLAUDE.local.md")))
+    assert guard.check(call(ws, agent, "Read", file_path=run_file(ws, "outsider.md"))) is None
+
+
+@pytest.mark.parametrize("agent", ["general-purpose", "outsider", "the-renamed-seat", None])
+def test_seat_argument_wins_over_the_reported_agent_type(ws, agent):
+    data = call(ws, agent, "Read", file_path=str(ws / "CLAUDE.local.md"))
+    assert guard.check(data, "council-outsider")
+    assert guard.check(data, "Council-Outsider")
+    assert guard.check(call(ws, agent, "Read", file_path=run_file(ws, "outsider.md")), "council-outsider") is None
+
+
+def test_config_seat_names_match_without_regard_to_case(ws):
+    (ws / "nest.json").write_text(json.dumps({"blind_seats": {"seats": {"My-Seat": ["seat.md"]}}}), encoding="utf-8")
+    assert guard.check(call(ws, "my-seat", "Read", file_path=str(ws / "CLAUDE.local.md")))
+
+
+def test_path_with_an_accent_survives_a_console_code_page(tmp_path, monkeypatch):
+    import os
+    root = tmp_path / "werk-Jos\u00e9"
+    (root / ".runs" / "r").mkdir(parents=True)
+    target = root / ".runs" / "r" / "outsider.md"
+    target.write_text("idea\n", encoding="utf-8")
+    payload = json.dumps({"agent_type": "council-outsider", "tool_name": "Read", "tool_input": {"file_path": str(target)}},
+                         ensure_ascii=False).encode("utf-8")
+    result = subprocess.run([sys.executable, str(SCRIPT)], input=payload, capture_output=True, check=False,
+                            env={**os.environ, "CLAUDE_PROJECT_DIR": str(root), "PYTHONIOENCODING": "cp1252",
+                                 "PYTHONUTF8": "0"})
+    assert result.returncode == 0, result.stderr
+
+
+def test_cli_takes_the_seat_from_the_argument(ws):
+    data = json.dumps(call(ws, "general-purpose", "Read", file_path=str(ws / "CLAUDE.local.md")))
+    result = subprocess.run([sys.executable, str(SCRIPT), "--seat", "council-outsider"], input=data, capture_output=True,
+                            text=True, encoding="utf-8", check=False)
+    assert result.returncode == 2 and "run file" in result.stderr
+
+
+def test_nest_json_with_a_byte_order_mark_is_read(ws):
+    raw = json.dumps({"blind_seats": {"seats": {"my-seat": ["seat.md"]}}}).encode("utf-8")
+    (ws / "nest.json").write_bytes(b"\xef\xbb\xbf" + raw)
+    assert guard.check(call(ws, "my-seat", "Read", file_path=str(ws / "CLAUDE.local.md")))
+
+
+# --- what the review of the guards found -----------------------------------------------------
+
+def test_link_named_after_the_seat_that_leads_to_another_report_is_refused(ws):
+    import os
+    first = ws / ".runs" / "r1"
+    second = ws / ".runs" / "r2"
+    first.mkdir(parents=True, exist_ok=True)
+    second.mkdir(parents=True, exist_ok=True)
+    (first / "skeptic.md").write_text("another seat's report\n", encoding="utf-8")
+    link = second / "outsider.md"
+    try:
+        os.symlink(first / "skeptic.md", link)
+    except (OSError, NotImplementedError):
+        pytest.skip("no symlinks here")
+    assert guard.check(call(ws, "council-outsider", "Read", file_path=str(link)))
+
+
+def test_seat_argument_that_is_not_in_the_table_is_refused(ws):
+    data = call(ws, "general-purpose", "Read", file_path=run_file(ws, "outsider.md"))
+    reason = guard.check(data, "council-outsidr")
+    assert reason and "not a blind seat" in reason
+    assert guard.check(call(ws, "council-outsidr", "Read", file_path=str(ws / "CLAUDE.local.md"))) is None

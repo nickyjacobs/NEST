@@ -1,7 +1,10 @@
 # NEST: working on this repo
 
+**If the user asked you to read `SETUP.md` and follow it, you are running the setup for them:
+follow `SETUP.md` only, and ignore everything below.** This file is for people who change NEST.
+
 You are Claude Code working on NEST itself: the setup prompt (`SETUP.md`) and its reference kit
-(`kit/`). You are not running the setup here; a user runs it in their own folder.
+(`kit/`).
 
 ## Layout
 
@@ -10,6 +13,10 @@ You are Claude Code working on NEST itself: the setup prompt (`SETUP.md`) and it
   `kit/scripts/` holds the Python tools and their tests; `kit/skills/`, `kit/agents/`,
   `kit/wiki/`, `kit/claude/`, `kit/integrations/`, `kit/github/` the rest.
 - `assets/`: banner and the quick start GIF (source in `assets/quickstart-src/`).
+  `assets/roadmap.png` is drawn from `assets/roadmap.svg`: when `ROADMAP.md` changes, change the
+  SVG to match and render it again with headless Chrome at twice the size
+  (`--headless=new --force-device-scale-factor=2 --default-background-color=00000000
+  --window-size=1600,772 --screenshot=assets/roadmap.png file://<path>/assets/roadmap.svg`).
 - `docs/project/backlog.md`: what is known to be open. `docs/reference/hooks-notes.md`: the hook facts
   the scripts rely on. `CHANGELOG.md`: Keep a Changelog, in the template of `docs/project/releasing.md`.
 - `tools/`: checks for this repo itself (`release_check.py`); not part of the kit.

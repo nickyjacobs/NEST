@@ -18,19 +18,22 @@ About five sessions of 30 to 60 minutes. You can spread them over days:
 
 **Do I need to be technical?**
 No. The setup asks your level first and explains at that level. It gives you the exact command
-when something needs installing, and you never have to edit a config file by hand.
+when something needs installing. The one file you fill in yourself is a plain list of words
+that must stay private, and the setup gives you the command that opens it.
 
 **Does it work on Windows and Linux?**
-Yes. The scripts are tested on macOS, Windows and Linux on every change. A complete setup run by
-a person has so far only been done on macOS, so tell us what you hit: an issue is welcome.
+Yes. The scripts are tested on macOS, Windows and Linux on every change. A complete setup has been
+run from start to finish on macOS and on Linux, not yet on Windows, so tell us what you hit
+there: an issue is welcome.
 
 **Can I use my own language?**
 Yes. The first question is which language you want. Your wiki, your assistant's instructions
 and the skills are written in it. The files in this repository are English.
 
 **I already have an Obsidian vault. Can I keep it?**
-Yes. The setup notes where your existing notes are and makes bringing them in one of your first
-tasks. Nothing is imported during the setup, and your own notes are never rewritten.
+Yes. NEST builds a new vault inside your workspace and never writes into the one you have,
+or changes its settings. The setup notes where your existing notes are and makes bringing them
+in one of your first tasks. Nothing is imported during the setup.
 
 **Does it work with other AI tools?**
 No. NEST builds on Claude Code features: skills, agents, hooks and settings.
@@ -44,12 +47,14 @@ Say "don't know yet". It becomes an open question and nothing waits on it.
 Any time. The setup saves its progress after every step and continues in the next session.
 
 **Will it install things without asking?**
-No. Every install and every build step waits for your yes. Commands that need your own login
-are yours to run.
+No. Every install and every build step waits for your yes, and commands that need your own
+login are yours to run. One thing happens with only a notice: the first time a script runs,
+uv fetches the Python version it needs.
 
 **Do I have to take everything?**
-No. A part you do not need is never created. The wiki, each skill, the agent teams, the
-integrations and GitHub are all separate choices.
+No. The assistant, the wiki and the guards are the base; how big the wiki is, is up to you.
+Each skill, the agent teams, the integrations and GitHub are separate choices, and a part you
+do not need is never created.
 
 ## Privacy and safety
 
@@ -65,8 +70,24 @@ login flow and keep their tokens outside the workspace.
 No. Replies are drafts. Sending mail is not part of NEST.
 
 **What stops a secret from ending up on GitHub?**
-A scan before and after every write, a scan before every commit, your own list of sensitive
-terms, and a read-only reviewer agent. Private context lives in a file that git ignores.
+A scan for secrets at these moments:
+
+- before and after every file your assistant writes with its edit tools;
+- after every shell command it runs. A command can write a file too, and that is only visible
+  afterwards. The scan then reads the files git reports as changed or new, in the workspace and
+  in the wiki's own backup repository when you have one, plus the files of a commit the command
+  made;
+- before every commit in the workspace repository, when you chose the pre-commit hook;
+- before every wiki backup commit.
+
+Next to that: your own list of sensitive terms, and a read-only reviewer agent. Private context
+lives in a file that git ignores. The scan knows the shapes of common keys, tokens and passwords;
+it cannot recognise a password that looks like an ordinary word, so the reviewer and your own
+eyes still count. Now and then it stops a harmless line that has the shape of a password, such
+as one that gives `minimaal12tekens` (Dutch for "at least 12 characters") as the value of
+`wachtwoord` ("password"): write the value with spaces, or
+put it between `<` and `>`.
+[SECURITY.md](../../SECURITY.md) lists what is covered and what is not.
 
 ## Living with it
 
@@ -90,5 +111,6 @@ tool keeps in its own place; disconnect it there. The tools you installed (Claud
 Obsidian, git, uv) stay; remove those the usual way if you want.
 
 **Something broke. Where do I go?**
-Open an [issue](https://github.com/nickyjacobs/NEST/issues). For a security problem, use a
+Open an [issue](https://github.com/nickyjacobs/NEST/issues); a question fits better in
+[Discussions](https://github.com/nickyjacobs/NEST/discussions). For a security problem, use a
 [private report](https://github.com/nickyjacobs/NEST/security/advisories/new) instead.

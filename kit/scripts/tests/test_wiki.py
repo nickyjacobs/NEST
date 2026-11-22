@@ -288,3 +288,193 @@ def test_status_roles_must_be_known_words(tmp_path):
     (tmp_path / "wiki.config.json").write_text(json.dumps(cfg), encoding="utf-8")
     with pytest.raises(wiki.ConfigError):
         wiki.load_config(tmp_path / "wiki.config.json")
+
+
+# Real-vault cases: links with a folder, odd frontmatter, tables, comments, markers, config mistakes
+
+def test_link_with_a_folder_never_falls_back_to_the_bare_name(vault: Path) -> None:
+    write(vault, "log.md", "# Log\n")
+    write(vault, "20-knowledge/moved.md", page("Moved", category="20-knowledge", extra="kind: tool\n", body=(
+        "See [[old-folder/nmap|Nmap]], [[50-decisions/log|the log]] and [[10-projects/x/index|x]].")))
+    res = wiki.lint(cfg_for(vault))
+    assert res.counts["broken-links"] == 3, res.errors
+    assert res.counts["ambiguous-links"] == 0
+    assert any("broken link [[old-folder/nmap]]" in e for e in res.errors)
+
+
+def test_link_paths_match_case_insensitively_and_across_unicode_forms(vault: Path) -> None:
+    import unicodedata
+    write(vault, "20-knowledge/" + unicodedata.normalize("NFD", "café.md"),
+          page("Cafe", category="20-knowledge", extra="kind: tool\n"))
+    write(vault, "20-knowledge/links.md", page("Links", category="20-knowledge", extra="kind: tool\n", body=(
+        "See [[20-Knowledge/NMAP|Nmap]] and [[20-knowledge/" + unicodedata.normalize("NFC", "café") + "|Cafe]].")))
+    res = wiki.lint(cfg_for(vault))
+    assert res.error_count == 0, res.errors
+
+
+def test_author_as_a_list_does_not_crash(vault: Path, capsys) -> None:
+    write(vault, "20-knowledge/listed.md", page("Listed", category="20-knowledge", extra="kind: tool\n",
+                                              author="[claude, user]"))
+    write(vault, "20-knowledge/stranger.md", page("Stranger", category="20-knowledge", extra="kind: tool\n",
+                                                author="[claude, nobody]"))
+    res = wiki.lint(cfg_for(vault))
+    assert res.error_count == 0, res.errors
+    assert res.counts["no-author"] == 1 and "stranger.md" in res.warnings[0]
+    assert wiki.stats(cfg_for(vault))["sections"]["20-knowledge"]["no_author"] == 1
+    assert run(vault, "stats") == 0
+
+
+def test_fix_escapes_the_pipe_inside_a_table(vault: Path) -> None:
+    p = write(vault, "20-knowledge/table.md", page("Table", category="20-knowledge", extra="kind: tool\n", body=(
+        "| Tool | Note |\n|---|---|\n| [[nmap]] | scanner |\n| [[nmap\\|The scanner]] | again |\n| [[index\\|Idx]] | root |")))
+    wiki.fix(cfg_for(vault))
+    text = p.read_text(encoding="utf-8")
+    assert "| [[20-knowledge/nmap\\|nmap]] | scanner |" in text
+    assert "| [[20-knowledge/nmap\\|The scanner]] | again |" in text
+    assert "[[index\\|Idx]]" in text
+    res = wiki.lint(cfg_for(vault))
+    assert res.counts["short-links"] == 0, res.warnings  # a root page in a table is not a short link
+
+
+def test_reindex_keeps_intro_text_that_mentions_the_marker(vault: Path) -> None:
+    idx = vault / "20-knowledge/index.md"
+    write(vault, "20-knowledge/index.md", index_head("Knowledge", "20-knowledge")
+          + "Everything below the line <!-- AUTO-INDEX --> is rebuilt.\n\nMy own paragraph.\n\n"
+            "<!-- AUTO-INDEX -->\n\nold\n")
+    wiki.reindex(cfg_for(vault))
+    text = idx.read_text(encoding="utf-8")
+    assert "My own paragraph." in text and "is rebuilt." in text
+    assert text.count("[[20-knowledge/nmap|Nmap]]") == 1 and "old" not in text.split("My own paragraph.")[1]
+    before = text
+    wiki.reindex(cfg_for(vault))
+    assert idx.read_text(encoding="utf-8") == before
+
+
+def test_links_inside_comments_and_all_code_forms_are_ignored(vault: Path) -> None:
+    write(vault, "20-knowledge/quiet.md", page("Quiet", category="20-knowledge", extra="kind: tool\n", body=(
+        "%% Rules: links as [[20-knowledge/<note>]] and [[bare]]. %%\n\n"
+        "<!-- also [[nowhere/page]] -->\n\n"
+        "Double ``[[inline double]]`` ticks.\n\n"
+        "~~~\n[[in a tilde fence]]\n~~~\n\n"
+        "> ```\n> [[in a quoted fence]]\n> ```\n")))
+    res = wiki.lint(cfg_for(vault))
+    assert res.error_count == 0, res.errors
+    assert res.warnings == [], res.warnings
+    assert wiki.fix(cfg_for(vault)) == 0
+
+
+def test_dashes_in_a_value_are_not_missing_fields(vault: Path) -> None:
+    write(vault, "20-knowledge/dash.md", "---\ntitle: \"A --- B\"\ntags: []\ncategory: 20-knowledge\n"
+                                         "status: active\nauthor: claude\nkind: tool\n---\n\nBody.\n")
+    res = wiki.lint(cfg_for(vault))
+    assert res.error_count == 0, res.errors
+
+
+def test_missing_status_is_reported_once(vault: Path) -> None:
+    write(vault, "20-knowledge/nostatus.md", "---\ntitle: No status\ntags: []\ncategory: 20-knowledge\n"
+                                             "author: claude\n---\n\nBody.\n")
+    res = wiki.lint(cfg_for(vault))
+    assert (res.counts["missing-fields"], res.counts["unknown-status"]) == (1, 0)
+
+
+def test_index_titles_survive_yaml_words_and_brackets(vault: Path) -> None:
+    write(vault, "20-knowledge/yes.md", "---\ntitle: Yes\ntags: []\ncategory: 20-knowledge\nstatus: active\n"
+                                        "author: claude\nkind: tool\n---\n\nBody.\n")
+    write(vault, "20-knowledge/odd.md", "---\ntitle: \"A ]] b [c\"\ntags: []\ncategory: 20-knowledge\n"
+                                        "status: active\nauthor: claude\nkind: tool\n---\n\nBody.\n")
+    wiki.reindex(cfg_for(vault))
+    text = (vault / "20-knowledge/index.md").read_text(encoding="utf-8")
+    assert "[[20-knowledge/yes|Yes]]" in text
+    assert "[[20-knowledge/odd|A )) b (c]]" in text
+    assert wiki.lint(cfg_for(vault)).error_count == 0
+
+
+def test_log_without_the_marker_line_keeps_the_heading_on_top(vault: Path) -> None:
+    write(vault, "log.md", "---\ntitle: Logboek\n---\n\n# Logboek\n\nNewest first, below <!-- Begin of the log --> "
+                           "as the config says.\n\n## 2026-01-01 10:00 · lint · old\n")
+    wiki.append_log(cfg_for(vault), "lint", "new", when=datetime(2026, 2, 3, 4, 5))
+    text = (vault / "log.md").read_text(encoding="utf-8")
+    assert text.index("# Logboek") < text.index("\n<!-- Begin of the log -->\n") < text.index("· new") < text.index("· old")
+    assert "as the config says." in text
+
+
+def test_new_log_uses_the_active_status_word(tmp_path: Path) -> None:
+    cfg = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    cfg["status_words"] = ["concept", "actief", "vraag"]
+    cfg["status_roles"] = {"active": "actief", "draft": "concept", "question": "vraag"}
+    cfg["sections"], cfg["content_sections"] = {}, []
+    (tmp_path / "wiki.config.json").write_text(json.dumps(cfg), encoding="utf-8")
+    (tmp_path / "wiki").mkdir()
+    wiki.append_log(wiki.load_config(tmp_path / "wiki.config.json"), "lint", "first")
+    assert "status: actief" in (tmp_path / "wiki" / "log.md").read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("patch", [
+    {"log": "log.md"}, {"index_marker": ""}, {"index_marker": 5}, {"log": {"marker": ""}},
+    {"sections": {"a": {"readme": 5}}}, {"sections": {"a": {"kinds": {"x": 1}}}}, {"wiki_dir": 3},
+    {"sections": {"a": {"labels": []}}}, {"sections": {"a": {"lint": "no"}}},
+])
+def test_config_mistakes_exit_2_without_a_traceback(tmp_path: Path, capsys, patch: dict) -> None:
+    (tmp_path / "wiki").mkdir()
+    (tmp_path / "wiki.config.json").write_text(json.dumps(patch), encoding="utf-8")
+    for cmd in (["lint"], ["reindex"], ["stats"]):
+        assert wiki.main(["--config", str(tmp_path / "wiki.config.json"), *cmd]) == 2
+    assert "wiki:" in capsys.readouterr().err
+
+
+def test_references_index_skips_folders_without_pages(vault: Path) -> None:
+    write(vault, "40-references/index.md", index_head("References", "40-references") + "<!-- AUTO-INDEX -->\n")
+    write(vault, "40-references/attachments/shot.png", "png")
+    write(vault, "40-references/manual/index.md", page("Manual", category="40-references", extra="sources: [x]\n"))
+    wiki.reindex(cfg_for(vault))
+    text = (vault / "40-references/index.md").read_text(encoding="utf-8")
+    assert "attachments" not in text and "[[40-references/manual/index|manual]]" in text
+
+
+def test_section_index_page_uses_the_top_level_status_words(vault: Path) -> None:
+    cfg = json.loads((vault.parent / "wiki.config.json").read_text(encoding="utf-8"))
+    cfg["sections"]["25-ideas"] = {"index": "folders", "page": "idea.md",
+                                   "status_words": ["new", "worked-out", "done"]}
+    (vault.parent / "wiki.config.json").write_text(json.dumps(cfg), encoding="utf-8")
+    write(vault, "25-ideas/index.md", index_head("Ideas", "25-ideas") + "<!-- AUTO-INDEX -->\n")
+    write(vault, "25-ideas/one/idea.md", page("One", category="25-ideas", status="new"))
+    write(vault, "25-ideas/one/index.md", page("Nested index", category="25-ideas", status="active"))
+    res = wiki.lint(cfg_for(vault), all_pages=True)
+    assert res.counts["unknown-status"] == 1, res.errors  # only the nested page, not the section's own index
+    assert "25-ideas/one/index.md" in res.errors[0]
+
+
+def test_stats_counts_active_and_draft_only(vault: Path) -> None:
+    write(vault, "20-knowledge/q.md", page("Q", category="20-knowledge", status="question", extra="kind: tool\n"))
+    assert wiki.stats(cfg_for(vault))["active"] == 2
+
+
+def test_the_ingest_log_of_a_sourced_section_needs_no_sources(vault: Path) -> None:
+    cfg = json.loads((vault.parent / "wiki.config.json").read_text(encoding="utf-8"))
+    cfg["unsourced_authors"] = ["claude"]
+    cfg["sections"]["40-references"] = {**cfg["sections"].get("40-references", {}), "sourced": True}
+    (vault.parent / "wiki.config.json").write_text(json.dumps(cfg), encoding="utf-8")
+    write(vault, "40-references/index.md", index_head("References", "40-references") + "<!-- AUTO-INDEX -->\n")
+    write(vault, "40-references/log.md", page("Ingest log", category="40-references"))
+    write(vault, "40-references/claim.md", page("A claim", category="40-references"))
+    res = wiki.lint(cfg_for(vault), all_pages=True)
+    flagged = [w for w in res.warnings if "without sources" in w and "40-references/" in w]
+    assert len(flagged) == 1 and "40-references/claim.md" in flagged[0], res.warnings
+
+
+def test_a_section_index_may_carry_a_section_word_or_a_top_level_word(vault: Path) -> None:
+    """A workspace built before the index rule gave the ideas index one of the section's words."""
+    cfg = json.loads((vault.parent / "wiki.config.json").read_text(encoding="utf-8"))
+    cfg["sections"]["25-ideas"] = {"index": "folders", "page": "idea.md", "status_words": ["new", "worked-out", "done"]}
+    (vault.parent / "wiki.config.json").write_text(json.dumps(cfg), encoding="utf-8")
+    for word in ("done", "active"):
+        write(vault, "25-ideas/index.md", page("Ideas", category="25-ideas", status=word, body="<!-- AUTO-INDEX -->"))
+        res = wiki.lint(cfg_for(vault), all_pages=True)
+        assert res.counts["unknown-status"] == 0, res.errors
+
+
+def test_an_unknown_status_names_the_words_that_are_allowed(vault: Path) -> None:
+    write(vault, "20-knowledge/odd.md", page("Odd", category="20-knowledge", status="in-progress", extra="kind: tool\n"))
+    res = wiki.lint(cfg_for(vault), all_pages=True)
+    line = next(e for e in res.errors if "20-knowledge/odd.md" in e)
+    assert "allowed here:" in line and "active" in line

@@ -28,8 +28,8 @@ only when they ask, or when they have to choose about it.
 ## What is never touched
 
 `CLAUDE.md`, `CLAUDE.local.md`, the wiki's own pages, `.claude/sensitive-terms.txt`,
-`.claude/lessons.json`, `docs/`, `_setup/` and every skill, agent or rule the user made
-themselves. They are not part of NEST's kit and the script does not know them. If a release
+`.claude/lessons.json`, `docs/` (except the generated skills list, `docs/skills.md`), `_setup/`
+and every skill, agent or rule the user made themselves. They are not part of NEST's kit and the script does not know them. If a release
 note says one of them could use a change, tell the user and let them decide; never edit it as
 part of an update.
 
@@ -43,8 +43,15 @@ uv run --script scripts/nest_update.py plan --json
   `uv run --script scripts/nest_update.py stamp` once (it reads the kit copy in `_setup/nest/`;
   without that copy, add `--version` with the `nest_version` from `_setup/STATE.md`), tell the
   user in one line that you recorded what the workspace was built from, then run the plan again.
-- **It cannot reach the source, or finds no release there**: say so in one line (no internet,
-  the address changed, or nothing was released yet) and stop. Nothing was changed.
+- **"nest.json is not valid JSON"**: the settings file has a typing mistake, and the message
+  names the line. Do not run `stamp` to get past it: that is for a missing stamp, not a broken
+  file. Show the user the spot, offer to repair exactly that (a comma, a quote, a bracket),
+  and after their yes fix only that and run the plan again.
+- **It cannot reach the source, or finds no release there**: say so in one line, with the
+  reason the script gives (no answer in time, git is not installed, the address changed, or
+  nothing was released yet) and stop. Nothing was changed.
+- **`ahead` is true**: the workspace was built from a NEST version that is not released yet.
+  Say so in one line and stop; there is nothing to bring over.
 - **`up_to_date` is true**: one line, "You are on NEST <version>, the newest release. Nothing
   to do.", and stop.
 - With the argument `check`: report as below, change nothing, stop after step 2.
@@ -53,11 +60,12 @@ uv run --script scripts/nest_update.py plan --json
 ## 2. Tell the user what is new
 
 Build one short overview from the plan. `notes` holds the release notes: use `in_short` and
-`for_your_workspace`, they are written for users. `items` holds the files; group them by
-`group` so the user chooses about parts, never about single files.
+`for_your_workspace`, they are written for users. Leave out the lines about parts this
+workspace does not have (a team, mail, a backup they never set up). `items` holds the files;
+group them by `group` so the user chooses about parts, never about single files.
 
 ```
-NEST 1.2.0 is out. You are on 1.0.0.
+NEST 1.2.0 is out. You are on 1.1.0.
 
 What is new for you
 1. The wiki check catches empty links. (improvement to something you have, safe)
@@ -78,6 +86,7 @@ How each `status` reads to the user:
 | `new` with `exists: true` | NEST now has a part with the same name as something that is already here, which may be your own | compare both, change theirs only after a yes (step 4) |
 | `removed` | NEST dropped this | ask: keep it, or take it out (its last version is kept) |
 | `wiki` | a wiki template or style changed in NEST | compare with theirs, propose only what fits their wiki |
+| `reference` | an example NEST ships changed, and something of yours was once made from it (your wiki settings, your word lists, your permission rules) | compare with theirs, propose only what they need |
 | `missing` | changed in NEST, but you removed it | mention once; bring it back only when they ask |
 
 Leave `unchanged`, `declined` and `gone` out. The plan only lists parts this workspace has, plus
@@ -88,7 +97,9 @@ so the workspace moves to the new version.
 
 If `scripts/nest_update.py` itself or this skill is in the list: say you bring those over first
 ("the updater updates itself first"), do it after their yes (step 3 for the script, step 4 for
-the skill), then run the plan again and continue with the fresh one.
+the skill), then run the plan again and continue with the fresh one. The newer updater can
+see changes the old one could not: when the fresh plan holds parts your first overview did not
+show, show the overview again before anything else changes.
 
 Wait for the answer. "Later" for an item leaves it open; "no" for an item means decline it
 (step 5). Never start changing files before the user chose.
@@ -155,8 +166,19 @@ history folder. Never delete a file yourself.
 For `wiki`: read the diff, compare with the user's version of that template or style, and
 propose the change in their wiki's terms. Their wiki is translated and restructured, so most
 changes need a rewrite, and some do not apply at all. Back up the wiki file before you change
-it. When it is handled, or does not apply: `uv run --script scripts/nest_update.py done <kit path>`.
-For `missing`: `done <kit path>` when they do not want it back.
+it. When the change is to Meta Bind's excluded folders, use the user's own folder names and
+every raw folder their `wiki.config.json` names (`raw_folders` and `raw_subdirs`, also the ones
+inside a project or a course). When it is handled, or does not apply:
+`uv run --script scripts/nest_update.py done <kit path>`.
+For `reference`: read the diff and the user's own file that was made from that example
+(`wiki.config.json` for `wiki.config.example.json` and `WIKI-CONFIG.md`,
+`.claude/sensitive-terms.txt` and the style word list for their examples, the permission rules
+in `.claude/settings.json` for `permissions.example.json`, the workspace README for the README
+template). Say in one line what NEST changed and whether theirs needs it; change their file only
+after a yes, with a `backup` first. Then `done <kit path>`.
+For `missing`: `done <kit path>` when they do not want it back. When they do: `apply <path>`
+brings back a script or the pre-commit hook as it is in the new release; a skill, agent or rule
+is written again for them (`backup <path>`, write, `mark <path>=<kit path>`).
 
 ## 5. Close
 
@@ -185,20 +207,42 @@ Updated: the wiki check, the inbox skill (your wording kept).
 Added: the study skill.
 Skipped: the old_tool cleanup (I will not ask again).
 The old versions are in .claude/.history/nest-update-20260108-1430/. "/nest-update undo" puts them back.
-Restart Claude Code to load the changed skills and hooks.
 ```
 
-5. Offer a commit of the update on its own, with a message like `Update: NEST 1.2.0`. Commit
-   only after a yes.
+5. Offer a commit of the update on its own, with a message like `Update: NEST 1.2.0`: only the
+   files the update touched, never the user's own notes that happen to be uncommitted. Commit
+   only after a yes, and settle it in this session.
+6. Last of all, when the commit question is answered: ask the user to restart Claude Code, so
+   the changed skills and hooks load.
 
 ## Undo
 
-`uv run --script scripts/nest_update.py restore` puts back the files the last update changed,
-moves the files it added into that update's history folder, and restores the stamp. A file the
-user changed after the update finished is left alone, and the script names it; `restore --force`
-puts those back too, after keeping today's version in the history folder. Ask before running
-either, say what will be put back, pass on what was left alone, and run the checks of step 5.2
-after.
+Undo means the last update, never an earlier one. An update that was done in parts (some
+things first, the rest a little later) counts as one: the dry run says "in N parts" and lists
+every part, and all of them are put back.
+
+1. `uv run --script scripts/nest_update.py restore --dry-run` says which update it is (when it
+   ran, which release the workspace was on before) and which files would be put back, taken
+   away or left alone. It changes nothing. Tell the user that in plain words and ask.
+2. After their yes: `uv run --script scripts/nest_update.py restore`. It puts back the files
+   that update changed, moves the files it added into that update's history folder, and
+   restores the stamp, including what was declined.
+3. A file the user changed after the update finished is left alone, and the script names it.
+   Pass that on. Only when they want those back too: `restore --force`, which puts back
+   exactly those files and keeps today's versions in the history folder first.
+4. After an undo this session still has the newer hooks loaded while the scripts are the older
+   ones again, so a hook can report an error until Claude Code is restarted. Say that before
+   it happens, and ask for a restart at the end.
+5. "Could not put back" means a file was open in another program or not writable. Everything
+   else was put back. Ask the user to close that program, then run `restore` again.
+6. Check that nothing broke: `uv run --script scripts/validate.py --self-test` and
+   `uv run --script scripts/skills_catalog.py --check`. When the catalogue is stale, regenerate
+   it with `uv run scripts/skills_catalog.py`. Do not run `backup` here: that would start a new
+   update.
+
+When the last update was already put back, the script says so and stops. Going further back is
+a separate decision: `restore --list` shows the updates in the history; put an older one back
+only when the user asks for that one, with `restore --run <name>`, after a dry run of it.
 
 ## Rules
 

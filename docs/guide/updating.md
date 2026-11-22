@@ -12,7 +12,7 @@ they reach you, and why they cannot break what you made.
 When a newer release is out, the first line of a session says so:
 
 ```
-Workspace: wiki inbox 3 notes, NEST 1.1.0 is available (this workspace is on 1.0.0)
+Workspace: wiki inbox 3 notes, NEST 1.2.0 is available (this workspace is on 1.1.0)
 ```
 
 Your workspace looks online at most once a week. Nothing is ever installed on its own.
@@ -37,6 +37,9 @@ Type `/nest-update`, or just ask "is there a NEST update?".
 | New | Offered. A new skill is written for you the way the setup would |
 | Something with the same name as a file of your own | Yours stays. You are asked what you want |
 | Dropped by NEST | You choose: keep it, or take it out (the last version is kept) |
+| An example that something of yours was made from, such as your wiki settings | You hear what changed in the example and whether yours needs it |
+| A wiki template or style | You hear what changed and get a proposal that fits your wiki; your pages are not touched |
+| Something you removed | Mentioned once; it only comes back when you ask |
 
 4. **Checks run**, and you get a short report with what was updated, added and skipped.
 
@@ -54,7 +57,8 @@ flowchart LR
 ## What is never touched
 
 Your `CLAUDE.md` and `CLAUDE.local.md`, the pages of your wiki, your list of sensitive terms,
-your lessons, your `docs/`, and every skill, agent or rule you made yourself. They are not part
+your lessons, your `docs/` (only the generated list of skills in it is refreshed), and every
+skill, agent or rule you made yourself. They are not part
 of NEST's kit, so an update does not know them.
 
 ## Undo
@@ -65,8 +69,13 @@ Every file is backed up before it changes, in `.claude/.history/` inside your wo
 /nest-update undo
 ```
 
-puts back what the last update changed and takes away what it added. A file you changed
-yourself after the update is left alone, and you are told which one.
+puts back what the last update changed and takes away what it added. You are told first which
+update it is and which files it concerns, and you say yes before anything moves. A file you
+changed yourself after the update is left alone, and you are told which one.
+
+Undo always means the last update, also when you brought it over in parts (some things first,
+the rest a little later): all parts go back together. Asking twice does not reach further back: an earlier update
+is only put back when you ask for that one by name.
 
 ## Turning the reminder off
 

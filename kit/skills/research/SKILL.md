@@ -36,7 +36,7 @@ Answer in the user's language and write the saved page in it; follow `.claude/ru
    vulnerability or a question about the user's own setup, add the verdict from `stack.md` (see
    Own setup). Close with a one-line gist and the offer: "Dig into one, or save it?"
 3. **Deep dive, only on request** ("dig deeper into 3", "the second one", "more on the price").
-   Run the `researcher` agent (`subagent_type: researcher`, in the foreground) with: today's
+   Run the `researcher` agent (`subagent_type: researcher`) and wait for its report, with: today's
    date, the question, the finding's text, the URLs already used, what the user wants to know,
    and the relevant `stack.md` lines when their setup matters. Show its report with its source
    list (its [n] point at that list), then a two-line gist and the offer to save it.
@@ -75,6 +75,7 @@ empty. A page that does not load is not a source: open another one. Mark a too-o
 
 ## Jobs
 
+<!-- customise: keep this section and profile.md only when the user looks for work or wants vacancies followed; otherwise remove the section and do not install profile.md -->
 - Read `profile.md` in this folder once: what the user looks for and what they bring.
 - Search with the month and year in the words, then open the posting itself, on the employer's
   own site when possible. A job board's copy is `single`.
@@ -87,6 +88,7 @@ empty. A page that does not load is not a source: open another one. Mark a too-o
 
 ## Own setup
 
+<!-- customise: keep this section and stack.md only when the user wants news checked against their own devices and software; otherwise remove the section and do not install stack.md -->
 Only for vulnerabilities or questions about the user's own things: read `stack.md` in this
 folder once. Verdict per item: `affected` only when product and version range both match;
 `check` when the version is close, unknown, or the inventory may be out of date; `not affected`

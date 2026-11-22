@@ -47,9 +47,18 @@ plugins have similar names.
 - **Templater, folders:** templates folder `_templates`, user scripts folder `_templates/_scripts`
   (for `tp.user.slug`). Without the scripts folder every template fails on its first line.
 - **Meta Bind, "Enable JavaScript": off** (`enableJs: false`). Pages the assistant writes can contain
-  outside text (ingested documentation, answers from the web); with JavaScript on, a code block in such
-  a page could run in Obsidian. The buttons need no JavaScript: their actions are "Templater create
-  note" and "Open".
+  outside text (ingested documentation, answers from the web); with JavaScript on, a JavaScript
+  button or view field in such a page could run in Obsidian. The buttons on Home need no JavaScript:
+  their actions are "Templater create note" and "Open".
+- **Meta Bind, excluded folders: the template folder and every folder that holds raw outside text**
+  (`excludedFolders`: `_templates`, `_inbox`, `40-references/sources`, `90-archives`). The JavaScript
+  switch does not cover everything: a Meta Bind button can also run a Templater file or an Obsidian
+  command, and a button is plain text in a code block, so a page copied from the web can carry one.
+  In an excluded folder Meta Bind renders nothing, so such a button stays text. Two limits to know:
+  the setting matches a folder path from the vault root, so a raw folder deeper in the vault (a
+  project's own inbox) needs its own line; and it protects folders, not pages, which is why the
+  ingest and inbox skills also make `meta-bind` code blocks and Templater tags inert in outside
+  text they copy into a wiki page. Do not click a button you did not put there yourself.
 - **Core Templates plugin: off** (`core-plugins.json`). It would compete with Templater for the
   `_templates` folder.
 
@@ -58,7 +67,7 @@ plugins have similar names.
 - Home opens as the start page and shows tiles, panels and (when configured) the KPI row.
 - A tile creates a note in the right folder with a kebab-case name.
 - The sidebar shows an icon and colour per section, and hides `_bases` and `_templates`.
-- Settings → Appearance → CSS snippets shows `base` and `idea-note` switched on.
+- Settings → Appearance → CSS snippets shows `base` switched on, and `idea-note` when you have The Council or The Architects with the styled look.
 
 ## Left out on purpose
 

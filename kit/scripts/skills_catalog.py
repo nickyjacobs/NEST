@@ -10,7 +10,12 @@ Usage:
                                <!-- /AUTO-CATALOG --> in docs/skills.md (created when missing)
   skills_catalog.py --check    check every skill and agent file, and that the catalogue is
                                current; exit 1 with one line per problem
+  skills_catalog.py --check --installed
+                               the same, for a workspace the setup has finished: also fail on a
+                               marker the setup should have resolved (`customise:`, `<fill in:`)
+                               in any file of a skill folder or in an agent file
   skills_catalog.py --root P   work on another workspace than $CLAUDE_PROJECT_DIR / the cwd
+Exit codes: 0 fine, 1 problems found, 2 the root folder does not exist.
 
 Sources: .claude/skills/<name>/SKILL.md and .claude/agents/<name>.md. The catalogue shows name,
 description, metadata.does (one sentence; falls back to the description's first sentence) and
@@ -27,7 +32,7 @@ The checks:
   - metadata is a map; metadata.try, when present, a non-empty list
   - no em dash anywhere in the file (the writing rules want a comma, a colon or two sentences)
 A skill folder with a NOTICE.md was taken over from someone else as is: only its description is
-checked, its frontmatter stays theirs.
+checked, its frontmatter stays theirs, and its text is not searched for markers.
 """
 
 from __future__ import annotations
@@ -145,9 +150,14 @@ def common_checks(fm: dict, text: str, allowed: set[str]) -> list[str]:
 
 
 def first_sentence(text: str) -> str:
+    """Up to the first full stop that ends a sentence: the next word does not start in lower case,
+    so "e.g. this" and "v1.2" do not cut it short."""
     text = " ".join(str(text).split())
-    m = re.match(r"(.+?[.!?])(?:\s|$)", text)
-    return (m.group(1) if m else text).rstrip(".")
+    for m in re.finditer(r"[.!?](?:\s+|$)", text):
+        nxt = text[m.end():m.end() + 1]
+        if not nxt or not nxt.islower():
+            return text[:m.start() + 1].rstrip(".")
+    return text.rstrip(".")
 
 
 def cell(text: object) -> str:
@@ -213,7 +223,33 @@ def write(root: Path) -> str:
     return f"catalog: {CATALOG.as_posix()} updated"
 
 
-def check(root: Path) -> list[str]:
+MARKERS = ("customise:", "<fill in:")
+TEXT_SUFFIXES = {".md", ".txt", ".json", ".yaml", ".yml", ".py", ".sh", ".js", ".toml"}
+
+
+def leftover_markers(root: Path) -> list[str]:
+    """Markers the setup resolves while it installs a skill or an agent, still present in a
+    workspace. Reference files (the kit) carry them on purpose, so this runs only on request."""
+    files: list[Path] = []
+    for skill_file in sorted((root / SKILLS_DIR).glob("*/SKILL.md")):
+        if not is_external(skill_file):
+            files += sorted(p for p in skill_file.parent.rglob("*") if p.is_file() and p.suffix in TEXT_SUFFIXES)
+    files += sorted((root / AGENTS_DIR).glob("*.md"))
+    problems = []
+    for path in files:
+        try:
+            lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        except OSError:
+            continue
+        for n, line in enumerate(lines, 1):
+            for marker in MARKERS:
+                if marker in line:
+                    problems.append(f"{path.relative_to(root).as_posix()}:{n}: leftover marker '{marker}'; "
+                                    "resolve it and remove the marker")
+    return problems
+
+
+def check(root: Path, installed: bool = False) -> list[str]:
     problems = []
     for path in sorted((root / SKILLS_DIR).glob("*/SKILL.md")):
         problems += [f"{path.relative_to(root).as_posix()}: {p}" for p in check_skill(path)]
@@ -226,6 +262,8 @@ def check(root: Path) -> list[str]:
             problems.append(f"{CATALOG.as_posix()}: no {BEGIN} markers")
         elif block != render(root):
             problems.append(f"{CATALOG.as_posix()}: stale, run scripts/skills_catalog.py")
+    if installed:
+        problems += leftover_markers(root)
     return problems
 
 
@@ -234,11 +272,16 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser(description="Generate and check the skills catalogue.")
     ap.add_argument("--check", action="store_true", help="Check the frontmatter and that the catalogue is current")
+    ap.add_argument("--installed", action="store_true",
+                    help="With --check, in a built workspace: also fail on a leftover customise: or <fill in: marker")
     ap.add_argument("--root", help="Workspace root (default: $CLAUDE_PROJECT_DIR or the current directory)")
     args = ap.parse_args(argv)
     root = Path(args.root or os.environ.get("CLAUDE_PROJECT_DIR") or Path.cwd())
-    if args.check:
-        problems = check(root)
+    if not root.is_dir():
+        print(f"skills: no such folder: {root}", file=sys.stderr)
+        return 2
+    if args.check or args.installed:
+        problems = check(root, args.installed)
         for p in problems:
             print(p)
         print("skills: ok" if not problems else f"skills: {len(problems)} problem{'s' if len(problems) != 1 else ''}")

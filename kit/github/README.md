@@ -1,6 +1,7 @@
 # kit/github/
 
-Reference files for build step B5 and the `.gitignore` in B1. Used only when the user wants them.
+Reference files for build step B5 and for B1. The ignore file is always used; the pre-commit
+hook, the README and the workflows only when the user wants them.
 
 | File | Becomes | Notes |
 |---|---|---|

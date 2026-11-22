@@ -223,7 +223,10 @@ def test_init_counts_a_single_file(ws, gd, remote, capsys):
 def test_init_twice_keeps_one_exclude_block_and_updates_the_remote(backup, remote, tmp_path, capsys):
     capsys.readouterr()
     moved = tmp_path / "moved.git"
-    assert wb.main(["init", str(moved), "--yes"]) == 0
+    assert wb.main(["init", str(moved), "--yes"]) == 1  # never repoints an existing backup by itself
+    assert "--set-remote" in capsys.readouterr().err
+    assert git(f"--git-dir={backup.git_dir}", "remote", "get-url", "origin") == str(remote)
+    assert wb.main(["init", str(moved), "--yes", "--set-remote"]) == 0
     out = capsys.readouterr().out
     assert "already exists" in out and "already has commits" in out
     exclude = (backup.git_dir / "info" / "exclude").read_text(encoding="utf-8")
@@ -386,9 +389,8 @@ def test_push_without_identity(ws, gd, remote, capsys):
 
 
 def test_push_reports_a_git_failure(backup, capsys):
-    (backup.wiki / "notes/a.md").unlink()
-    (backup.wiki / "notes").rmdir()
-    backup.wiki.rmdir()
+    write(backup.wiki / "notes/b.md")
+    (backup.git_dir / "index.lock").write_text("", encoding="utf-8")  # another git process, or a stopped one
     assert wb.main(["push"]) == 1
     assert "git add" in capsys.readouterr().err
 
@@ -477,3 +479,140 @@ def test_cli_runs_as_a_script(ws, gd, remote, tmp_path):
     status = run("status")
     assert status.returncode == 0 and "0 commits not pushed" in status.stdout
     assert run().returncode == 2
+
+
+# --- real vaults: another wiki's git directory, nested repositories, an emptied folder, secrets ----
+
+SECRET = "gh" + "p_" + "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8"  # assembled, so this file never holds it
+
+
+def test_init_refuses_the_git_dir_of_another_wiki(backup, remote, tmp_path, monkeypatch, capsys):
+    """Two workspaces whose folders share a name share the default git directory name."""
+    other = tmp_path / "elsewhere" / "ws"
+    write(other / "wiki" / "theirs.md")
+    (other / "nest.json").write_text(json.dumps({"wiki_backup": {"git_dir": str(backup.git_dir)}}), encoding="utf-8")
+    monkeypatch.setenv("CLAUDE_PROJECT_DIR", str(other))
+    monkeypatch.chdir(other)
+    second = tmp_path / "second.git"
+    git("init", "-q", "--bare", "-b", "main", str(second))
+    capsys.readouterr()
+    assert wb.main(["init", str(second), "--yes"]) == 1
+    err = capsys.readouterr().err
+    assert "belongs to another wiki" in err and "--git-dir" in err
+    assert wb.main(["push"]) == 1
+    assert "belongs to another wiki" in capsys.readouterr().err
+    assert wb.main(["status"]) == 1
+    assert git(f"--git-dir={backup.git_dir}", "remote", "get-url", "origin") == str(remote)
+    assert remote_files(remote) == ["notes/a.md"]
+    assert git(f"--git-dir={second}", "for-each-ref") == ""
+
+
+def test_init_rebind_takes_over_after_the_wiki_moved(backup, remote, tmp_path, monkeypatch, capsys):
+    new_root = tmp_path / "renamed"
+    monkeypatch.chdir(tmp_path)  # Windows cannot rename the folder a process stands in
+    backup.wiki.parent.rename(new_root)
+    monkeypatch.setenv("CLAUDE_PROJECT_DIR", str(new_root))
+    monkeypatch.chdir(new_root)
+    assert wb.main(["push"]) == 1
+    assert "--rebind" in capsys.readouterr().err
+    assert wb.main(["init", str(remote), "--rebind"]) == 0
+    write(new_root / "wiki/notes/b.md")
+    assert wb.main(["push"]) == 0
+    assert sorted(remote_files(remote)) == ["notes/a.md", "notes/b.md"]
+
+
+def test_backup_without_a_recorded_work_tree_is_adopted(backup, remote):
+    git(f"--git-dir={backup.git_dir}", "config", "--unset", "core.worktree")
+    write(backup.wiki / "notes/b.md")
+    assert wb.main(["push"]) == 0
+    assert Path(git(f"--git-dir={backup.git_dir}", "config", "core.worktree")).resolve() == backup.wiki.resolve()
+
+
+def test_nested_repository_is_named_because_its_files_are_not_backed_up(backup, remote, capsys):
+    inner = backup.wiki / "projects" / "cloned"
+    write(inner / "notes.md")
+    git("init", "-q", "-b", "main", cwd=inner)
+    capsys.readouterr()
+    assert wb.main(["push"]) == 0  # a repository without a commit would make a plain `git add -A` fail
+    captured = capsys.readouterr()
+    assert "projects/cloned" in captured.err and "not in the backup" in captured.err
+    assert remote_files(remote) == ["notes/a.md"]  # left out, not stored as a pointer nobody can restore
+    assert wb.main(["status"]) == 0
+    assert "projects/cloned" in capsys.readouterr().out
+
+
+def test_push_refuses_an_emptied_wiki(backup, remote, capsys):
+    (backup.wiki / "notes/a.md").unlink()
+    (backup.wiki / "notes").rmdir()
+    head = remote_head(remote)
+    capsys.readouterr()
+    assert wb.main(["push"]) == 1
+    assert "--allow-empty" in capsys.readouterr().err
+    assert remote_head(remote) == head
+    assert git(f"--git-dir={backup.git_dir}", f"--work-tree={backup.wiki}", "diff", "--cached", "--name-only") == ""
+    assert wb.main(["push", "--allow-empty"]) == 0
+    assert remote_files(remote) == []
+
+
+def test_push_and_status_without_the_wiki_folder(backup, tmp_path, capsys):
+    backup.wiki.rename(tmp_path / "gone")
+    capsys.readouterr()
+    assert wb.main(["status"]) == 1
+    assert "No wiki folder" in capsys.readouterr().err
+    assert wb.main(["push"]) == 1
+    assert "No wiki folder" in capsys.readouterr().err
+
+
+def test_wiki_config_with_a_bom_and_a_home_path(ws, tmp_path, monkeypatch):
+    (ws / "wiki.config.json").write_bytes(b"\xef\xbb\xbf" + json.dumps({"wiki_dir": "vault"}).encode())
+    assert wb.Backup.from_config(ws, None, None).wiki == ws / "vault"
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path / "home"))
+    (ws / "wiki.config.json").write_text(json.dumps({"wiki_dir": "~/vault"}), encoding="utf-8")
+    assert wb.Backup.from_config(ws, None, None).wiki == tmp_path / "home" / "vault"
+
+
+def test_workspace_root_is_found_from_a_subfolder(ws, gd, monkeypatch):
+    monkeypatch.delenv("CLAUDE_PROJECT_DIR")
+    monkeypatch.chdir(ws / "wiki")
+    assert wb.workspace_root().resolve() == ws.resolve()
+    assert wb.Backup.from_config(wb.workspace_root(), None, None).git_dir == gd
+
+
+def test_git_never_waits_for_a_password(monkeypatch):
+    monkeypatch.delenv("GIT_TERMINAL_PROMPT")
+    assert wb.git_env()["GIT_TERMINAL_PROMPT"] == "0"
+
+
+def test_push_failure_text_only_blames_another_device_on_a_rejection():
+    assert "another device" in wb.push_failure("! [rejected] main -> main (fetch first)")
+    other = wb.push_failure("remote: error: File big.bin is 120 MB; this exceeds the file size limit")
+    assert "another device" not in other and "120 MB" in other
+    assert "nothing was forced" in other
+
+
+def test_secret_scan_stops_the_commit(backup, remote, capsys):
+    write(backup.wiki / "notes/token.md", f"token: {SECRET}\n")
+    head = remote_head(remote)
+    capsys.readouterr()
+    assert wb.main(["push"]) == 1
+    err = capsys.readouterr().err
+    assert "notes/token.md" in err and "--no-scan" in err and SECRET not in err
+    assert remote_head(remote) == head
+    assert git(f"--git-dir={backup.git_dir}", "rev-parse", "HEAD") == head
+    assert wb.main(["push", "--no-scan"]) == 0
+    assert "notes/token.md" in remote_files(remote)
+
+
+def test_secret_scan_checks_the_first_commit_too(ws, gd, remote, capsys):
+    write(ws / "wiki/token.md", f"token: {SECRET}\n")
+    prepare(gd, ws / "wiki")
+    assert wb.main(["init", str(remote), "--yes"]) == 1
+    assert "--no-scan" in capsys.readouterr().err
+    assert git(f"--git-dir={remote}", "for-each-ref") == ""
+
+
+def test_no_validate_script_means_no_scan(backup, remote, monkeypatch):
+    monkeypatch.setattr(wb, "find_scanner", lambda root: None)
+    write(backup.wiki / "notes/token.md", f"token: {SECRET}\n")
+    assert wb.main(["push"]) == 0

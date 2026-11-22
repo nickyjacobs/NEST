@@ -2,7 +2,8 @@
 
 # Backlog
 
-Things NEST does not do yet, with why they wait.
+Things NEST does not do yet, with why they wait. This is the technical list; what is planned
+for users is in the [roadmap](../../ROADMAP.md).
 
 ## Guards
 
@@ -19,8 +20,34 @@ Things NEST does not do yet, with why they wait.
   the updater reports a changed wiki template or style and leaves the comparison to the
   nest-update skill. A mapping the setup records per template would make those merges exact.
 
-- **Not tried on Windows:** the update check gives git two seconds at session start. On Windows a
-  killed `git.exe` can leave a helper process holding the pipe, which could stretch that wait.
+- **Not tried on Windows by a person:** the update check stops git and its helper processes as
+  a group when the time is up, and a test on Windows covers that. A slow real connection on a
+  Windows machine has not been watched.
+- **Undo after carrying on:** when an undo fails in an older part of an update and the user
+  starts a new update without running `restore` again, that older part is only reachable by
+  name (`restore --run`). `restore --list` does not show which parts belong together.
+- **Undo of an update nobody closed:** an update that was started and left without `finish`
+  counts as the update's own work when it is put back, also for edits made days later. Those
+  edits are kept in the history folder, not in place.
+
+## Secret scan
+
+- **What it does not see:** a password without a digit, with spaces or shorter than ten
+  characters, and a secret written in a sentence. `SECURITY.md` lists the limits.
+- **After a shell command** the scan reads files changed in the last two minutes, within a
+  budget; a commit on another branch and a stash are not followed.
+
+## Idea pages
+
+- With only one of the two teams installed, an idea page still shows the empty section and
+  the counter of the other (a "Blueprint" section in a workspace with only The Council).
+
+## Language
+
+- **Two things stay English in a workspace in another language:** the session-start line
+  ("Workspace: wiki inbox 3 notes, ...") and the headings of the generated skills list in
+  `docs/skills.md`. Both need labels in `nest.json` that the scripts read. The idea pages
+  already have them (`idea_page.labels`), and the setup now fills those in.
 
 ## Skills
 
@@ -30,10 +57,12 @@ Things NEST does not do yet, with why they wait.
 
 ## Tests
 
-- No real setup run on Windows or Linux yet; CI runs the script tests and the pre-commit hook on
-  all three.
+- A complete setup run has been done on macOS and on Linux (Debian), each with a fictional
+  user. Not yet on Windows; CI runs the script tests and the pre-commit hook on all three.
 - Not covered by the trial runs: installing the Obsidian plugins and how Home renders (needs a
   person), a real mail or calendar connection, and a pushed GitHub setup (B5).
+- The PowerShell rules of the read-only guard and the Windows code paths of the session guards
+  are tested by simulation, not on a Windows machine.
 - The session guard, the lesson hook, the plan hook and the blind seat guard are tested as
   scripts; nobody has watched them through a real compaction, a real second session or a real
   Council run yet.

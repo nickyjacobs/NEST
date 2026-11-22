@@ -5,6 +5,10 @@
     "ask": [],
     "deny": []
   },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "claudeMdExcludes": [],
   "hooks": {
     "PreToolUse": [
@@ -52,6 +56,17 @@
         ]
       },
       {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv",
+            "args": ["run", "--quiet", "--script", "${CLAUDE_PROJECT_DIR}/scripts/validate.py", "--hook", "shell"],
+            "timeout": 30
+          }
+        ]
+      },
+      {
         "matcher": "ExitPlanMode",
         "hooks": [
           {
@@ -59,6 +74,19 @@
             "command": "uv",
             "args": ["run", "--quiet", "--script", "${CLAUDE_PROJECT_DIR}/scripts/session_guard.py", "--event", "plan"],
             "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv",
+            "args": ["run", "--quiet", "--script", "${CLAUDE_PROJECT_DIR}/scripts/validate.py", "--hook", "shell"],
+            "timeout": 30
           }
         ]
       }

@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/nickyjacobs/NEST/releases/latest"><img src="https://img.shields.io/badge/NEST_v1.0.0-3fb950?logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDMgMjIgOSAxMiAxNSAyIDlaIi8+PHBhdGggZD0iTTIgMTQuNSAxMiAyMC41IDIyIDE0LjUiLz48L3N2Zz4K" alt="NEST v1.0.0"></a>
+  <a href="https://github.com/nickyjacobs/NEST/releases/latest"><img src="https://img.shields.io/badge/NEST_v1.1.0-3fb950?logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDMgMjIgOSAxMiAxNSAyIDlaIi8+PHBhdGggZD0iTTIgMTQuNSAxMiAyMC41IDIyIDE0LjUiLz48L3N2Zz4K" alt="NEST v1.1.0"></a>
   <a href="https://code.claude.com/docs/en/overview"><img src="https://img.shields.io/badge/Claude_Code-D97757?logo=claude&logoColor=white" alt="Claude Code"></a>
   <a href="https://obsidian.md"><img src="https://img.shields.io/badge/Obsidian-7C3AED?logo=obsidian&logoColor=white" alt="Obsidian"></a>
   <img src="https://img.shields.io/badge/macOS-2b2b2b?logo=apple&logoColor=white" alt="macOS">
@@ -25,6 +25,7 @@
   <a href="#your-data">Your data</a> ·
   <a href="#staying-up-to-date">Updates</a> ·
   <a href="#faq">FAQ</a> ·
+  <a href="ROADMAP.md">Roadmap</a> ·
   <a href="docs/README.md">Docs</a>
 </p>
 
@@ -56,8 +57,8 @@ setup remembers where you were and tells you the line that starts the next sessi
 <details>
 <summary>No git yet?</summary>
 
-Download the [ZIP](https://github.com/nickyjacobs/NEST/archive/refs/heads/main.zip), unpack it,
-open a terminal in that folder and run `claude`. The setup helps you install git along the way.
+Open the [latest release](https://github.com/nickyjacobs/NEST/releases/latest), download
+"Source code (zip)" under Assets, unpack it, open a terminal in that folder and run `claude`. The setup helps you install git along the way.
 
 </details>
 
@@ -73,11 +74,12 @@ you use. It builds only what fits, in your own language.
 | 📚 | **A wiki that keeps itself tidy** | An Obsidian vault in your structure. You drop raw notes; the assistant files, links and indexes them |
 | 🧩 | **Skills you choose, one by one** | Routines for your notes, research, studying, writing, mail, calendar and your morning. Take what you need |
 | 🏛️ | **Two agent teams, if you want them** | The Council judges an idea with a jury. The Architects turn a rough idea into a blueprint |
-| 🛡️ | **Guards that always run** | A secret is stopped before it lands in a file, and your own words survive a long conversation |
+| 🛡️ | **Guards that run by themselves** | A secret in a shape the scan knows is stopped before your assistant writes it into a file, or found right after a shell command wrote it, and your own words are kept through a long conversation: the first message and the latest ones go into every summary, all of them into a file. What the guards cover and what they do not: [SECURITY.md](SECURITY.md) |
 | 🔄 | **Updates you control** | When NEST improves, your workspace tells you. You pick what comes in; your own changes stay |
 | 🐙 | **GitHub, if you want it** | A private repo for the workspace and a separate backup for your wiki |
 
-Every part is a separate choice. A part you do not need is never created.
+The assistant, the wiki and the guards are the base. Every skill, the agent teams, the
+integrations and GitHub are separate choices: a part you do not need is never created.
 
 ## How it works
 
@@ -106,8 +108,10 @@ More: [what to expect from the setup](docs/guide/what-to-expect.md).
   machine. NEST has no server and collects nothing.
 - **No passwords.** NEST never asks for one. Mail and calendar sign in through their own login
   flow, and your assistant can draft a reply but never send one.
-- **Private stays private.** Personal context goes in a file git ignores, and a scan runs
-  before every write and every commit.
+- **Private stays private.** Personal context goes in a file git ignores. A scan for secrets
+  runs before and after every file your assistant writes with its edit tools, and after every
+  shell command it runs. With the pre-commit hook installed (the setup offers it), it also runs
+  before every commit in the workspace repository.
 
 Details: [SECURITY.md](SECURITY.md).
 
@@ -144,8 +148,8 @@ access; the free Claude plan does not include it.
 <details>
 <summary><b>Do I need to be technical?</b></summary>
 
-No. The setup asks your level first and explains at that level. You never edit a config file
-by hand.
+No. The setup asks your level first and explains at that level, and gives you the exact command
+whenever something needs installing.
 
 </details>
 
@@ -160,26 +164,17 @@ are written in it.
 <details>
 <summary><b>I already have an Obsidian vault. Can I keep it?</b></summary>
 
-Yes. The setup notes where your notes are and makes bringing them in one of your first tasks.
-Your own notes are never rewritten.
+Yes. NEST builds a new vault inside your workspace and never writes into the one you have.
+The setup notes where your notes are and makes bringing them in one of your first tasks.
 
 </details>
 
 <details>
 <summary><b>Does it work on Windows and Linux?</b></summary>
 
-The scripts are tested on macOS, Windows and Linux on every change. A complete setup by a person
-has so far been done on macOS only, so an issue about what you hit is very welcome.
-
-</details>
-
-<details>
-<summary><b>What is NEST not?</b></summary>
-
-Not a voice assistant or an always-on service: everything runs in your own Claude Code
-sessions. Not a template you copy: the files in `kit/` are reference material the setup adapts
-to your answers. Not a cloud service: nothing leaves your machine unless you push it to your own
-private repo.
+The scripts are tested on macOS, Windows and Linux on every change. A complete setup has been
+run from start to finish on macOS and on Linux, not yet on Windows, so an issue about what you
+hit there is very welcome.
 
 </details>
 
@@ -192,6 +187,16 @@ Delete the workspace folder. Everything NEST built lives inside it.
 
 More questions: [docs/guide/faq.md](docs/guide/faq.md).
 
+## Roadmap
+
+<p align="center">
+  <a href="ROADMAP.md"><img src="assets/roadmap.png" alt="NEST roadmap. Now: your assistant from your phone, a board on your Home page, what your assistant remembers is yours. Next: capture on the go, tried on Windows by a person. Later: upkeep that runs by itself, no plugin homework." width="100%"></a>
+</p>
+
+The next releases work on three things: your assistant from your phone, a board for your
+projects and ideas on your Home page, and a place in your own workspace for what your
+assistant remembers. What comes after that: [ROADMAP.md](ROADMAP.md).
+
 ## Documentation
 
 | Page | What it covers |
@@ -202,13 +207,15 @@ More questions: [docs/guide/faq.md](docs/guide/faq.md).
 | [nest.json](docs/reference/nest-json.md) | Every setting of a workspace |
 | [The kit](kit/README.md) | The reference files the setup adapts |
 | [Changelog](CHANGELOG.md) | Every release, with what it means for your workspace |
+| [Roadmap](ROADMAP.md) | What is coming next |
 | [Contributing](CONTRIBUTING.md) | Branches, commits, pull requests, releases |
 
 ## Feedback
 
 NEST is new. If the setup confused you, asked something odd or broke on your system, please
 [open an issue](https://github.com/nickyjacobs/NEST/issues): that is exactly what makes it
-better. Ideas for skills are welcome too.
+better. Questions, ideas for skills and what you built with it belong in
+[Discussions](https://github.com/nickyjacobs/NEST/discussions).
 
 ## Credits
 

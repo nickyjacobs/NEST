@@ -1,6 +1,7 @@
 # Contributing
 
-Ideas, questions and bug reports are welcome as issues. Pull requests too. Everything in this
+Bug reports are welcome as issues; ideas and questions in
+[Discussions](https://github.com/nickyjacobs/NEST/discussions). Pull requests too. Everything in this
 repo follows one set of templates, so the history reads the same from top to bottom.
 
 **On this page:** [Setup](#setup) · [Branches](#branches) · [Commits and pull request titles](#commits-and-pull-request-titles) · [Pull requests](#pull-requests) · [Merging](#merging) · [Releases](#releases)

@@ -9,7 +9,7 @@ without the key uses the default. Your assistant can change these for you: just 
 
 ```json
 {
-  "nest": {"version": "1.0.0", "update_check": true},
+  "nest": {"version": "1.1.0", "update_check": true},
   "session_guard": {"live_minutes": 30, "keep_days": 14},
   "size_ceiling": {"lines": 400},
   "morning_nudge": {"before": "11:00", "text": "say good morning for your briefing"},
@@ -29,7 +29,7 @@ change only `update_check`. Read by `scripts/nest_update.py`.
 | `source` | the NEST repository | Where releases come from: a git URL or a folder |
 | `update_check` | `true` | `false` silences the session-start line about new releases |
 | `skipped_version` | none | A release you chose to skip; the line stays quiet until the next one |
-| `files` | set by the setup | Per installed file: its kit file, whether it is a `copy` or `adapted`, and the hash of the kit original |
+| `files` | set by the setup | Per installed file: its kit file, whether it is a `copy` or `adapted`, the hash of the kit original, and the release that original came from |
 | `declined` | `{}` | Changes you said no to, so they are not offered again |
 
 ## session_guard
@@ -40,7 +40,7 @@ Read by `scripts/session_guard.py`.
 |---|---|---|
 | `live_minutes` | `30` | How long after its last activity another session still counts as open |
 | `keep_days` | `14` | How long the files with your own messages stay in `.claude/.session/` |
-| `words_chars` | `8000` | How much of your own words is handed to a conversation summary |
+| `words_chars` | `8000` | How much of your own words is handed to a conversation summary: your first message and the newest ones, at most 9500 characters |
 | `plan_author` | `"claude"` | The author value on a plan note in the inbox; `""` leaves the field out |
 
 ## size_ceiling
@@ -83,7 +83,7 @@ Read by `scripts/blind_seat_guard.py`. Only with The Council or The Architects i
 
 ## wiki_backup
 
-Read by `scripts/wiki_backup.py` and the session-start line. Only when your wiki has its own
+Read by `scripts/wiki_backup.py`, the session-start line and the scan after a shell command. Only when your wiki has its own
 backup repository.
 
 | Key | Default | Meaning |

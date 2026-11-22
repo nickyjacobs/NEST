@@ -4,7 +4,7 @@ const subject = await tp.system.prompt("What is being audited?", "", true);
 await tp.file.move("/60-audits/audit-" + tp.date.now("YYYY-MM-DD") + "-" + tp.user.slug(subject));
 -%>
 ---
-title: "Audit <% tp.date.now("YYYY-MM-DD") %>: <% subject.replace(/"/g, "'") %>"
+title: "Audit <% tp.date.now("YYYY-MM-DD") %>: <% subject.replace(/\\/g, "\\\\").replace(/"/g, "'") %>"
 date: <% tp.date.now("YYYY-MM-DD") %>
 scope: <% tp.user.slug(subject) %>
 previous:

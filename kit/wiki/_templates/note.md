@@ -4,7 +4,7 @@ const title = await tp.system.prompt("What is the note about?", "", true);
 await tp.file.move("/_inbox/" + tp.user.slug(title));
 -%>
 ---
-title: "<% title.replace(/"/g, "'") %>"
+title: "<% title.replace(/\\/g, "\\\\").replace(/"/g, "'") %>"
 created: <% tp.date.now("YYYY-MM-DD") %>
 updated: <% tp.date.now("YYYY-MM-DD") %>
 tags: []

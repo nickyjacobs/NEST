@@ -136,3 +136,37 @@ def test_cli_check_exit_codes(ws, capsys):
     skill(ws, "broken", "name: x\n")
     assert sk.main(["--root", str(ws), "--check"]) == 1
     assert "no description" in capsys.readouterr().out
+
+
+# The catalogue line, a root that is not there, and markers the setup left behind
+
+def test_first_sentence_does_not_stop_at_an_abbreviation():
+    assert sk.first_sentence("Does a thing, e.g. this one. Second sentence.") == "Does a thing, e.g. this one"
+    assert sk.first_sentence("Reads v1.2 files. Then more.") == "Reads v1.2 files"
+
+
+def test_a_root_that_does_not_exist_is_a_usage_error(tmp_path, capsys):
+    assert sk.main(["--root", str(tmp_path / "nowhere"), "--check"]) == 2
+    assert "nowhere" in capsys.readouterr().err
+    assert sk.main(["--root", str(tmp_path / "nowhere")]) == 2
+    assert not (tmp_path / "nowhere").exists()
+
+
+def test_installed_check_finds_leftover_markers(ws, capsys):
+    p = skill(ws, "half-built", "description: Does things. Use it when asked.\n",
+              "Read `<!-- customise: wiki index path -->` first.\n")
+    (p.parent / "reference.md").write_text("Author: <fill in: user author value>\n", encoding="utf-8")
+    agent(ws, "helper", "name: helper\ndescription: Helps.\n").write_text(
+        "---\nname: helper\ndescription: Helps.\n---\n\nWrite in English <!-- customise: output language -->.\n",
+        encoding="utf-8")
+    external = skill(ws, "borrowed", "description: From elsewhere.\n", "They say customise: freely.\n")
+    (external.parent / "NOTICE.md").write_text("Taken over as is.\n", encoding="utf-8")
+    sk.write(ws)
+    assert sk.main(["--root", str(ws), "--check"]) == 0  # reference files may carry markers
+    capsys.readouterr()
+    assert sk.main(["--root", str(ws), "--check", "--installed"]) == 1
+    out = capsys.readouterr().out
+    assert ".claude/skills/half-built/SKILL.md:5: leftover marker 'customise:'" in out
+    assert ".claude/skills/half-built/reference.md:1: leftover marker '<fill in:'" in out
+    assert ".claude/agents/helper.md:6: leftover marker 'customise:'" in out
+    assert "borrowed" not in out and "skills: 3 problems" in out

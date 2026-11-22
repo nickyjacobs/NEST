@@ -10,7 +10,10 @@ hooks:
     - matcher: "Read|Grep|Glob"
       hooks:
         - type: command
-          command: "<fill in: hook command for scripts/blind_seat_guard.py, same format as the other hooks in .claude/settings.json, with onFailure: block>"
+          command: uv
+          args: ["run", "--quiet", "--script", "${CLAUDE_PROJECT_DIR}/scripts/blind_seat_guard.py", "--seat", "council-outsider"]
+          onFailure: block
+          timeout: 30
 metadata:
   does: "Looks at your idea with fresh eyes on The Council: knows nothing about you, so it sees what only makes sense to you, who else would want it and the plainer way, on Claude Sonnet."
   try:

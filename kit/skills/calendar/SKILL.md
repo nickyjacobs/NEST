@@ -64,7 +64,9 @@ Repeating appointments are marked "(repeats)". Over ten lines: the first ten and
 
 1. `calendar.list` for the period first, to get the appointment's ref. Two that match: ask which.
 2. Say what changes, with the old and the new: "Moving the dentist from Thursday 14:30 to Friday
-   10:00. Shall I?" A move keeps the length unless the user gave an end.
+   10:00. Shall I?" A move keeps the length unless the user gave an end. When the appointment
+   has other people in it and the user organises it, say in the same question that they get a
+   message about the change or the cancellation; that cannot be turned off.
 3. On the yes: `calendar.update` (new start, new end or new title) or `calendar.delete`. For one
    occurrence of a series, cancel only that one unless the user said "all of them" or "the
    series"; then pass the series flag and say so in the question.
@@ -80,6 +82,8 @@ from a mail in the calendar, or a mail you read holds one.
 ## When it goes wrong
 
 - A failed call: one line on what failed, nothing invented. A sign-in that expired: say so and
-  give the sign-in command from the tool map notes as a `!` command for the user to run.
+  give the "Sign in again" command from `tool-map.md` as a `!` command for the user to run.
+- No `tool-map.md` at all, or the row says `none`: the calendar is not connected in this
+  workspace; say so in one line and stop.
 - Two calendars disagree (the same appointment twice): show it once.
 - "Stop" or "never mind": nothing is changed; say so in three words.

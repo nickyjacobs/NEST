@@ -21,6 +21,10 @@ CLAUDE.local.md
 *.local.*
 .env
 .env.*
+# Server addresses and headers of connected tools; these often hold keys
+.mcp.json
+# Mail folders with their usual senders
+mail-folders.md
 
 # Working files of skills and the setup
 .runs/

@@ -55,7 +55,7 @@ What survives a rebuild of idea.md: per open point (matched by its text, case, w
 punctuation ignored) the tick and every line nested under it. A point that left the latest
 blueprint drops off unless the user wrote something under it that no blueprint file holds yet;
 such a point stays at the end of the list. Other lines the user typed in the Open points section
-stay too. Everything else on the page is rebuilt.
+stay too, also after the section's heading label was changed. Everything else on the page is rebuilt.
 
 SETTINGS, in this order: the options above, then the ideas section's "idea_page" object in
 wiki.config.json ({"style": "styled", "blueprints": "blueprints", "reviews": "reviews",
@@ -78,7 +78,10 @@ OUTPUT AND EXIT CODES
 Prints one 'wrote <path>' line per file written. Writes atomically (a temp file, then a replace);
 never deletes a file. Afterwards the skill runs wiki.py log, reindex and lint; this script doesn't.
 Exit 0 on success, 1 on an input problem (a missing or unreadable file, a verdict.json without a
-verdict, a run file in the wrong shape), 2 on a usage or config problem.
+verdict or not in the shape council_score.py decide prints, a run file in the wrong shape), 2 on a
+usage or config problem. The status words it writes must be allowed where it writes them: the ideas
+section's own "status_words", else the top-level list; if not, it stops with exit 2 before writing.
+A heading inside a desk report is moved below the desk's own heading, so it cannot end the section.
 """
 
 from __future__ import annotations
@@ -107,6 +110,8 @@ SEATS = ("believer", "skeptic", "investor", "outsider")
 STATUS_BY_VERDICT = {"GO": "go", "GO WITH CONDITIONS": "go", "RESHAPE": "reviewed", "PARK": "parked",
                      "DROP": "dropped"}
 CONFIDENCE_ORDER = {"low": 0, "medium": 1, "normal": 2, "high": 2}
+# wiki.py's default status_words, for a config that names none: what lint accepts there.
+TOP_LEVEL_STATUS_WORDS = ("draft", "active", "done", "parked", "archived", "question")
 
 # The styled folded blueprint: one nested callout per section, as idea-note.css styles them.
 SECTION_CALLOUTS = {
@@ -134,7 +139,9 @@ DEFAULT_LABELS: dict[str, dict[str, str]] = {
     "text": {"not_reviewed": "not reviewed yet",
              "no_open_points": "_No open points: there is no blueprint yet._",
              "no_reviews": "_Not reviewed yet. Say \"put it to the council\"._",
+             "no_reviews_plain": "_Not reviewed._",
              "no_blueprint": "No blueprint yet. The Architects can work it out: \"work this idea out\".",
+             "no_blueprint_plain": "No blueprint.",
              "full_blueprint": "Full blueprint", "updated": "Updated", "blueprints": "Blueprints",
              "reviews": "Reviews", "blueprint_link": "Blueprint", "review_link": "Review",
              "full_run": "full run", "review": "review", "reviewed_event": "reviewed by The Council",
@@ -251,8 +258,12 @@ def load_settings(args: argparse.Namespace) -> Settings:
         if not re.fullmatch(r"[^/\\]+", str(name)) or name in (".", ".."):
             raise UsageError(f"folder name must be one plain name: '{name}'")
     words = sec.get("status_words")
+    if not isinstance(words, list):  # as wiki.py lint: the section's own list, else the top-level one
+        words = cfg.get("status_words")
+    if not isinstance(words, list):
+        words = list(TOP_LEVEL_STATUS_WORDS)
     return Settings(vault=vault, ideas=ideas, blueprints=str(blueprints), reviews=str(reviews), style=style,
-                    labels=labels, allowed_status=list(words) if isinstance(words, list) else None)
+                    labels=labels, allowed_status=[str(w) for w in words])
 
 
 def check_status_words(s: Settings) -> None:
@@ -262,8 +273,10 @@ def check_status_words(s: Settings) -> None:
         return
     missing = [w for w in s.labels["status"].values() if w not in s.allowed_status]
     if missing:
-        raise UsageError(f"status word(s) {', '.join(missing)} not in the status_words of section '{s.ideas}' "
-                         f"({', '.join(s.allowed_status)}); fix wiki.config.json or the status labels")
+        raise UsageError(f"status word(s) {', '.join(missing)} are not allowed in section '{s.ideas}' "
+                         f"({', '.join(s.allowed_status)}), so lint would refuse the pages. Give the section "
+                         "its own \"status_words\" in wiki.config.json (see the idea skill's reference.md), "
+                         "or change the status labels")
 
 
 # Files
@@ -281,10 +294,17 @@ def write_atomic(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists() and b"\r\n" in path.read_bytes():
         text = text.replace("\n", "\r\n")
+    if path.exists():
+        mode = path.stat().st_mode & 0o777
+    else:  # what a plain open() would give: mkstemp makes the file private (0600)
+        umask = os.umask(0)
+        os.umask(umask)
+        mode = 0o666 & ~umask
     fd, tmp = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
     try:
         with os.fdopen(fd, "wb") as f:
             f.write(text.encode("utf-8"))
+        os.chmod(tmp, mode)
         os.replace(tmp, path)
     except BaseException:
         Path(tmp).unlink(missing_ok=True)
@@ -315,9 +335,16 @@ def split_frontmatter(text: str) -> tuple[dict[str, str], str]:
 
 def yaml_str(value: str) -> str:
     """A YAML scalar: bare when that is safe, else a JSON string (which YAML reads as well)."""
-    if re.fullmatch(r"[A-Za-z0-9À-￿][^:#\[\]{}&*!|>'\"%@`,]*", value) and value == value.strip():
+    reads_as_other = (value.lower() in ("y", "n", "yes", "no", "true", "false", "on", "off", "null", "none")
+                      or re.fullmatch(r"[0-9][0-9._:eE+\- TZ]*", value))  # a bool, null, number or date to YAML
+    if (re.fullmatch(r"[A-Za-z0-9À-￿][^:#\[\]{}&*!|>'\"%@`,]*", value) and value == value.strip()
+            and not reads_as_other):
         return value
     return json.dumps(value, ensure_ascii=False)
+
+
+def one_line(text: str) -> str:
+    return " ".join(str(text).split())
 
 
 def alias(text: str) -> str:
@@ -377,8 +404,36 @@ def strip_labels(text: str) -> str:
 
 def first_sentences(text: str, n: int = 1) -> str:
     para = " ".join(text.strip().split("\n\n")[0].split())
-    parts = re.split(r"(?<=[.!?])\s+(?=[A-Z0-9\"'(“])", para)
+    parts, start = [], 0
+    for m in re.finditer(r"(?<=[.!?])\s+", para):
+        nxt = para[m.end():m.end() + 1]
+        if nxt and not nxt.islower():  # a capital in any script, a digit, a quote; never "e.g. five"
+            parts.append(para[start:m.start()])
+            start = m.end()
+    parts.append(para[start:])
     return " ".join(parts[:n]).strip()
+
+
+def council_installed() -> bool:
+    """Is the idea skill (The Council) part of this workspace? Unknown counts as yes: the script
+    runs from the workspace root, and a folder without `.claude/skills` is a test or a kit copy."""
+    skills = Path.cwd() / ".claude" / "skills"
+    return not skills.is_dir() or (skills / "idea").is_dir()
+
+
+def architects_installed() -> bool:
+    """Is the blueprint skill (The Architects) part of this workspace? Unknown counts as yes."""
+    skills = Path.cwd() / ".claude" / "skills"
+    return not skills.is_dir() or (skills / "blueprint").is_dir()
+
+
+def lead_item(text: str) -> str:
+    """What a block opens with: its first line, without a list marker. The format asks for "the
+    load-bearing assumption first"; some desks write it as a sentence above the list."""
+    for line in text.splitlines():
+        if line.strip():
+            return re.sub(r"^\s*(?:[-*+]|\d+\.) ", "", line).strip()
+    return ""
 
 
 def first_item(text: str) -> str:
@@ -513,6 +568,12 @@ class Point:
 def parse_open_points(text: str, heading: str, placeholder: str) -> tuple[list[Point], list[str]]:
     """The points of the Open points section, each with its nested lines, and any other lines."""
     body = section(text, 2, heading) if text else ""
+    if text and not body:
+        # The heading label changed since the page was written. The page is built by this script,
+        # so the open points are its second section whatever it is called.
+        found = sections(split_frontmatter(text)[1], 2)
+        if len(found) == 5 and found[0][0].casefold() != heading.casefold():
+            body = found[1][1]
     points: list[Point] = []
     extra: list[str] = []
     pending_blank = 0
@@ -603,8 +664,8 @@ def fold_blueprint(text: str, style: str) -> list[str]:
 
 
 def idea_title(f: Folder, given: str | None, existing: dict[str, str]) -> str:
-    if given:
-        return given
+    if given and one_line(given):
+        return one_line(given)
     if existing.get("title"):
         return existing["title"]
     for run in reversed(f.runs):
@@ -678,7 +739,7 @@ def build_idea(s: Settings, f: Folder, title: str, existing_text: str) -> tuple[
         first: list[str] = []
         add(first, C["one_liner"], strip_labels(first_sentences(section(bp_text, 2, "One-liner"))))
         add(first, C["line"], field_value(eng, "Direction"))
-        load = field_value(insp, "Load-bearing") or first_item(section(bp_text, 2, "Assumptions and risks"))
+        load = field_value(insp, "Load-bearing") or lead_item(section(bp_text, 2, "Assumptions and risks"))
         add(first, C["load_bearing"], load)
         groups.append(first)
         second: list[str] = []
@@ -743,14 +804,14 @@ def build_idea(s: Settings, f: Folder, title: str, existing_text: str) -> tuple[
             rev.append(f"| {r.when} | v{r.version} | **{r.fm.get('verdict', '')}** | {r.fm.get('score', '')} | "
                        f"{cell(risk)} | [[{link(r)}\\|{T['review']}]] |")
     else:
-        rev = [T["no_reviews"]]
+        rev = [T["no_reviews"] if council_installed() else T["no_reviews_plain"]]
 
     # Blueprint
     if bp:
         fold = [f"> [!{'blueprint' if styled else 'quote'}]- {T['full_blueprint']} v{bp.version}"]
         fold += fold_blueprint(blueprint_text(bp), s.style)
     else:
-        fold = [f"> [!{'open' if styled else 'info'}] {T['no_blueprint']}"]
+        fold = [f"> [!{'open' if styled else 'info'}] {T['no_blueprint'] if architects_installed() else T['no_blueprint_plain']}"]
 
     # History
     hist = [f"| {T['table_date']} | {T['table_version']} | {T['table_event']} | {T['table_full']} |",
@@ -851,6 +912,18 @@ def report(path: Path) -> str:
     return text or "(no report)"
 
 
+def nested(text: str, under: int = 3) -> str:
+    """A report that goes under a level-3 heading: its own headings move below that level (at most
+    level 6), so one of them cannot end the section it sits in. Code fences are left alone."""
+    out, fence = [], False
+    for line in text.splitlines():
+        if line.lstrip().startswith("```"):
+            fence = not fence
+        m = None if fence else re.match(r"(#{1,6}) ", line)
+        out.append("#" * min(6, len(m.group(1)) + under) + line[len(m.group(1)):] if m else line)
+    return "\n".join(out)
+
+
 def count_claims(blueprint: str) -> str:
     body = re.split(r"(?m)^## Sources\s*$", blueprint)[0]
     counts = {"yours": 0, "fact": 0, "proposed": 0, "assumed": 0, "open": 0}
@@ -866,7 +939,7 @@ def count_claims(blueprint: str) -> str:
 
 
 def save_blueprint(s: Settings, args: argparse.Namespace) -> list[Path]:
-    slug, title = check_slug(args.slug), args.title.strip()
+    slug, title = check_slug(args.slug), one_line(args.title)
     src = Path(args.file).expanduser()
     raw = read_text(src).strip("\n")
     if not re.search(r"(?m)^## ", raw):
@@ -905,7 +978,7 @@ def save_blueprint(s: Settings, args: argparse.Namespace) -> list[Path]:
     if run is not None:
         out += ["## The desks", ""]
         for d in desks:
-            out += [f"### The {d.capitalize()}", "", report(run / f"{d}.report.md"), ""]
+            out += [f"### The {d.capitalize()}", "", nested(report(run / f"{d}.report.md")), ""]
     path = f.path / s.blueprints / f"{stamp}-v{version}.md"
     write_atomic(path, "\n".join(out).rstrip("\n") + "\n")
     return [path, rebuild(s, slug, title)]
@@ -940,11 +1013,29 @@ def load_verdict(path: Path) -> dict:
         raise InputError(f"{path}: no verdict and score (did the jury complete?)")
     if str(v["verdict"]).upper() not in STATUS_BY_VERDICT:
         raise InputError(f"{path}: unknown verdict '{v['verdict']}'")
+    for key in ("score", "idea_alone"):
+        if v.get(key) is None:
+            continue
+        try:
+            ok = not isinstance(v[key], bool) and 0 <= float(v[key]) <= 10
+        except (TypeError, ValueError):
+            ok = False
+        if not ok:
+            raise InputError(f"{path}: {key} must be a number from 0 to 10, not {v[key]!r}")
+    jury = [] if v.get("jury") is None else v["jury"]
+    notes = [] if v.get("mismatches") is None else v["mismatches"]
+    if not isinstance(jury, list) or not all(isinstance(j, dict) for j in jury):
+        raise InputError(f"{path}: 'jury' must be a list of {{verdict, score}} objects; write the file with "
+                         "council_score.py decide, not by hand")
+    if not isinstance(notes, list) or not all(isinstance(m, dict) and isinstance(m.get("notes") or [], list)
+                                             for m in notes):
+        raise InputError(f"{path}: 'mismatches' must be a list of {{judge, notes: [...]}} objects; write the file "
+                         "with council_score.py decide, not by hand")
     return v
 
 
 def save_review(s: Settings, args: argparse.Namespace) -> list[Path]:
-    slug, title = check_slug(args.slug), args.title.strip()
+    slug, title = check_slug(args.slug), one_line(args.title)
     vpath, src = Path(args.verdict).expanduser(), Path(args.file).expanduser()
     v = load_verdict(vpath)
     board = read_text(src).strip("\n")
@@ -971,7 +1062,7 @@ def save_review(s: Settings, args: argparse.Namespace) -> list[Path]:
     for m in v.get("mismatches") or []:
         if m.get("notes"):
             who = "judge" if len(v.get("jury") or []) == 1 else f"judge {m.get('judge')}"
-            notes.append(f"{who}: {'; '.join(m['notes'])}")
+            notes.append(f"{who}: {'; '.join(str(n) for n in m['notes'])}")
     if notes:
         items.append(f"- Score check: {' | '.join(notes)}")
     body_lines = lines[:at] + [heading, ""] + computed + items + [""] + lines[end:]

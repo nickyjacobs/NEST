@@ -1,6 +1,6 @@
 # NEST setup prompt
 
-Version 1.0.0 · New Environment Setup Toolkit
+Version 1.1.0 · New Environment Setup Toolkit
 
 This file is a prompt for Claude Code. You (Claude) read it and follow it. The person in front of
 you is "the user". Together you build their own workspace: a Claude Code project with a named
@@ -17,13 +17,23 @@ that fit their life. Everything comes from an interview; nothing is assumed.
 - **No `_setup/STATE.md` yet:** this is the first session. Read this whole file once, then start
   at section 4 (the language question) and Phase 0.
 - **`_setup/STATE.md` exists:** the setup is running. Read sections 0 to 3 of this file,
-  `_setup/STATE.md`, and only the sections named after `read:` in STATE.md. Then continue at
-  `next:`. You have no memory of earlier sessions: this file and STATE.md are the source.
+  `_setup/STATE.md`, and the sections named after `read:` in STATE.md. Then read what the earlier
+  sessions left behind, because you have no memory of them: every file in `_setup/interview/`
+  (the user's answers; the question IDs such as E5 or D8 are explained in section 6, look one
+  up when a step names it), `_setup/docs/FACTS.md`, `_setup/open-questions.md` and the last
+  session's block in `_setup/log.md`. During the build also read section 7 and the first
+  paragraph of section 8. Then continue at `next:`.
+- **`next:` says `done`:** the setup is finished. Say so in one line, name what is still under
+  "Open during the setup", and offer the nest-update skill or one of the open items. Build nothing.
+- **`next:` says `handover`:** see "The handover" at the end of section 6: check whether the
+  workspace folder exists and continue there.
 - **Why several sessions:** hooks, skills, agents and MCP servers load when a Claude Code session
   starts. You build in one session and test in the next. Each stop point: update STATE.md, ask
-  whether you may commit (once git exists), and ask the user to restart Claude Code in the folder
-  STATE.md names. When the user stops on their own ("I have to go"), it is a stop point too: update
-  STATE.md and ask in one line whether to commit what is built so far.
+  whether you may commit (once git exists), and tell the user exactly how the next session
+  starts: close Claude Code, open it again in this folder (name the folder), and type the line
+  after `trigger:` in STATE.md (quote it). When the user stops on their own ("I have to go"), it
+  is a stop point too: update STATE.md, ask in one line whether to commit what is built so far,
+  and give the same folder and line.
 - The reference files live in `kit/` next to this file (`kit/README.md` explains them). You
   **adapt** them to the user's answers; you never copy one blindly and never retype a script:
   scripts are copied with a file copy and configured, never rewritten from memory.
@@ -44,7 +54,7 @@ A folder the user opens with Claude Code every day. When it is done it holds:
 |---|---|---|
 | The assistant: name, tone, a short card about the user, how the workspace works | `CLAUDE.md` (under 150 lines), `CLAUDE.local.md` (gitignored, private context) | built from the interview |
 | Rules that load by path | `.claude/rules/*.md` (at most five, one topic each) | `kit/claude/rules/` |
-| Guards that always run | `.claude/settings.json` hooks: secret scan before and after every write, one session-start line, the user's own words kept across a compaction, a warning when two sessions share the folder | `kit/claude/settings.reference.json`, `kit/scripts/validate.py`, `kit/scripts/session_context.py`, `kit/scripts/session_guard.py` |
+| Guards that run by themselves | `.claude/settings.json` hooks: secret scan before and after every write with the edit tools and after every shell command, one session-start line, the user's own words kept across a compaction, a warning when two sessions share the folder | `kit/claude/settings.reference.json`, `kit/scripts/validate.py`, `kit/scripts/session_context.py`, `kit/scripts/session_guard.py` |
 | Staying up to date | `nest.json` records which NEST release the workspace was built from; the nest-update skill brings over newer releases, only what the user picks | `kit/scripts/nest_update.py`, `kit/skills/nest-update/` |
 | The wiki | `wiki/` (Obsidian vault) in the user's structure and language | `kit/wiki/`, `kit/scripts/wiki.py` |
 | Skills the user chose, one by one | `.claude/skills/<name>/SKILL.md` | `kit/skills/` |
@@ -77,11 +87,20 @@ The principles that make the original work, and that you keep in every build:
 - **Never invent** a command, package, path, MCP server, setting name, API endpoint or plugin. If
   you are not sure it exists, verify it in the docs you fetched in Phase 0 or on the maker's own
   page. Until then it is a placeholder `<fill in: ...>` and an open item in STATE.md.
+- **Offer only what NEST has.** A skill, a hook or a reminder you propose is one from Appendix A
+  or B or from `kit/`. Something else the user would like goes to `_setup/backlog.md`; say that
+  it is not part of NEST instead of promising it.
+- **Write files with the Write and Edit tools,** not through a shell command (`cat > file`, a
+  heredoc, `sed -i`, a Python one-liner). The secret scan checks a file before a tool writes
+  it; a shell command is only checked afterwards.
 - **The fetched docs win.** If `_setup/docs/` says a field is named differently than this file
   does, follow the docs and log the difference.
 - **Ask before you write** outside `_setup/`, before you install anything, before any network
   action other than reading docs and searching, before any git commit, and before anything on
-  GitHub. One yes covers exactly what you showed, nothing more.
+  GitHub. One yes covers exactly what you showed, nothing more. Two look-ups need no question
+  of their own, because the user answers for them elsewhere: uv fetching Python the first time
+  a script runs (tell them in one line), and the check for a newer NEST release (D8). With a no to
+  D8.4, skip that check in B1 step 11 and B4 step 6 and note it.
 - **Commits** only after a yes, with an explicit list of files. No `Co-Authored-By` lines and no
   "Generated with" footers: the commits are the user's. Never `--no-verify`, never force-push.
 - **Secrets never pass through the chat.** If the user is about to paste a password, token or key,
@@ -104,6 +123,12 @@ The principles that make the original work, and that you keep in every build:
 - **Ask, don't infer from the machine.** The user's apps, level and habits come from the interview,
   not from what is installed or configured on this computer (it may be shared, borrowed or set up
   by someone else). Machine facts are only for the machine check.
+- **The names The Council and The Architects, and their seat names, stay as they are** in
+  every language, from the first time you mention them, unless the user asks for a
+  translation in D2. Name a skill the same way every time: its command (`/wiki-inbox`) with a
+  few words in the user's language the first time.
+- **Examples you write into a file are invented.** A rule or a skill never uses something the
+  user told you about a real person as its example.
 - **Honour the style answers from A8 in your own messages too** (no emojis if they said so, the
   length they asked for), from the moment they give them.
 - **Warn once.** Give a warning or advice once, clearly. If the user declines, record it in
@@ -125,8 +150,9 @@ language: <the user's language>
 level: <beginner | intermediate | technical>
 os: <macOS | Windows | Linux> <version>
 workspace: <fill in at F1>            # absolute path once known
-assistant: <fill in at F3>
-nest_version: 1.0.0
+assistant: <fill in at F3>            # the name; written at F3
+teams: <fill in at D2 and D7>         # for example "council: light, architects: none, ideas: 50-ideas"
+nest_version: 1.1.0
 started: <YYYY-MM-DD>
 ---
 next: Phase 0, step 0.3
@@ -147,11 +173,13 @@ Rules:
   passed. A step that failed or was skipped goes under "Open during the setup" with the reason.
 - `next:` always points at the next concrete action, also in the middle of the interview (for
   example `next: interview block B, question B3`). `read:` names the sections of this file it
-  needs.
+  needs. Update both whenever you write answers to a block file, so a session that ends without
+  warning loses nothing.
 - `_setup/log.md` is append-only: per session the date, what was built, what deviated from this
   file and why.
-- `_setup/interview/<block>.md`: the user's raw answers per block, verbatim, append-only. A
-  correction goes underneath with the date; an earlier answer is never rewritten.
+- `_setup/interview/<block>.md`: the user's raw answers per block, verbatim, append-only,
+  written as they come in (see 4.2), not at the end of the block. A correction goes underneath
+  with the date; an earlier answer is never rewritten.
 - `_setup/open-questions.md`: every skipped question (see 4.3), numbered.
 - `_setup/backlog.md`: things the user wants that are out of scope now.
 
@@ -166,7 +194,10 @@ At the handover after block F it is copied into the new workspace, and the setup
 | 2 | Interview blocks C to F, then the handover | the user creates the workspace with one command and restarts there |
 | 3 | B1 (the skeleton) | restart, so the hooks load |
 | 4 | B2 (wiki) and B3 (skills and agents) | restart, so skills and agents load |
-| 5 | B3b (integrations), B4 (tests), B5 (GitHub), wrap-up | the first real task |
+| 5 | B4 (tests), B5 (GitHub), wrap-up | the first real task |
+
+With integrations (D4) there is one more session before the last: B3b connects them, and a
+restart follows so the new tools load before they are tested.
 
 Tell the user this plan in Phase 0, in two or three lines, with a rough time per session
 (30 to 60 minutes).
@@ -182,16 +213,27 @@ Ask one question, in English and in the language of the user's first message if 
 user wants, the assistant's tone) follows that choice. The repo-facing parts (scripts, settings
 keys) stay English.
 
-Then introduce yourself in a few lines: what NEST builds, the four phases (check, interview,
+Then introduce yourself in a few lines, without tool names (git, uv, hooks) until you know the
+user's level from 0.5: what NEST builds, the four phases (check, interview,
 build, grow), how many sessions, that every step waits for a yes, and that the names come last.
+Say once that Claude Code itself will ask permission for some commands in the first minutes
+(looking at the machine, saving the docs): those are the checks of Phase 0, and "yes" is safe.
 Ask if you can start.
 
 ### 4.2 How you ask
 
 - Each block opens with one sentence: why you ask this and where the answers will land.
 - **Closed questions** go through the choice dialog (AskUserQuestion), your recommendation as the
-  first option, marked as recommended. **Story questions** are plain text.
+  first option, marked as recommended. **Story questions** are plain text. The dialog holds at
+  most four questions with two to four options each: a longer list (the pain points in B1, the
+  plugins in C6) is a numbered list in plain text, and the user answers with the numbers.
 - **At most four questions per message.** Fewer is better for story questions.
+- **Write answers down as they come.** After every message with answers, append them verbatim
+  to `_setup/interview/<block>.md` and move `next:` in STATE.md to the next question, before
+  you ask anything else. When the answer is a yes to something you proposed (a folder tree, a
+  dashboard, a palette, a list of skills), write the proposal itself with it, in full: "yes" on
+  its own tells a later session nothing, and it would build something else than the user
+  agreed to. The recap at the end of a block confirms what is already on file.
 - Give an example or a proposal with every question, so the user corrects instead of writing from
   nothing. Where earlier answers already suggest the answer, propose it and ask for a yes.
 - Never ask what you already know from an earlier answer or from the machine check.
@@ -211,7 +253,7 @@ Every question may be skipped:
 |---|---|
 | "I don't know yet" | an open question: what, who might know, the assumption the workspace uses meanwhile |
 | "Not decided yet" | an open question: what, who decides, the assumption meanwhile |
-| "Rather not say" | in the block file only that this topic stays outside the workspace. No content. It counts as done |
+| "Rather not say" | in the block file only that this topic stays outside the workspace. No content. It counts as done: it is not an open question and is never asked again |
 
 An empty field in a built file is never silently empty: it reads "unknown, see open question n"
 or the line is removed. A well-filled open-questions list is a good outcome, not a failed interview.
@@ -224,11 +266,12 @@ Do this before the first interview block. A half interview on a machine that mis
 tools is work done twice.
 
 **0.1 Where are we.** Confirm the current folder is the NEST folder (it contains `SETUP.md` and
-`kit/`). Check the path has no spaces; if it has, explain that hooks and scripts break on spaces
-in some shells and propose moving it. Create `_setup/` with `STATE.md`, `log.md`,
-`interview/`, `open-questions.md`, `backlog.md`.
+`kit/`). The NEST repository has a `CLAUDE.md` for people who work on NEST itself; it does not
+apply to a setup, ignore it. Create `_setup/` with `STATE.md`, `log.md`, `interview/`,
+`open-questions.md`, `backlog.md`.
 
-**0.2 What machine.** Detect the OS and version. Then check, one line each with ✓ or ✗:
+**0.2 What machine.** Detect the OS and version (macOS `sw_vers`, Windows `ver`, Linux
+`/etc/os-release` for the distribution, not only the kernel). Then check, one line each with ✓ or ✗:
 
 | Tool | Why | Check |
 |---|---|---|
@@ -241,14 +284,14 @@ in some shells and propose moving it. Create `_setup/` with `STATE.md`, `log.md`
 For every ✗: look up the current install command for this OS on the tool's own site (fetch the
 page; do not rely on memory) and give the user that command. Install only after a yes. A command
 that needs the user's own login or admin rights: suggest they run it themselves by typing
-`! <command>` in the prompt.
-
-Windows: check how Claude Code runs hooks on this machine (the fetched hooks docs say which shell;
-Git for Windows may be required). Note the answer in `_setup/log.md`; B1 depends on it.
+`! <command>` in the prompt. After an install, run the tool's check again. A tool that was just
+installed is often not found yet, because this session started before it existed: then ask the
+user to close Claude Code, open a new terminal, start Claude Code again in this folder and type
+the trigger line (a stop point).
 
 **0.3 Fetch the docs.** Save these Claude Code docs pages to `_setup/docs/` with `curl -sL`
-(append `.md` to the URL if the page comes back as HTML), not with a summarising tool, so the exact
-field names survive:
+(`curl.exe -sL` on Windows; append `.md` to the URL if the page comes back as HTML), not with a
+summarising tool, so the exact field names survive:
 
 - `https://code.claude.com/docs/en/memory` (CLAUDE.md, imports, rules)
 - `https://code.claude.com/docs/en/skills`
@@ -256,12 +299,15 @@ field names survive:
 - `https://code.claude.com/docs/en/hooks`
 - `https://code.claude.com/docs/en/settings` (permissions, `claudeMdExcludes`)
 - `https://code.claude.com/docs/en/mcp`
-- `https://code.claude.com/docs/en/output-styles`
 
 If a URL moved, find the new one from `https://code.claude.com/docs/en/overview`. Write
 `_setup/docs/FACTS.md`: per page the field names and behaviours this setup relies on (skill
 frontmatter fields, agent frontmatter fields, hook events and stdin JSON, exit code 2, permission
 rule syntax for MCP tools, how rules load by path). From now on FACTS.md overrides this file.
+
+Windows: note in `_setup/log.md` what the hooks page says about how Claude Code runs hooks
+there (which shell, whether Git for Windows is needed). B1 uses the exec form, which needs no
+shell, so this is only a fallback.
 
 **0.4 What Claude can reach.** List the MCP servers and connectors this session already has, by
 **name only**, from the tool names you can see (`mcp__<server>__<tool>`). Do **not** run
@@ -302,30 +348,31 @@ the context pages of the wiki, the card in CLAUDE.md, `CLAUDE.local.md` for what
 - **A5** Interests and hobbies, and what you would like to learn.
 - **A6** Where do you want to grow in the next one to three years? What would make this year a
   good year? Short-term goals (this quarter) and long-term ones.
-- **A7** **Apps and software.** Go through the categories one at a time and propose what is
-  common so the user only corrects: mail, calendar, tasks or to-do, notes (where do notes live
+- **A7** **Apps and software.** Go through the categories in two or three short rounds, never
+  as one long table, and propose what is common so the user only corrects: mail, calendar, tasks or to-do, notes (where do notes live
   today?), chat (Teams, Slack, WhatsApp, Signal ...), cloud storage, browser, password manager,
   smart home, music, and the tools of their work or study. Per app: private or work account, and
   what they use it for. *This list feeds block D and, later, every new skill.*
 - **A8** How should the assistant talk to you: formal or casual, short or explanatory, humour or
   none? What do you never want to see (long lists, emojis, flattery, jargon)?
 
-Recap, yes, then write `_setup/interview/A.md` (raw) and keep going.
+Recap, yes (the answers are in `_setup/interview/A.md` already, see 4.2), and keep going.
 
 ### Block B: where you get stuck
 
 *Why:* the workspace should fix real problems, not add a hobby. *Lands in:* the recommendations in
 blocks C and D, and the first tasks at the end.
 
-- **B1** What frustrates you most in how you work now? Offer the list below as a choice dialog
-  with multiple answers allowed, plus room for their own:
+- **B1** What frustrates you most in how you work now? Offer the list below as a numbered list
+  in plain text (it is too long for the choice dialog); they answer with the numbers and may
+  add their own:
   writing notes at all · finding notes again · notes piling up unprocessed · Obsidian feels
   overwhelming · losing track of projects and priorities · forgetting what I learned · studying
   for a course or certification · ideas that never get worked out or decided · career or job
   search · mail chaos · calendar and day planning ·
   research takes long or sources are unreliable · writing sounds stiff or AI-like · repeating the
   same tasks · fear of leaking something sensitive · losing work (no backups) · every Claude session
-  starts from zero.
+  starts from zero · the assistant repeats a mistake · a long conversation forgets what I asked.
 - **B2** For the top two or three: what does it look like in practice? A recent example.
 - **B3** Rank them: which one would make the biggest difference if it were gone?
 - **B4** What have you tried before that did not stick, and why? (This prevents rebuilding the
@@ -337,13 +384,20 @@ with what NEST would build for it. This is a preview, not a decision; blocks C a
 ### Block C: the wiki
 
 *Why:* the wiki is the long-term memory; its shape decides whether the user keeps using it.
-*Lands in:* `wiki.config.json`, the folder tree, templates, the CSS, the dashboard.
+*Lands in:* `wiki.config.json`, the folder tree, templates, the CSS, the dashboard. The wiki is
+part of every workspace: the assistant's context pages live in it. Say so at the start of this
+block, with the small option next to it: a user who wants no notes beyond that gets the
+backbone only (context, sessions, decisions, archive) and none of the wiki skills.
 
 Explain the idea first in three lines, at the user's level: a vault in Obsidian; the user drops
 things in an inbox; the assistant files them into sections, links and indexes them; nothing is
 deleted.
 
-- **C1** **Sections.** Propose a folder tree derived from A and B. Keep the generic backbone:
+- **C1** **Sections.** Propose a folder tree derived from A and B, with every folder name
+  written exactly as it will be on disk (lowercase, hyphens, no spaces, for example
+  `30-weiterbildung`) and the readable label next to it; what the user confirms is what you
+  build, letter for letter. Letters of the user's language are fine in a folder name
+  (`70-privé`); never drop an accent on your own. Keep the generic backbone:
   numbered sections with gaps (00, 10, 20 ...) so new ones fit between, plus `_inbox`,
   `_templates`, `_bases` and an archive section (90). Typical sections: context (who you are,
   goals, priorities), projects, knowledge, research, sessions, references, decisions, archive. Add
@@ -363,15 +417,17 @@ deleted.
   counter), which lists (new this week, open questions, projects). Propose from B.
 - **C5** **Look.** Light, dark or both; an accent colour; one colour per section (propose a
   palette, show the hex codes). Keep the Minimal theme as a recommendation.
-- **C6** **Plugins.** Present the recommended set from `kit/wiki/obsidian/PLUGINS.md` (Minimal and
-  Minimal Settings, Style Settings, Templater, Meta Bind, Notebook Navigator; Bases is built in),
-  one line each: what it does here and why. Per plugin a yes or no. Mention the safety settings
-  (Templater does not run on file creation; Meta Bind has JavaScript off) and why. Ask whether
-  they already have an Obsidian vault: a new vault inside the workspace is recommended; never touch
-  an existing vault without an explicit yes and a backup.
-- **C7** **Existing notes.** Do they have notes elsewhere they want in? Do not import now: record
-  where (path in `CLAUDE.local.md`) and plan it as a first task with `/wiki-ingest` or a copy into
-  the inbox.
+- **C6** **Plugins and snippets.** Present the recommended set from
+  `kit/wiki/obsidian/PLUGINS.md` (Minimal and Minimal Settings, Style Settings, Templater, Meta
+  Bind, Notebook Navigator; Bases is built in), one line each: what it does here and why. Ask
+  once: all of them (recommended), or which to leave out. The same for the base look CSS
+  snippet (the snippet for idea pages is asked in D2, with the teams). Mention the safety settings (Templater does not run on file
+  creation; Meta Bind has JavaScript off) and why.
+- **C7** **Existing notes.** Tell the user, whatever they have today: the wiki is always a new
+  vault inside the workspace; NEST never writes into a vault they already have, and never
+  changes its settings. Do they have notes
+  elsewhere (an older vault, another app) they want in? Do not import now: record where (path
+  in `CLAUDE.local.md`) and plan it as a first task with `/wiki-ingest` or a copy into the inbox.
 
 Show the final tree and the dashboard sketch as text. Yes, then on.
 
@@ -390,14 +446,17 @@ proposals first). Read the `<!-- customise: ... -->` markers in the skill's refe
 `kit/skills/<name>/` to make sure every marker gets an answer.
 
 - **D1** The wiki skills (inbox, ingest, query, maintenance) and the Obsidian skills. Recommended
-  as a set when there is a wiki.
+  as a set, unless the user wants the backbone only (block C).
 - **D2** The Council (`idea`) and The Architects (`blueprint`). For each team: **full** (more
   agents, a jury of three, checked sources, several minutes and more tokens per run) or **light**
   (four or five agents, one judge, faster and cheaper). Explain the trade-off in two lines and
   recommend full for someone who will use it for real decisions, light for curiosity. Use the
   names The Council and The Architects (and the seat names) as they are, in every language,
   unless the user asks for a translation here; then use that translation everywhere from then on.
-  Record the choice in STATE.md.
+  Record the choice in STATE.md by filling in the `teams:` line at the top (replace it, do not
+  add a second one); the name of the ideas section is added to that line in D7.
+  With a team chosen, ask here whether the idea pages get the styled look (the idea snippet
+  from C6's list) or the plain one.
 - **D3** career, study-inbox, research, session-end, writing-style, release, skill-builder: per
   skill yes or no and its customise questions.
 - **D4** **Integration skills** (calendar, mail, mail-organizer, morning-briefing). These touch the
@@ -410,9 +469,10 @@ proposals first). Read the `<!-- customise: ... -->` markers in the skill's refe
      `kit/integrations/microsoft-graph/` for Microsoft accounts. Follow the verification rules in
      `kit/integrations/README.md`: find it in current docs or the maker's repo, check that it is
      maintained, how it signs in, which scopes it asks, and whether it can send mail. Present at most
-     three routes with your recommendation and the trade-offs (safety, cost, maintenance). Do this
-     research now, also when the user wants to connect later: the open item then names the chosen
-     route. Never invent a package or a command.
+     three routes with your recommendation and the trade-offs (safety, cost, maintenance). When
+     the user wants to connect now or soon, do this research now. When they say "later" or
+     "maybe", do not: the skill is built with its "not connected" path, and choosing a route
+     becomes an open item. Never invent a package or a command.
   3. **What it may do:** read only, or also change things. Which actions always ask first (these
      become `permissions.ask` rules; see `kit/integrations/permissions.example.json`). Sending mail
      is never part of NEST: replies are drafts.
@@ -424,7 +484,11 @@ proposals first). Read the `<!-- customise: ... -->` markers in the skill's refe
   becomes an open item in STATE.md.
 - **D5** **How independent may the assistant be?** Propose three groups (Appendix B gives each
   skill a default): runs only on the user's command; the assistant may propose it and runs it
-  after a yes; the assistant may just do it. Confirm or adjust.
+  after a yes; the assistant may just do it. Confirm or adjust. Claude Code has one switch per
+  skill for this: "only on command" sets `disable-model-invocation: true`. The difference
+  between "propose first" and "just do it", and a mixed default such as "reading freely,
+  changes after a yes", is written in the "When you act on your own" section of `CLAUDE.md`
+  and in the skill's own ask-first rules.
 - **D6** **Permission mode.** Recommend Claude Code's default mode (it asks before risky actions).
   If the user prefers fewer prompts, explain the trade-off and propose a few read-only allow rules
   instead of skipping permissions altogether.
@@ -433,7 +497,8 @@ proposals first). Read the `<!-- customise: ... -->` markers in the skill's refe
   research section; wiki-ingest needs a references section with a raw sources folder; idea and
   blueprint need an ideas section; career and study-inbox need a projects section, and study-inbox
   needs the inbox folder name in `raw_folders`. Propose what is missing in one message, update
-  `_setup/interview/C.md` after the yes.
+  `_setup/interview/C.md` after the yes, and write the name of the ideas section into `teams:`
+  in STATE.md.
 
 - **D8** **Session guards and updates.** Two things always run and need no answer, so only tell
   the user in two lines: their own messages are kept word for word in a local file, so a long
@@ -441,7 +506,7 @@ proposals first). Read the `<!-- customise: ... -->` markers in the skill's refe
   a second session is open in the same folder. Then ask, with a recommendation each:
   1. **Lessons** (recommended yes): when something goes wrong, the assistant records a one-line
      lesson and is reminded of it the next time the same kind of step comes up.
-  2. **Plans into the inbox** (yes when they have a wiki and use plan mode): an approved plan is
+  2. **Plans into the inbox** (yes when they use plan mode): an approved plan is
      copied into the wiki inbox, so it is not lost with the session.
   3. **Morning nudge** (only with morning-briefing): before which hour a new session may end its
      start line with a reminder, and the wording in their language.
@@ -457,8 +522,12 @@ proposals first). Read the `<!-- customise: ... -->` markers in the skill's refe
 Explain in two lines what git and GitHub add for this workspace (history, a backup off the
 machine, undo). Then:
 
-- **E1** Do you have a GitHub account? (yes / no, I want one / no GitHub). No GitHub: skip to F,
-  keep local git, and note the wiki backup as an open item.
+- **E1** Do you have a GitHub account? (yes / no, I want one / no GitHub). "I want one": they
+  make it themselves on github.com (free), then go on with E2. No GitHub, or "later":
+  the workspace still gets local git, so skip E2, E3 and E6 and ask only what local git needs:
+  E5 (a name and an address for the commits; any address works locally), E7 (the pre-commit
+  scan only) and E8. E4 is then (b): the wiki lives inside the local repo, so it has a history;
+  a backup off the machine becomes an open item.
 - **E2** Is the GitHub CLI signed in (from Phase 0)? If not: the user runs `! gh auth login`.
   Is a GitHub MCP server connected (Phase 0.4)? Not needed: the CLI is enough.
 - **E3** A repo for the workspace: private (recommended), named after the workspace.
@@ -471,7 +540,8 @@ machine, undo). Then:
   a short tagline, a feature table with one emoji per row, a "what it is not" section). Show a
   small example. Optional.
 - **E7** Protections: a pre-commit secret scan (recommended), a gitleaks workflow on GitHub
-  (recommended), Dependabot for workflow updates. Rulesets and branch protection: explain that on
+  (recommended), a checks workflow that runs the skills catalogue check and the secret scan on
+  every push (recommended), Dependabot for workflow updates. Rulesets and branch protection: explain that on
   a private repo they need a paid plan, so they are optional.
 - **E8** Who commits: the assistant commits only when the user asks, with a short imperative
   message and a prefix (`Add:`, `Fix:`, `Update:`, `Docs:`). Confirm.
@@ -483,7 +553,12 @@ machine, undo). Then:
 
 - **F1** **The workspace folder.** Propose two or three names (short, lowercase, no spaces; the
   assistant's name in lowercase is a good default once F3 is known, so you may ask F1 after F3) and
-  where it goes (default: next to the NEST folder). Check the path is free.
+  where it goes. Default: next to the NEST folder, unless that is a downloads folder or a folder
+  a cloud service syncs (iCloud Drive, OneDrive, Dropbox, Google Drive: the path usually says
+  so); then propose a folder in the user's home, such as `~/Projects`. Sync services and git
+  get in each other's way and can damage files; say so once when the user prefers a synced
+  place, and respect the answer. Check the path is free. A path without spaces is easier to
+  type in commands; the hooks work either way.
 - **F2** **What the workspace is for, in one sentence**, in the user's words. Propose one from A
   and B. It becomes the first line of CLAUDE.md and the README tagline.
 - **F3** **The assistant's name.** Propose four to six acronyms. Each one:
@@ -503,16 +578,24 @@ Recap of the whole interview in at most ten lines. Yes, then the handover.
 **The handover.** The workspace folder lies outside the folder this session was started in, and
 Claude Code may not write there. So the user creates it with one command:
 
-1. Update STATE.md first: `workspace:` the absolute path, `next: B1`, `read: section 8 (B1)`,
-   `trigger: Read _setup/nest/SETUP.md and follow it.`
+1. After the yes to the recap, update STATE.md first: `workspace:` the absolute path, `assistant:` the name,
+   `next: handover (the user creates the workspace folder; then B1 there)`,
+   `read: section 8 (B1)`, `trigger: Read _setup/nest/SETUP.md and follow it.`
 2. Give the user one command for their OS that creates the folder and copies `_setup/` into it
    and `SETUP.md` plus `kit/` into `_setup/nest/`, with the real paths filled in. For example
    macOS and Linux: `mkdir -p "<ws>/_setup/nest" && cp -R _setup/. "<ws>/_setup/" && cp -R SETUP.md kit "<ws>/_setup/nest/"`;
    Windows PowerShell: `New-Item -ItemType Directory -Force "<ws>\_setup\nest" | Out-Null; Copy-Item -Recurse -Force _setup\* "<ws>\_setup\"; Copy-Item -Recurse -Force SETUP.md,kit "<ws>\_setup\nest\"`.
    They run it with `!` in front, or in their own terminal.
 3. Tell them to close Claude Code, open it in the new folder (`cd "<ws>"` then `claude`), trust the
-   folder when asked, and type the trigger line. The copy of `_setup/` next to NEST can go later;
-   it is gitignored.
+   folder when asked, and type the trigger line (quote it). The copy of `_setup/` next to NEST
+   can go later; it is gitignored.
+
+A session that starts while `next:` still says `handover`: if the current folder is the
+workspace path from STATE.md and `_setup/nest/SETUP.md` exists, the copy worked: set
+`next: B1` and go on with B1. If you are still in the NEST folder: check whether the workspace
+folder exists. If it does, tell the user to open Claude Code there and type the new trigger
+line; if it does not, give the copy command again. If you cannot look there, ask the user
+whether they ran the command; never assume they did not. Never start B1 from the NEST folder.
 
 ---
 
@@ -535,18 +618,18 @@ open question.
 | C2 | `wiki.config.json` labels, templates, `how-this-wiki-works` page |
 | C4 | `wiki/Home.md`, `_bases/dashboard.base`, Meta Bind button templates |
 | C5 | `wiki/.obsidian/snippets/base.css` tokens, `appearance.json`, Notebook Navigator colours |
-| C6 | `wiki/.obsidian/` settings; the plugin checklist the user follows in B2 |
-| C7 | `CLAUDE.local.md` (where the old notes are); first tasks |
+| C6 | `wiki/.obsidian/` settings (`community-plugins.json`, the enabled snippets in `appearance.json`); the plugin checklist the user follows in B2 |
+| C7 | `CLAUDE.local.md` (where the old notes are); first tasks. The old vault itself is never touched |
 | D1 to D3 | `.claude/skills/`, `.claude/agents/`, the skills list in `CLAUDE.md`, `docs/skills.md`; the course list in the study-inbox skill |
-| D4 | the integration skill files, `tool-map.md`, `.claude/settings.json` permissions, `mail-folders.md` in the workspace root or the briefing config; failed routes in STATE.md "Open" |
+| D4 | the integration skill files, `tool-map.md`, `.claude/settings.json` permissions, `mail-folders.md` in the workspace root (gitignored), the blocks in the morning-briefing skill; failed or postponed routes in STATE.md "Open" |
 | D5 | `disable-model-invocation` per skill; the "When you act on your own" section of `CLAUDE.md` |
 | D6 | `.claude/settings.json` (`permissions`) |
 | D7 | `_setup/interview/C.md`, then `wiki.config.json` and the tree in B2 |
 | D8 | the `lesson` and `plan` hooks in `.claude/settings.json`; `morning_nudge` and `nest.update_check` in `nest.json`; a line in `CLAUDE.md` that lessons go into `.claude/lessons.json` |
-| team names (D2) | STATE.md; every skill, agent and wiki page that names the teams |
+| team names and sizes (D2) | `teams:` in STATE.md; every skill, agent and wiki page that names the teams |
 | E1 to E8 | `nest.json` (backup git dir, next to the stamp from B1), `.github/`, `.githooks/`, README, `.gitignore`, repo settings, `.claude/rules/commits.md` |
 | F1 | the workspace path in STATE.md |
-| F2, F3 | `CLAUDE.md` title and first lines, README title and tagline, `author` value in `wiki.config.json` |
+| F2, F3 | `CLAUDE.md` title and first lines, README title and tagline, `assistant:` in STATE.md |
 | skipped questions | `_setup/open-questions.md`, later `wiki/<context>/open-questions.md` |
 
 ---
@@ -562,18 +645,25 @@ cause; never tick around it. Commits stay separate questions.
 ### B1. The skeleton
 
 1. You are now in the workspace folder (check: the current folder is the path in STATE.md and
-   `_setup/nest/SETUP.md` exists). Writes into `.claude/` ask for permission in Claude Code; tell
+   `_setup/nest/SETUP.md` exists; if not, see the end of "The handover" in section 6 and build
+   nothing here). Writes into `.claude/` ask for permission in Claude Code; tell
    the user before B1 starts so they expect those prompts and approve them. If a write there is
-   refused anyway, build the files under `_setup/build/.claude/` and give the user one copy command
-   for their OS.
-2. `git init`, the commit identity from E5 (or the user's normal identity if no GitHub), and a
-   `.gitignore` from `kit/github/` (check: `git status` runs; `CLAUDE.local.md`,
-   `.claude/settings.local.json`, `.claude/sensitive-terms.txt`, `.runs/` and `_setup/` are
-   ignored; `wiki/` too if E4 is (a)).
+   refused anyway, build the files under `_setup/build/dot-claude/` and give the user one copy
+   command for their OS; after they say it ran, run the stamp of step 11 again, so the files
+   under `.claude/` are in it. A refusal counts for that moment only: at the start of each
+   later phase try one write into `.claude/` again before you fall back.
+2. `git init -b main` (some systems still start on `master`; the rules and the workflows expect
+   `main`), the commit identity from E5 set for this repo (`git config user.name` and
+   `user.email` without `--global`), and a `.gitignore` from `kit/github/gitignore.template`:
+   keep the `/wiki/` line only when E4 is (a) (check: `git status` runs; `git config user.name`
+   prints a name; `CLAUDE.local.md`, `.claude/settings.local.json`,
+   `.claude/sensitive-terms.txt`, `.runs/` and `_setup/` are ignored; `wiki/` too if E4 is (a)).
 3. `CLAUDE.md`, under 150 lines, in this order: who the assistant is (name, the sentence from F2,
    personality); who the user is (the card from A, at most 10 lines); how to talk; the workspace
-   (where things are); the wiki rules (the four from section 1, points 1 to 4, in one short list);
-   when the assistant acts on its own (D5); the skills list (one line each); and at the top a
+   (where things are, with the language and the local formats from A1 in one line each); the
+   wiki rules (the four from section 1, points 1 to 4, in one short list); when the assistant
+   acts on its own (D5); with a yes to lessons in D8, one line that a lesson goes into
+   `.claude/lessons.json`; the skills list (one line each); and at the top a
    temporary line: "Setup in progress: next session, read `_setup/nest/SETUP.md` and follow it."
    Write it in the user's language unless they chose English. No project facts that change weekly:
    those live in the wiki (check: `wc -l` under 150; the assistant's name appears in the title).
@@ -585,26 +675,45 @@ cause; never tick around it. Commits stay separate questions.
    load by path, per FACTS.md).
 6. `scripts/`: copy from `kit/scripts/` with a file copy: `validate.py`, `session_context.py`,
    `session_guard.py`, `nest_update.py`, `agent_git_readonly.py`, `wiki.py`, `skills_catalog.py`,
-   plus `wiki_backup.py`,
-   `council_score.py`, `idea_page.py`, `blind_seat_guard.py` (idea or blueprint), `check_style.py`
-   when their feature was chosen. Then run `uv run --script scripts/validate.py --self-test` once:
+   plus, each when its feature was chosen: `wiki_backup.py` (E4 a), `council_score.py` (idea),
+   `idea_page.py` and `blind_seat_guard.py` (idea or blueprint), `check_style.py`
+   (writing-style). Then run `uv run --script scripts/validate.py --self-test` once:
    it proves the scanner works and makes uv fetch Python now, so the first hook does not time out
-   (check: the self-test passes; `uv run --script scripts/wiki.py --help` runs).
+   (check: the self-test passes; `uv run --script scripts/wiki.py --help` runs). Tell the user
+   once what it looks like when uv cannot be found later (a new terminal without it on the
+   PATH, an app started from the dock): every write is refused with a line such as
+   `PreToolUse:Write hook error: ... failed; blocking because onFailure is "block"`. That is the
+   guard failing safe, not a broken workspace: start Claude Code from a terminal where
+   `uv --version` works.
 7. `.claude/settings.json` from `kit/claude/settings.reference.json`: the hooks, permissions from
-   D6, and nothing else yet. Always: the secret scan before and after writes, the session-start
+   D6, the `attribution` block exactly as the reference has it (it keeps "Co-Authored-By" lines out of
+   the user's commits), with idea or blueprint the three allow rules their scripts need
+   (`Bash(uv run scripts/council_score.py *)`, `Bash(uv run --script scripts/idea_page.py *)`,
+   `Bash(uv run scripts/wiki.py *)`, so a run is not stopped by a prompt halfway), and nothing
+   else yet. Always: the secret scan before and after writes and after shell commands, the session-start
    line, and the `session_guard.py` hooks for `start`, `prompt`, `precompact` and `end`. From D8:
-   the `lesson` hook and the `plan` hook, each only on a yes. Leave out the `check_style.py` hook
+   the `lesson` hook and the `plan` hook, each only on a yes: on a no, take that entry out of the
+   file. Take out the lists the reference leaves empty (`permissions.ask`, `permissions.deny`,
+   `claudeMdExcludes`) when you have nothing to put in them; never the `attribution` block: its
+   empty strings are the setting. Leave out the `check_style.py` hook
    unless writing-style was chosen. Keep the exec form the reference uses (`"command": "uv"` with
    `args`, and `${CLAUDE_PROJECT_DIR}` in braces): it runs the same on macOS, Linux and Windows
    without depending on a shell. Compare with FACTS.md (check: valid JSON; the paths in the
    commands exist).
-8. `.claude/sensitive-terms.txt`: explain that the user fills it themselves, in an editor, not in
-   the chat: names, domains, IP ranges or words that must never land in a committed file. One per
-   line. Ask: now or later (check: the file exists, even if empty; it is ignored by git).
-9. `.githooks/pre-commit` from `kit/github/pre-commit`, `.gitattributes` from
-   `kit/github/gitattributes.template` (it keeps the hook's line endings right on Windows) and
-   `git config core.hooksPath .githooks`, if E7 said yes (check: `git config core.hooksPath`
-   prints `.githooks`).
+8. `.claude/sensitive-terms.txt`, from `kit/claude/sensitive-terms.example.txt` (keep its
+   comment lines, which explain the format, and remove the example lines with `<fill in`): the user fills it themselves, in an editor, not in the chat:
+   names, domains, IP ranges or words that must never land in a committed file. One per line.
+   The folder is hidden in most file explorers, so give the command that opens the file in
+   their editor (macOS `open -e .claude/sensitive-terms.txt`, Windows
+   `notepad .claude\sensitive-terms.txt`, Linux `xdg-open .claude/sensitive-terms.txt`). Ask:
+   now or later (check: the file exists, even if it holds no terms; it is ignored by git).
+9. If E7 said yes: `.githooks/pre-commit` from `kit/github/pre-commit` with a file copy (never
+   written out by hand: the copy keeps it executable), `chmod +x .githooks/pre-commit` on macOS
+   and Linux, `.gitattributes` from `kit/github/gitattributes.template` (it keeps the hook's
+   line endings right on Windows) and `git config core.hooksPath .githooks` (check:
+   `git config core.hooksPath` prints `.githooks`; on macOS and Linux
+   `test -x .githooks/pre-commit` succeeds. Git skips a hook that is not executable without
+   saying so).
 10. `docs/next-session.md`: a title, then one line per open item as a Markdown checkbox
     (`- [ ] ...`); a done item becomes `- [x] ...`. The session-start line shows the first unchecked
     one (check: `uv run --script scripts/session_context.py` prints it).
@@ -615,8 +724,9 @@ cause; never tick around it. Commits stay separate questions.
     does not want the session-start line about new releases, and `morning_nudge` when they want
     the nudge (check: `nest.json` has a `nest` block with the version from the header of this
     file; `uv run --script scripts/nest_update.py check` answers: up to date, a newer release, no
-    release found, or that it could not reach the source. All four are fine here). Run the stamp again at the end of B3, B3b and B5: it only adds what is
-    new. A kit file installed under another name gets `--map <workspace path>=<kit path>`.
+    release found, or that it could not reach the source. All four are fine here). The stamp
+    is run again at the end of B3, B3b and B5 (each has its own step): it only adds what is new.
+    A kit file installed under another name gets `--map <workspace path>=<kit path>`.
 12. Stop point: update STATE.md (`next: B2`, `trigger: Read _setup/nest/SETUP.md and follow it.`),
     ask to commit, then ask the user to close Claude Code and start it again in this folder, so the
     hooks and settings load.
@@ -625,27 +735,40 @@ cause; never tick around it. Commits stay separate questions.
 
 Do this in the new folder, in a fresh session (the hooks are now active).
 
-1. `wiki.config.json` from `kit/scripts/wiki.config.example.json` with the sections, kinds,
-   status words, labels and author values from block C and F (check: valid JSON; every section
-   in the tree from C1 is in it). When idea or blueprint was chosen, add the ideas section exactly as
-   `kit/skills/idea/reference.md` specifies (index type `folders`, page `idea.md`, its own status
-   words), with the name from D2.
+1. `wiki.config.json` in the workspace root (next to `CLAUDE.md`, not inside `wiki/`), from
+   `kit/scripts/wiki.config.example.json`, with the sections, kinds, status words and labels
+   from block C. Keep its `authors` list as it is unless the user wants other names
+   (`kit/scripts/WIKI-CONFIG.md` explains every key); pages you write carry `author: claude`
+   (check: valid JSON; every section in the tree from C1 is in it). When idea or blueprint was
+   chosen, add the ideas section exactly as `kit/skills/idea/reference.md` specifies (index type
+   `folders`, page `idea.md`, its own status words), with the section name recorded in STATE.md.
+   When the user's language is not English, also fill that section's `idea_page.labels` with
+   the headings and texts of the idea page in their language (the header of
+   `kit/scripts/idea_page.py` lists every key): without it every idea page is half English.
 2. The folders, each section's `index.md` from `kit/wiki/section-index.md` (hand-written intro,
    optional Bases embed, the `<!-- AUTO-INDEX -->` marker; context and decisions keep a
    hand-written index), the root pages `index.md`, `log.md`, `Home.md`,
-   `how-this-wiki-works.md` from `kit/wiki/`, translated and filled (check: `ls -R wiki | head`).
+   `how-this-wiki-works.md` from `kit/wiki/`, translated and filled, and the decisions log
+   (`log.md` in the decisions section) from `kit/wiki/decisions-log.md` with its format block and
+   the user's areas (check: list the `wiki` folder two levels deep; every section has its index).
 3. The context pages from block A: profile, goals, priorities, apps and tools, open questions. Each
    with frontmatter (`author: claude`), short, in the user's language. Show them; the user corrects.
-4. `_templates/` from `kit/wiki/_templates/`, translated, with the user's `author` value; `_bases/`
-   adapted to the sections and the dashboard from C4.
+4. `_templates/` from `kit/wiki/_templates/`, translated, with the `author` value a note the
+   user writes themselves gets (`user`, unless the `authors` list was changed); `_bases/`
+   adapted to the sections, the status words and the dashboard from C4.
 5. `.obsidian/`: settings from `kit/wiki/obsidian/`, CSS from `kit/wiki/snippets/` with the palette
-   from C5. Plugins cannot be installed from here: walk the user through
+   from C5. Resolve the `customise:` comments in the CSS and remove them, like everywhere else.
+   In the Meta Bind settings (`plugins/obsidian-meta-bind-plugin/data.json`), set
+   `excludedFolders` to the user's own names for the templates folder, the inbox, the raw sources
+   folder and the archive, plus every other folder in `raw_folders`: a button inside text that
+   came from outside must never run. Plugins cannot be installed from here: walk the user through
    `kit/wiki/obsidian/PLUGINS.md` (open the folder as a vault in Obsidian, trust it, install each
    plugin they chose, enable the snippets). Wait until they confirm. The user may postpone this
    and step 7: then record both as open items, carry on with B3, and mention them at most once per
    session. They never block B3 or B4.
 6. `uv run scripts/wiki.py log migrate "Wiki created by NEST"`, then `reindex`, then `lint`
-   (check: lint reports zero errors).
+   (check: lint reports zero errors; a search of `wiki/` for `customise:` and `<fill in` finds
+   nothing).
 7. Ask the user to open Home in Obsidian and say what looks wrong. Fix, lint again.
 
 ### B3. Skills and agents
@@ -653,24 +776,27 @@ Do this in the new folder, in a fresh session (the hooks are now active).
 1. For each skill chosen in D, and always `nest-update`: create `.claude/skills/<name>/` from
    `kit/skills/<name>/`. Rewrite,
    don't copy: paths and section names from `wiki.config.json`, labels in the user's language,
-   their apps from A7, every `<!-- customise: ... -->` resolved and removed. For idea and blueprint
+   their apps from A7, every `<!-- customise: ... -->` resolved and removed. The exception:
+   `obsidian-markdown` and `obsidian-bases` come from Obsidian's own repository; copy those two
+   folders as they are, with their `NOTICE.md` (the licence asks for it), and change nothing. For idea and blueprint
    take `SKILL.md` with `formats.md` (full) or `SKILL.light.md` renamed to `SKILL.md` with
    `formats.light.md` kept under its own name (light; the skill refers to it), plus the other
    supporting files in the folder (`reference.md`, `run-files.md`). Leave out the files of the
    variant that was not chosen. Idea pages come in two looks: styled (own callout types, needs the
    `idea-note.css` snippet) or plain (standard callouts only). Resolve the `callout` customise
    markers in both skills and the `idea-note` entry in `.obsidian/appearance.json` the same way:
-   styled when the user has the Minimal theme and said yes to the snippets in C6, else plain.
+   styled when the user said yes to the Minimal theme in C6 and to the styled look in D2, else plain.
    Add `.runs/` to `.gitignore` if it is not there.
 2. The agents those skills need, from `kit/agents/full/` or `kit/agents/light/`, plus `researcher`
    with research and `security-reviewer` always. Adjust names, output language and the user
-   description; keep tools to the minimum each agent needs. The security reviewer's hook runs
-   `scripts/agent_git_readonly.py` in the same exec form as the other hooks, with the matcher
-   `Bash|PowerShell` (on Windows the PowerShell tool can take the place of Bash). The blind seats
-   (`council-outsider`, `council-verifier`, `architect-dreamer`, where built) hook `Read|Grep|Glob`
-   that runs `scripts/blind_seat_guard.py` the same way, with `onFailure: block`: it keeps each of
-   them inside its own run file. When the run folder is not `.runs`, or a seat was renamed, record
-   that under `blind_seats` in `nest.json` (the script's header shows the shape).
+   description; keep tools to the minimum each agent needs. The agent files ship with their hooks in the frontmatter: leave
+   those lines as they are. The security reviewer's hook (`scripts/agent_git_readonly.py`) keeps
+   it read-only; on Windows add `PowerShell` to that agent's `tools`. The blind seats
+   (`council-outsider`, `council-verifier`, `architect-dreamer`, where built) carry a hook that
+   runs `scripts/blind_seat_guard.py` with `--seat <name>`: it keeps each of them inside its own
+   run file. When you rename a seat, keep the original name after `--seat`. When the run folder
+   is not `.runs`, record that under `blind_seats` in `nest.json` (the script's header shows the
+   shape).
    Build the skills one at a time and run `uv run --script scripts/skills_catalog.py --check` after
    each one, or in parallel with helper agents: then give each helper the frontmatter rules from
    FACTS.md, and before the stop point check every file they wrote (catalogue check, secret scan,
@@ -678,48 +804,65 @@ Do this in the new folder, in a fresh session (the hooks are now active).
    `scripts/idea_page.py`, never through a script you write yourself.
 3. `disable-model-invocation` per skill from D5. The skills list in CLAUDE.md, one line each.
 4. `uv run scripts/skills_catalog.py` to write `docs/skills.md`, then
-   `uv run scripts/skills_catalog.py --check` (check: zero problems; no `customise:` marker left:
-   search `.claude/` for `customise:` and `<fill in`).
+   `uv run scripts/skills_catalog.py --check --installed` (check: zero problems; `--installed`
+   also fails on a `customise:` or `<fill in` marker left in a skill or agent).
 5. `uv run --script scripts/nest_update.py stamp` again, so the skills and agents are in the
    stamp (check: `nest.json` lists a file under `.claude/skills/nest-update/`).
 6. Stop point: STATE.md `next: B3b`, ask to commit, ask for a restart so skills and agents load.
 
 ### B3b. Integrations
 
-Per integration skill chosen in D4, in a fresh session:
+Per integration skill the user wants connected now (D4), in a fresh session. A skill whose
+connection was postponed has nothing to do here: its open item stays.
 
 1. Connect the route the user chose: add the MCP server, enable the connector, or run the login
    script. Only after a yes; a login the user does themselves (`! <command>`). Tokens stay where the
-   route keeps them, never in the workspace. For the Microsoft route: copy
+   route keeps them, never in the workspace. Add an MCP server in the local scope (the default
+   of `claude mcp add`), not the project scope: a project-scoped server is written to
+   `.mcp.json` in the workspace, which can hold addresses and keys. For the Microsoft route: copy
    `kit/integrations/microsoft-graph/graph.py` to `scripts/graph.py` and follow its README (the
    user registers the app and signs in with the device code; NEST never sees a password).
 2. `tool-map.md` in the workspace root, from `kit/integrations/tool-map.example.md`: which tool does
    which operation, from the tools that now actually exist; `none` where nothing does (always for
    `mail.send`).
 3. Permission rules in `.claude/settings.json` from D4 point 3, in the syntax of
-   `kit/integrations/permissions.example.json`: `ask` for every changing action marked with * in the
-   tool map, `deny` for any send-mail tool the route offers. MCP rules cannot be limited per
-   argument, so gate the whole tool.
-4. One read-only test: the next three appointments, or the unread count, or today's weather
-   (check: the result is real and matches what the user sees in their app). Only then tick it.
-5. Anything that did not work: STATE.md "Open", with what is missing.
+   `kit/integrations/permissions.example.json`: `ask` for every action with "yes" under
+   "Ask first" in the tool map, `deny` for any send-mail tool the route offers and for reading
+   the folder where the route keeps its token. MCP rules cannot be limited per argument, so gate
+   the whole tool.
+4. `uv run --script scripts/nest_update.py stamp` again, so `scripts/graph.py` and
+   `tool-map.md` are in the stamp when they were installed.
+5. Stop point when a server or connector was added: STATE.md `next: B3b, step 6 (test the
+   integrations)`, ask to commit, ask for a restart so the new tools load. A route that is only
+   a script (the Microsoft route) needs no restart: go on.
+6. One read-only test per integration: the next three appointments, or the unread count, or
+   today's weather (check: the result is real and matches what the user sees in their app).
+   Only then tick it.
+7. Anything that did not work: STATE.md "Open", with what is missing. Then `next: B4`.
 
 ### B4. Test
 
-In a fresh session. Record every outcome in `_setup/log.md`.
+In a session that started after B3 (and after B3b step 5 when a server or connector was added).
+Record every outcome in `_setup/log.md`.
 
 1. **Secret guard:** `uv run --script scripts/validate.py --self-test` passes; then try to write a
    file containing a fake key in the shape of a real one (for example a GitHub token prefix with
-   random characters): the write is blocked. Never use a real key.
+   random characters): the write is blocked. Never use a real key. With the pre-commit scan
+   (E7): put the same fake key in a new file `guard-test.txt` with a shell command (the one
+   place a shell write is meant; the scan after the command reports the key, which is the
+   guard working), `git add` it and try to commit: the commit is refused. Then take the file out again
+   (`git rm --cached guard-test.txt`, and remove this test file you made yourself).
 2. **Session start:** the session-start line appeared at the start of this session. After the
    first message, `.claude/.session/` holds a words file with that message in it.
-3. **Wiki:** ask the user for a small real note for the inbox (a thought, a link, a question);
+3. **Wiki:** without the wiki skills (the backbone only): lint is zero and the context pages
+   open; go on to step 4. With them: ask the user for a small real note for the inbox (a thought, a link, a question);
    write a sample yourself only if they would rather not. Run the inbox skill, check it is filed,
    linked, logged, and the original is in the archive unchanged. Ask one question with the query skill. Lint is zero.
 4. **One run per chosen team:** a small, real idea of the user's through `idea` (light or full),
    and, if chosen, through `blueprint`. Check the board shows, the score comes from
    `council_score.py`, and saving writes the idea pages and lint stays zero.
-5. **Each other chosen skill:** one natural test phrase from its `metadata.try`.
+5. **Each other chosen skill:** one natural test phrase from its `metadata.try`. An integration
+   skill that is not connected yet: its test is that it says so in one line and invents nothing.
 6. **Updates:** `uv run --script scripts/nest_update.py plan` says the workspace is up to date (or
    that it could not reach the source, which is an open item, not a failure).
 7. **Leftovers:** search the workspace for `customise:`, `<fill in` and `TODO` outside `_setup/`
@@ -727,16 +870,29 @@ In a fresh session. Record every outcome in `_setup/log.md`.
 
 ### B5. GitHub
 
-Only with E answers, each action after a yes:
+Only with a GitHub account (E1); each action after a yes. Without one, do step 1 only when the
+user wants a README, and go on to the final check.
 
-1. README from `kit/github/README.template.md` in the style from E6, with the name, the tagline from
+1. README from `kit/github/README.template.md` in the style from E6 (also without GitHub, when
+   the user answered E6 or asks for one), with the name, the tagline from
    F2 and a "what is in here" table generated from the chosen parts. Never personal details.
-2. `.github/` workflows from `kit/github/` (gitleaks, and tests if the workspace has any).
+2. `.github/` from `kit/github/`, as chosen in E7: `workflows/gitleaks.yml`,
+   `workflows/checks.yml` (it runs the skills catalogue check and the secret scan on every
+   push) and `dependabot.yml`.
 3. Ask the `security-reviewer` agent to scan everything that will be pushed. Fix hard findings.
 4. `gh repo create <name> --private --source . --remote origin`, then push after a yes.
-5. Wiki backup per E4 (a): `uv run scripts/wiki_backup.py init <private-repo-url>` and the first
-   backup after a yes; record the git dir in `nest.json` (check: the session-start line shows the
-   backup state).
+5. Wiki backup per E4 (a): the backup needs its own private repository, so after a yes
+   `gh repo create <name>-wiki --private` (no `--source`: the script fills it). Then
+   `uv run scripts/wiki_backup.py init <private-repo-url>` and the first backup after a yes;
+   record the git dir in `nest.json` (`wiki_backup.git_dir`), so a second workspace with the
+   same folder name can never share it. The first backup scans every page for secrets; when it
+   stops on one, show the user the line: they replace the value, or say it is a false alarm
+   (then `--no-scan`, once). The backup uses git's own identity settings: when the
+   script says name and address are missing, set the ones from E5 for the backup only
+   (`git --git-dir <its git dir> config user.name ...` and `user.email`), not with `--global`
+   (check: the session-start line shows the backup state).
+6. `uv run --script scripts/nest_update.py stamp` again, so the files under `.github/` are in
+   the stamp. STATE.md: `next: section 9 (final check)`.
 
 ---
 
@@ -746,7 +902,8 @@ Go through this list and record each outcome in `_setup/log.md`. Say "done" only
 done, and say what failed or was skipped.
 
 1. `uv run scripts/wiki.py lint` reports zero errors; `reindex` runs.
-2. The secret guard blocked the test term and a fake key (B4.1).
+2. The self-test of the secret guard passed and a fake key was blocked on write (B4.1), and on
+   commit when the pre-commit scan was chosen.
 3. `uv run scripts/skills_catalog.py --check` reports zero problems; the skills and agents that
    CLAUDE.md lists match what exists (count them).
 4. `CLAUDE.md` is under 150 lines and holds no facts that change weekly.
@@ -770,8 +927,10 @@ ideas), and whether an integration keeps working after its token expires.
 When you start the wrap-up, add its five points to STATE.md as checkboxes, plus every B4 test that
 did not run yet. Tick each only when it is done; the wrap-up is not done while one is open.
 
-1. Remove the "Setup in progress" line from `CLAUDE.md`. Keep `_setup/` (it is the history of how
-   this workspace was made; it is gitignored); ask whether `_setup/nest/` may move to the archive.
+1. Remove the "Setup in progress" line from `CLAUDE.md`. Keep `_setup/` as it is, with
+   `_setup/nest/` in it: it is the history of how this workspace was made, it is gitignored, and
+   the updater can fall back on that kit copy. When the wrap-up is done, set `next: done` in
+   STATE.md.
 2. Write `wiki/how-this-wiki-works.md` for real: how the workspace works, in plain words, on one
    page, in the user's language.
 3. Give the user an overview in the chat itself, not as a pointer to a file: the folder tree two
@@ -796,7 +955,7 @@ and the nest-update skill brings over what NEST improves later.
 
 ## Appendix A: pain points and what NEST builds for them
 
-| Pain point (B1) | What NEST recommends |
+| Pain point (B1, or heard elsewhere in the interview) | What NEST recommends |
 |---|---|
 | Writing notes at all | Capture-first: one inbox, a "new note" button and hotkey, no structure needed while writing; the inbox skill files it later; session-end writes the session note for you |
 | Finding notes again | The query skill with lazy lookup (index first, at most three pages, then search one section); consistent links as vault paths; Bases views on Home; weekly lint |
@@ -834,10 +993,10 @@ runs it after a yes; **A** = the assistant may just do it.
 | wiki-maint | Reindex, lint, stats and signals (stale pages, big inbox, backups) | wiki | C | how often (weekly is recommended) |
 | obsidian-markdown, obsidian-bases | Correct Obsidian syntax for notes and Bases views | wiki | A | none |
 | idea (The Council) | Judges an idea: four perspectives, a fact check, a jury, a verdict with a score and a next step | agents; web | P | full or light; which context pages hold their goals, time and money; currency; the ideas section name; whether The Architects are installed too |
-| blueprint (The Architects) | Works a rough idea out into a blueprint: what exists, variants, the first user, the smallest version, risks | agents; web | P | full or light; same context pages; the ideas section name |
+| blueprint (The Architects) | Works a rough idea out into a blueprint: what exists, variants, the first user, the smallest version, risks | agents; web | P | full or light; same context pages; the ideas section name; whether The Council is installed too |
 | career | Tracks applications and career moves, prepares for a vacancy | wiki | A for status, C for writing | which tracks (jobs, study, promotion, freelance); where their CV or experience lives |
 | study-inbox | Turns raw course material into a module note, a file with their own answers kept verbatim, and a checklist per module | wiki | C | which courses or certifications, with exam dates; where course folders live if not under projects |
-| research | Quick web research with numbered findings, deeper on request via the researcher agent, saved to the wiki | web | A | the domains they research most; source rules for their field |
+| research | Quick web research with numbered findings, deeper on request via the researcher agent, saved to the wiki | web | A | the domains they research most; source rules for their field; whether they want vacancies followed (`profile.md`) and news checked against their own devices (`stack.md`): each file is installed only on a yes |
 | session-end | Closes a work session: session note, decisions, project status, next steps | wiki | C | which pages to update at the end of a session |
 | writing-style | Rewrites text in their voice and checks a word list | none | C | the words, phrases and openers they dislike; their language; whether texts for others must be checked |
 | release | Commits per topic, runs the checks, pushes after a yes | git | C | commit prefixes; whether to push to GitHub |

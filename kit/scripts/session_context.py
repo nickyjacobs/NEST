@@ -28,7 +28,11 @@ What it reads, all optional:
                      for your briefing"}}: on a new session before that hour, when the
                      morning-briefing skill is installed, the line ends with the text.
 
+When nest.json is there but is not valid JSON, the line says so, because every setting above is
+then off. A byte order mark at its start is read past.
+
 The workspace root is $CLAUDE_PROJECT_DIR, else the hook's cwd, else the current directory.
+The hook input is read as UTF-8 bytes, whatever the console code page is.
 It never fails the session: every error is swallowed, git calls are time-boxed, exit code is 0.
 """
 
@@ -60,11 +64,30 @@ def workspace_root(hook_cwd: str | None) -> Path:
 
 
 def read_json(path: Path) -> dict:
+    """The file's JSON object, or {}. A byte order mark (Windows editors add one) is read past."""
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
         return data if isinstance(data, dict) else {}
     except (OSError, ValueError):
         return {}
+
+
+BROKEN_PREFIX = "nest.json cannot be read"
+
+
+def broken_part(root: Path) -> str | None:
+    """A plain part for the line when nest.json is there but is not a JSON object: without it the
+    settings in that file (the backup, the ceiling, the update check, the nudge) go quiet unseen."""
+    path = root / "nest.json"
+    try:
+        if not path.is_file():
+            return None
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
+    except OSError:
+        return None
+    except ValueError:
+        return f"{BROKEN_PREFIX} (not valid JSON), so its settings are off"
+    return None if isinstance(data, dict) else f"{BROKEN_PREFIX} (not a JSON object), so its settings are off"
 
 
 def find_config(root: Path) -> Path | None:
@@ -202,8 +225,8 @@ def size_part(root: Path) -> str | None:
 def update_part(root: Path) -> str | None:
     """The line of nest_update.py when a newer NEST release exists; silent on any problem."""
     try:
-        if not isinstance(read_json(root / "nest.json").get("nest"), dict):
-            return None
+        if not isinstance(read_json(root / "nest.json").get("nest"), dict) and not broken_part(root):
+            return None  # no stamp: nothing to update. A broken file is the updater's to judge too.
         sys.path.insert(0, str(Path(__file__).resolve().parent))
         import nest_update
         return nest_update.notice(root, timeout=GIT_TIMEOUT) or None
@@ -243,22 +266,37 @@ def build_line(root: Path, source: str | None = None) -> str:
     item = first_open_item(root)
     if item is not None:
         parts.append(f"first open item in {NEXT_FILE.as_posix()}: {item}")
-    for extra in (size_part(root), update_part(root), nudge_part(root, source)):
-        if extra:
+    broken = broken_part(root)
+    for extra in (broken, size_part(root), update_part(root), nudge_part(root, source)):
+        # nest_update.notice may report the broken file itself: say it once.
+        if extra and not (broken and extra is not broken and extra.startswith(BROKEN_PREFIX)):
             parts.append(extra)
     return "Workspace: " + ", ".join(parts) if parts else ""
 
 
 def read_stdin(seconds: float = 3.0) -> str:
-    """The hook input. Claude Code writes it at once; a run by hand with stdin left open must not
-    hang, so the read gives up after a moment."""
+    """The hook input, decoded as UTF-8 whatever the console code page is (on Windows a text read
+    would use the code page and garble or lose a message with an accent or a curly quote).
+    Claude Code writes it at once; a run by hand with stdin left open must not hang, so the read
+    gives up after a moment."""
     if sys.stdin is None or sys.stdin.isatty():
         return ""
     box: list[str] = []
 
     def read() -> None:
         try:
-            box.append(sys.stdin.read())
+            # Straight from the file descriptor: a read through sys.stdin.buffer would hold its
+            # lock in this thread and abort the interpreter when the wait below gives up.
+            try:
+                fd = sys.stdin.fileno()
+            except (OSError, ValueError, AttributeError):
+                raw = sys.stdin.buffer.read()  # a stand-in stream without a descriptor cannot hang
+            else:
+                chunks: list[bytes] = []
+                while chunk := os.read(fd, 65536):
+                    chunks.append(chunk)
+                raw = b"".join(chunks)
+            box.append(raw.decode("utf-8", errors="replace"))
         except Exception:
             pass
 

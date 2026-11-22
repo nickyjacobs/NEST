@@ -153,3 +153,16 @@ def test_secret_is_refused_when_the_session_lives_in_another_folder(repo, env, t
     assert refused.returncode != 0
     assert "Commit blocked" in refused.stderr
     assert commit_count(repo, env) == 0
+
+
+@pytest.mark.skipif(os.name == "nt", reason="builds a PATH out of symlinks")
+def test_missing_uv_gives_one_clear_line(repo, env, tmp_path):
+    # A git client started outside a terminal often has a PATH without uv.
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    (bin_dir / "git").symlink_to(shutil.which("git"))
+    (repo / "notes.md").write_text("# Notes\n", encoding="utf-8")
+    assert run(["git", "add", "-A"], repo, env).returncode == 0
+    done = run([SH, (repo / ".githooks" / "pre-commit").as_posix()], repo, {**env, "PATH": str(bin_dir)})
+    assert done.returncode == 1
+    assert done.stderr.count("\n") == 1 and "uv is not on PATH" in done.stderr and "commit is stopped" in done.stderr

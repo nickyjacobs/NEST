@@ -72,9 +72,15 @@ All fine, or change per number?
 - Write to the destination's template: skip the Templater block, fill the frontmatter yourself
   (`title`, `tags`, `category`, `status`, `author: claude`, dates; `created` keeps the original
   date), keep the user's own text verbatim (under a heading "Own note" if needed), links as vault
-  paths, sources named.
+  paths, sources named. In a section that asks for sources, the source field is never left
+  empty: a page made from an inbox note names at least that note's archived original (and
+  "own note" or the teacher, book or page the user mentioned).
 - Extending an existing note: add a section `## Addition YYYY-MM-DD (Claude)` at the bottom,
   never overwrite what is there.
+- Text you copy from a note into a wiki page must not be able to act in Obsidian: in the copy
+  (never in the raw note) give a code fence whose language starts with `meta-bind` the language
+  `text`, and write every `<%` as `<\%`. A Meta Bind button is plain text in a code block and can
+  run a template; a Templater tag is code.
 - Then move the original note unchanged to `90-archives/inbox/` (a question too; the link to the
   answer sits in the answer page, not in the raw note). Delete nothing.
 - Then:

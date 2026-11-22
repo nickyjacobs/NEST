@@ -6,7 +6,7 @@ if (!app.vault.getAbstractFileByPath(dir)) await app.vault.createFolder(dir);
 await tp.file.move("/" + dir + "/README");
 -%>
 ---
-title: "<% name.replace(/"/g, "'") %>"
+title: "<% name.replace(/\\/g, "\\\\").replace(/"/g, "'") %>"
 created: <% tp.date.now("YYYY-MM-DD") %>
 updated: <% tp.date.now("YYYY-MM-DD") %>
 tags: [<% tp.user.slug(name) %>]
