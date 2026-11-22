@@ -7,11 +7,13 @@
 One script, one job per `--event`. Wire only the ones the user wants (see
 `kit/claude/settings.reference.json`):
 
-  start       SessionStart. Registers the session. When another session was active in this
-              workspace a moment ago, prints one line so Claude knows two sessions may write the
-              same files. After a compaction it names the file with the user's own words.
+  start       SessionStart. Registers the session and notes when it was opened. After a
+              compaction it names the file with the user's own words, and prints the
+              second-session line when one is due (see prompt).
   prompt      UserPromptSubmit. Appends the user's message, word for word, to a file for this
-              session, and repeats the second-session line once when another session turns up.
+              session. When another session was active in this workspace while this one was
+              open, prints one line, once per other session, so Claude knows two sessions may
+              write the same files.
               One thing is taken out first: a secret the user pasted (a key, a token, a
               password, a private key block), as validate.py next to this script recognises
               it. In its place stands "[secret removed]", so the file and the compaction
@@ -26,8 +28,11 @@ One script, one job per `--event`. Wire only the ones the user wants (see
   plan        PostToolUse on ExitPlanMode. Copies the approved plan into the wiki inbox.
 
 Files, all under `.claude/.session/` (gitignored, local to this machine):
-  <session>.json       when the session started and was last seen, where its transcript is,
-                       what it was already told
+  <session>.json       when the session started, was opened last and was last seen, where its
+                       transcript is, what it was already told, and the first words of its last
+                       message, by which another session can name it: secrets and the private
+                       terms of the workspace taken out, plain words only, and nothing at all
+                       when validate.py is not there to take them out
   <session>.words.md   the user's messages of that session
 Both are removed after `keep_days`. The folder is made for the user alone (mode 0700, the files
 0600), because the words file holds everything the user typed; on Windows the folder keeps the
@@ -48,10 +53,18 @@ Configuration (optional), in nest.json at the workspace root:
       "plan_author": "claude"   author value for a plan note; "" leaves the field out
   }}
 
-A session counts as active for `live_minutes` after the newer of two moments: its last prompt, and
-the last write to its transcript file. The second one keeps a session visible while it works for
-a long time without a new prompt. A session that crashed cannot say goodbye, so it still counts
-until that time has passed.
+A session's last activity is the newer of two moments: its last prompt, and the last write to its
+transcript file. The second one keeps a session visible while it works for a long time without a
+new prompt.
+
+Another session counts as a second session only when there is proof that it ran next to this one:
+its last activity is later than the moment this session was opened plus a minute
+(HANDOVER_SECONDS), and no older than `live_minutes`. A file of another session alone proves
+nothing: a session that crashed cannot say goodbye, SessionEnd may not run or may not finish, and
+a user who ends one conversation and starts the next sees the new one start while the old one
+still writes its last message. All of those were active before this session opened, or in its
+first minute, and then never again. The price is that a real second session is named on the first
+prompt after it showed itself, not at the start.
 
 The workspace root is $CLAUDE_PROJECT_DIR, else the hook's cwd, else the current directory.
 The hook input is read as UTF-8 bytes, whatever the console code page is. Input without a
@@ -75,6 +88,13 @@ STATE_DIR = Path(".claude/.session")
 LESSONS_FILE = Path(".claude/lessons.json")
 DEFAULTS = {"live_minutes": 30, "keep_days": 14, "words_chars": 8000, "plan_author": "claude"}
 PROMPT_CHARS = 4000
+# How long after this session was opened another session may still finish its last step without
+# counting as a second session. The first real user's old conversation wrote its last message 2
+# and 8 seconds after the new one had started.
+HANDOVER_SECONDS = 60
+# How much of a session's last message is kept in its state file, so another session can say
+# which conversation it means.
+ASKED_CHARS = 80
 WORDS_CEILING = 9500  # Claude Code cuts a hook's stdout at 10,000 characters; the intro needs room
 STAMP = re.compile(r"(?m)^## \d{4}-\d{2}-\d{2} \d{2}:\d{2}$")
 WORDS_OPEN, WORDS_CLOSE = "<<< the user's messages", ">>> end of the user's messages"
@@ -170,15 +190,23 @@ def save_state(root: Path, sid: str, state: dict) -> None:
             pass
 
 
-def touch(root: Path, sid: str, now: float, data: dict | None = None) -> dict:
+def touch(root: Path, sid: str, now: float, data: dict | None = None, opened: bool = False) -> dict:
+    """Note that the session is alive. `opened` marks the moment the user opened it (a start or
+    a resume): what another session did before that was not done next to this one."""
     state = load_state(root, sid)
     state.setdefault("started", now)
+    if opened or not is_time(state.get("opened")):
+        state["opened"] = now if opened else state["started"]
     state["seen"] = now
     transcript = (data or {}).get("transcript_path")
     if isinstance(transcript, str) and transcript:
         state["transcript"] = transcript
     save_state(root, sid, state)
     return state
+
+
+def is_time(value) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
 def cleanup(root: Path, keep_days: float, now: float) -> None:
@@ -197,7 +225,7 @@ def last_active(state: dict) -> float | None:
     """The newer of the last prompt and the last write to the transcript: a session that works
     for a long time without a new prompt keeps writing its transcript."""
     seen = state.get("seen")
-    seen = float(seen) if isinstance(seen, (int, float)) and not isinstance(seen, bool) else None
+    seen = float(seen) if is_time(seen) else None
     transcript = state.get("transcript")
     if isinstance(transcript, str) and transcript:
         try:
@@ -208,8 +236,10 @@ def last_active(state: dict) -> float | None:
     return seen
 
 
-def other_sessions(root: Path, sid: str, live_minutes: float, now: float) -> list[tuple[str, float]]:
-    """Other sessions seen within `live_minutes`: (id, minutes since their last activity)."""
+def other_sessions(root: Path, sid: str, live_minutes: float, now: float,
+                   after: float | None = None) -> list[tuple[str, float]]:
+    """Other sessions seen within `live_minutes`, and later than `after` when that is given:
+    (id, minutes since their last activity)."""
     folder = root / STATE_DIR
     found = []
     if folder.is_dir():
@@ -218,42 +248,61 @@ def other_sessions(root: Path, sid: str, live_minutes: float, now: float) -> lis
                 continue
             data = read_json(path)
             seen = last_active(data) if isinstance(data, dict) else None
-            if seen is not None and 0 <= now - seen <= live_minutes * 60:
+            if seen is not None and 0 <= now - seen <= live_minutes * 60 and (after is None or seen > after):
                 found.append((path.stem, (now - seen) / 60))
     return found
 
 
 def second_session_line(root: Path, sid: str, conf: dict, now: float) -> str:
-    """One line about sessions this one was not told about yet; marks them as told."""
+    """One line about sessions that were active while this one was open and that it was not
+    told about yet; marks them as told. Without a known moment of opening nothing is said."""
     state = load_state(root, sid)
-    told = set(state.get("told") or [])
-    fresh = [(other, minutes) for other, minutes in other_sessions(root, sid, conf["live_minutes"], now)
+    told = state.get("told")
+    # A value of another kind (a damaged file) counts as: not told yet.
+    told = {item for item in told if isinstance(item, str)} if isinstance(told, list) else set()
+    opened = next((float(state[key]) for key in ("opened", "started") if is_time(state.get(key))), now)
+    fresh = [(other, minutes) for other, minutes
+             in other_sessions(root, sid, conf["live_minutes"], now, after=opened + HANDOVER_SECONDS)
              if other not in told]
     if not fresh:
         return ""
     state["told"] = sorted(told | {other for other, _ in fresh})
     save_state(root, sid, state)
-    minutes = min(m for _, m in fresh)
+    newest, minutes = min(fresh, key=lambda item: item[1])
     ago = "less than a minute ago" if minutes < 1 else f"{int(minutes)} minute{'s' if int(minutes) != 1 else ''} ago"
-    return ("Another Claude Code session is open in this workspace (last active " + ago + "). "
-            "Two sessions that write the same files can overwrite each other's work. "
+    clock = datetime.fromtimestamp(now - minutes * 60).strftime("%H:%M")
+    asked = load_state(root, newest).get("asked")
+    asked = plain_words(asked) if isinstance(asked, str) else ""  # again: the file may be older, or not ours
+    return ("A second Claude Code session was active in this workspace " + ago + " (at " + clock + "), while this "
+            "session was already open. "
+            + (f"Its last message from the user began: '{asked[:ASKED_CHARS + 3]}'. " if asked else "")
+            + "Two sessions that write the same files can overwrite each other's work. "
+            "Where the user finds it: in a terminal, another window or tab where Claude Code runs in this "
+            "folder; in the VS Code extension or the desktop app, another conversation that is still working "
+            "(a second Claude tab or panel, a second window on this folder, or an earlier conversation in the "
+            "history). Once found, the safe way on is to let one of the two finish, or to close one, before "
+            "going on with the same files. A conversation the user closed can go on for a moment to finish its "
+            "last step; when the user finds no second one, nothing needs to be done. "
             "The user has not been told about it in this session yet.")
 
 
 SECRET_MARK = "[secret removed]"
+PRIVATE_MARK = "[private term removed]"
 _rules: list | None = None
 _key_blocks = None
+_private_terms = None  # validate.load_private_rules, once secret_rules() has found validate.py
 
 
 def secret_rules() -> list:
     """The hard rules of validate.py, when it sits next to this script; else none. What a private
     key block is comes from the same place, so the scan and this file cannot disagree about it."""
-    global _rules, _key_blocks
+    global _rules, _key_blocks, _private_terms
     if _rules is None:
         try:
             sys.path.insert(0, str(Path(__file__).resolve().parent))
             import validate
             _rules, _key_blocks = list(validate.HARD_RULES), validate.key_blocks
+            _private_terms = validate.load_private_rules
         except Exception:
             _rules = []
     return _rules
@@ -318,6 +367,31 @@ def without_secrets(text: str) -> str:
     return "\n".join(lines)
 
 
+def plain_words(text: str) -> str:
+    """Text that is safe to put into another session's context as a quotation: printable
+    characters only (no control character, no escape sequence, no invisible or
+    direction-changing character), no angle bracket and no backtick (a tag or a code block),
+    no quote (it stands between quotes), all white space as single spaces."""
+    return " ".join("".join(ch if ch.isprintable() and ch not in "<>`\"'" else " " for ch in text).split())
+
+
+def asked_text(root: Path, prompt: str) -> str:
+    """The start of a message for the second-session line of another session: the message after
+    the secrets were taken out, with the private terms of this workspace taken out by the
+    scanner's own rules as well, as plain words. "" when validate.py is not next to this script
+    or the terms cannot be applied: then nothing vouches for the text, and none is kept."""
+    if not prompt or not secret_rules() or _private_terms is None:
+        return ""
+    text = prompt[:ASKED_CHARS * 10]  # enough to show ASKED_CHARS of it, whatever is taken out
+    try:
+        for rule in _private_terms(root)[0]:
+            text = rule.regex.sub(PRIVATE_MARK, text)
+    except Exception:
+        return ""
+    text = plain_words(text)
+    return text[:ASKED_CHARS].rstrip() + ("..." if len(text) > ASKED_CHARS else "")
+
+
 def user_words(root: Path, sid: str, limit: int) -> str:
     """The user's messages for the compaction summary: all of them when they fit, else the first
     one (a session's goal is usually there) and as many of the newest as fit."""
@@ -356,7 +430,8 @@ def on_start(root: Path, data: dict, conf: dict, now: float) -> str:
     cleanup(root, conf["keep_days"], now)
     if not sid:
         return ""
-    state = touch(root, sid, now, data)
+    # A compaction happens inside a session that stays open; every other start opens it.
+    state = touch(root, sid, now, data, opened=data.get("source") != "compact")
     if data.get("source") == "compact" and state.get("lessons"):
         # The lessons shown so far went out with the old context: show each again when it applies.
         state.pop("lessons")
@@ -378,12 +453,14 @@ def on_prompt(root: Path, data: dict, conf: dict, now: float) -> str:
     touch(root, sid, now, data)
     prompt = data.get("prompt")
     prompt = prompt.strip() if isinstance(prompt, str) else ""
+    unclean = False
     if prompt:
         try:
             # A little past the cut, so a secret that straddles it is still seen whole.
             prompt = without_secrets(prompt[:PROMPT_CHARS + 2000])
         except Exception:
             prompt = ""  # rather no words than a secret on disk
+            unclean = True
         if len(prompt) > PROMPT_CHARS:
             prompt = prompt[:PROMPT_CHARS].rstrip() + "\n(message cut here)"
         prompt = LOOKS_LIKE_OURS.sub(r"\\\g<0>", prompt)
@@ -392,6 +469,12 @@ def on_prompt(root: Path, data: dict, conf: dict, now: float) -> str:
         stamp = datetime.fromtimestamp(now).strftime("%Y-%m-%d %H:%M")
         with private_file(path, append=True) as fh:
             fh.write(f"## {stamp}\n\n{prompt}\n\n")
+    # The start of the message for the second-session line of another session: secrets and
+    # private terms taken out, plain words only. A message that could not be cleaned leaves none.
+    if prompt or unclean:
+        state = load_state(root, sid)
+        state["asked"] = asked_text(root, prompt)
+        save_state(root, sid, state)
     return second_session_line(root, sid, conf, now)
 
 

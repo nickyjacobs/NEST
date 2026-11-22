@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -223,3 +224,233 @@ def test_value_option_never_swallows_what_follows(command, tool):
         reason = guard.check(f"{command} {rest}", tool)
         assert reason is not None, f"{command} {rest}"
     assert guard.check(command, tool) is not None  # and without a value it is refused too
+
+
+# --- the security reviewer and the scanner ---------------------------------------------------
+# The first real user's reviewer searched with the raw terms file (`rg -f`): every line of that
+# file became a pattern, a comment and an empty line included, and an empty line matches
+# everything. The reviewer asks validate.py now, which reads the file the right way.
+
+AGENT_FILE = SCRIPT.parent.parent / "agents" / "security-reviewer.md"
+
+
+@pytest.mark.parametrize("cmd", [
+    "rg -n -i -f .claude/sensitive-terms.txt", "rg -nif .claude/sensitive-terms.txt wiki",
+    "rg --file .claude/sensitive-terms.txt .", "rg --file=.claude/sensitive-terms.txt .",
+    "grep -rn -f .claude/sensitive-terms.txt .", "grep -rnf .claude/sensitive-terms.txt .",
+    "grep --file=.claude/sensitive-terms.txt -rn .", "/usr/bin/grep -f terms.txt a.md",
+])
+def test_pattern_file_is_refused_and_the_reason_names_the_scanner(cmd):
+    reason = guard.check(cmd)
+    assert reason and "pattern" in reason and "scripts/validate.py --changed" in reason
+
+
+@pytest.mark.parametrize("cmd,tool", [
+    ("uv run --quiet --script scripts/validate.py --file notes/a.md", "Bash"),
+    ("uv run --script ./scripts/validate.py --file notes/a.md 'wiki/b c.md' ./wiki/*.md", "Bash"),
+    ("uv run --quiet --script scripts/validate.py --file notes/a.md 2>&1 | head -50", "Bash"),
+    ("uv run --quiet --script scripts/validate.py --staged", "Bash"),
+    ("uv run --quiet --script scripts/validate.py --changed", "Bash"),
+    ("uv run -q --script scripts/validate.py --changed --private-blocks 2>&1", "Bash"),
+    ("uv run --quiet --script scripts/validate.py --changed", "PowerShell"),
+    ("uv run --quiet --script scripts/validate.py --private-blocks --file a.md", "Bash"),
+    ("uv run --quiet --script scripts/validate.py --file notes\\a.md", "PowerShell"),
+    ("uv run --quiet --script .\\scripts\\validate.py --file notes\\a.md 2>&1", "PowerShell"),
+])
+def test_reviewer_may_ask_the_scanner(cmd, tool):
+    assert guard.check(cmd, tool, at_root=True) is None
+
+
+@pytest.mark.parametrize("cmd,why", [
+    ("uv run --quiet --script scripts/validate.py --hook shell", "--hook"),          # writes its state file
+    ("uv run --quiet --script scripts/validate.py --stdin", "--stdin"),              # would wait for input
+    ("uv run --quiet --script scripts/validate.py --self-test", "--self-test"),
+    ("uv run --quiet --script scripts/validate.py --file -", "wait forever"),
+    ("uv run --quiet --script scripts/validate.py --file *.md", "wildcard"),
+    ("uv run --quiet --script scripts/validate.py --file //server/share/a.md", "network share"),
+    ("uv run --quiet --script scripts/other.py --file a.md", "only"),
+    ("uv run --quiet --script ../scripts/validate.py --file a.md", "only"),
+    ("uv run --quiet --script /tmp/scripts/validate.py --file a.md", "only"),
+    ("uv run --quiet --script sub/scripts/validate.py --file a.md", "only"),
+    ("uv run scripts/validate.py --file a.md", "only"),
+    ("uv run --with evil --script scripts/validate.py --file a.md", "only"),
+    ("uv run --quiet --python 3.12 --script scripts/validate.py --file a.md", "only"),
+    ("uv run python -c 'print(1)'", "only"), ("uv pip install x", "only"), ("uv", "only"),
+    ("uv tool run evil", "only"), ("uvx evil", "not uvx"),
+    ("uv run --quiet --script scripts/validate.py --file a.md | sh", "after a pipe"),
+    ("uv run --quiet --script scripts/validate.py --file a.md > out.txt", "redirect"),
+    ("uv run --quiet --script scripts/validate.py --file $HOME/a.md", "variable"),
+])
+def test_uv_runs_nothing_but_the_scanner(cmd, why):
+    reason = guard.check(cmd, "Bash", at_root=True)
+    assert reason and why in reason, f"{cmd!r}: {reason}"
+    if why != "wildcard":  # PowerShell hands a * to a program as it stands, as with git
+        assert guard.check(cmd, "PowerShell", at_root=True) is not None, cmd
+
+
+def test_scanner_is_only_run_from_the_workspace_folder(tmp_path):
+    # A folder further down can hold a scripts/validate.py of its own, which is another program.
+    cmd = "uv run --quiet --script scripts/validate.py --file a.md"
+    assert "workspace folder" in guard.check(cmd, at_root=False)
+    assert "workspace folder" in guard.check(cmd)  # not known where the call runs: refused
+    sub = tmp_path / "sub"
+    sub.mkdir()
+    payload = {"tool_name": "Bash", "tool_input": {"command": cmd}}
+    env = {**os.environ, "CLAUDE_PROJECT_DIR": str(tmp_path)}
+
+    def hook(cwd) -> int:
+        data = json.dumps({**payload, **({"cwd": str(cwd)} if cwd else {})}).encode()
+        return subprocess.run(check=False, args=[sys.executable, str(SCRIPT)], input=data, capture_output=True, env=env).returncode
+
+    assert hook(tmp_path) == 0 and hook(sub) == 2 and hook(None) == 2
+    env.pop("CLAUDE_PROJECT_DIR")
+    assert hook(tmp_path) == 2
+
+
+def fenced(text: str, language: str) -> list[str]:
+    lines, inside = [], False
+    for line in text.splitlines():
+        if line.startswith("```"):
+            inside = line.strip() == f"```{language}"
+        elif inside and line.strip():
+            lines.append(line.strip())
+    return lines
+
+
+def test_every_command_the_reviewer_is_shown_passes_its_own_guard():
+    text = AGENT_FILE.read_text(encoding="utf-8")
+    bash, powershell = fenced(text, "bash"), fenced(text, "powershell")
+    assert len(bash) >= 4 and len(powershell) >= 2
+    for cmd in bash:
+        assert guard.check(cmd, "Bash", at_root=True) is None, cmd
+    for cmd in powershell:
+        assert guard.check(cmd, "PowerShell", at_root=True) is None, cmd
+
+
+def test_reviewer_is_sent_to_the_scanner_for_the_terms_and_told_what_its_guard_refuses():
+    text = AGENT_FILE.read_text(encoding="utf-8")
+    assert "scripts/validate.py --file" in text and "scripts/validate.py --changed" in text
+    # No output is only "clean" when every path was scanned: the text says what an unscanned path looks like,
+    # what each exit code means, and that a name as git prints it is not passed on.
+    assert "was not scanned" in text and "3 is" in text and "usage:" in text
+    assert "bare file names" not in text and "never pass it to a command" in text
+    assert "`rg -f`" in text and "`grep -f`" in text  # named as what not to do
+    # What the first run tripped over: a pipe into cut, and variables in PowerShell.
+    assert "`cut`" in text and "PowerShell" in text and "no variables" in text
+    assert "\u2014" not in text
+
+
+# --- what the review of the scanner allowance found -------------------------------------------
+
+@pytest.mark.parametrize("cmd", [
+    # A POSIX file name may hold a backslash: these name another file than scripts/validate.py.
+    "uv run --quiet --script 'scripts\\validate.py' --file a.md",
+    'uv run --quiet --script "scripts\\/validate.py" --file a.md',
+    'uv run --quiet --script "./scripts\\/validate.py" --file a.md',
+    "uv run --quiet --script '.\\scripts\\validate.py' --file a.md",
+    "uv run --quiet --script .\\\\scripts\\\\validate.py --file a.md",
+    'uv run --quiet --script "scripts\\validate.py" --file a.md',
+])
+def test_scanner_path_with_a_backslash_is_another_file_in_bash(cmd):
+    assert "only" in guard.check(cmd, "Bash", at_root=True)
+
+
+def words_of(command: str) -> list[str]:
+    parts, reason = guard.scan(command, False)
+    assert reason is None, reason
+    return [w.text for w in parts[0]]
+
+
+def test_backslash_inside_double_quotes_is_read_the_way_a_posix_shell_reads_it():
+    # Only before $ ` " \ and a line break is it an escape; before anything else it stays.
+    assert words_of('cat "a\\b" "c\\/d" "e\\-f"') == ["cat", "a\\b", "c\\/d", "e\\-f"]
+    assert words_of('cat "a\\\\b" "c\\"d" "e\\$f" "g\\`h"') == ["cat", "a\\b", 'c"d', "e$f", "g`h"]
+    assert "line break" in guard.scan('cat "a\\\nb"', False)[1]
+    # So a word in double quotes that the shell hands on with a backslash in front is no option...
+    assert guard.check('grep -rn "\\-x" notes') is None
+    # ...and one that the shell hands on as an option is still judged as one.
+    assert guard.check('find . "\\\\-delete"') is None  # the shell gives \-delete, a path
+    assert guard.check('find . "-delete"') is not None and guard.check('find . "\\$x" -delete') is not None
+    assert guard.check('cat "\\\\\\\\server\\share\\a.md"') is not None  # \\\\server: still a network share
+
+
+@pytest.mark.parametrize("cmd", [
+    "uv run --quiet --script scripts/validate.py --staged\x0b", "ls -la\x0b", "ls -la\x0c", "\x0bls", "git status\x1f",
+    "git status\u00a0", "git status\x85", "git status\r",
+])
+def test_only_what_the_shell_strips_is_stripped(cmd):
+    # Python's strip() takes a vertical tab and its like off the end; the shell hands them to the program.
+    assert guard.check(cmd, "Bash", at_root=True) is not None, repr(cmd)
+
+
+def test_blanks_and_a_closing_line_break_around_a_command_are_fine():
+    for cmd in ("  git status  ", "\tgit status\t", "git status\n", "\ngit status"):
+        assert guard.check(cmd) is None, repr(cmd)
+    assert guard.check("git status\r\n", "PowerShell") is None  # PowerShell ends a line with either
+
+
+@pytest.mark.parametrize("cmd", [
+    "git diff '\"--output=x.txt\"'",
+    "git grep '\"--open-files-in-pager=calc.exe\"' x",
+    "uv run --quiet --script scripts/validate.py '\"--hook\"' shell",
+    "Get-Content 'a\"b.md'", 'Get-Content "a""b.md"', "Select-String -Pattern 'say \"hi\"' -Path a.md",
+    "git log --grep '\"x\"'", "'g\"it' status",
+])
+def test_powershell_word_with_a_double_quote_in_it_is_refused(cmd):
+    # Windows PowerShell 5.1 hands a quote inside a word to the program as it stands, and the
+    # program then reads "--output=x" as --output=x: a word that starts with a dash after all.
+    reason = guard.check(cmd, "PowerShell", at_root=True)
+    assert reason and "double quote" in reason, cmd
+
+
+def test_double_quotes_around_a_powershell_word_are_still_fine():
+    for cmd in ('Get-Content "a b.md"', 'Select-String -Pattern "BEGIN [A-Z ]*PRIVATE KEY" -Path notes\\a.md',
+                'git log --grep "fix"', "git diff 'a b.md'"):
+        assert guard.check(cmd, "PowerShell") is None, cmd
+    assert guard.check("grep -n 'say \"hi\"' a.md") is None  # Bash hands the word on whole
+
+
+# --- the scanner call takes words, not values glued to an option -----------------------------
+# From the second review: `--file=//server/share/a.md` went past the network path rule, because
+# the rule looks at the start of a word and the path stood after an =.
+
+@pytest.mark.parametrize("cmd,tool", [
+    ("uv run --quiet --script scripts/validate.py --file=//server/share/a.md", "Bash"),
+    ("uv run --quiet --script scripts/validate.py --file=\\\\server\\share\\a.md", "Bash"),
+    ("uv run --quiet --script scripts/validate.py --file=notes/a.md", "Bash"),
+    ("uv run --quiet --script scripts/validate.py --changed=1", "Bash"),
+    ("uv run --quiet --script scripts/validate.py --staged=1", "Bash"),
+    ("uv run --quiet --script scripts/validate.py --private-blocks=1 --changed", "Bash"),
+    ("uv run --quiet --script scripts/validate.py --changed notes/a.md", "Bash"),          # --changed takes no names
+    ("uv run --quiet --script scripts/validate.py --staged notes/a.md", "Bash"),
+    ("uv run --quiet --script scripts/validate.py notes/a.md", "Bash"),                    # a name without --file
+    ("uv run --quiet --script scripts/validate.py --file", "Bash"),                        # --file without a name
+    ("uv run --quiet --script scripts/validate.py --file --changed", "Bash"),
+    ("uv run --quiet --script scripts/validate.py --file //server/share/a.md", "Bash"),
+    ("uv run --quiet --script scripts/validate.py --file a.md '\\\\server\\share\\a.md'", "Bash"),
+    ("uv run --quiet --script scripts/validate.py --file=\\\\server\\share\\a.md", "PowerShell"),
+    ("uv run --quiet --script scripts/validate.py --file=//server/share/a.md", "PowerShell"),
+    ("uv run --quiet --script scripts/validate.py --file \\\\server\\share\\a.md", "PowerShell"),
+    ("uv run --quiet --script scripts/validate.py --file a.md //server/share/a.md", "PowerShell"),
+    ("uv run --quiet --script scripts/validate.py --file x::\\\\server\\share", "PowerShell"),
+    ("uv run --quiet --script scripts/validate.py --file FileSystem::\\\\server\\share\\a.md", "PowerShell"),
+    ("uv run --quiet --script scripts/validate.py --file a:\\\\server\\share", "PowerShell"),
+    ("uv run --quiet --script scripts/validate.py --file a=//server/share", "PowerShell"),
+    ("uv run --quiet --script scripts/validate.py --changed=1", "PowerShell"),
+])
+def test_scanner_call_takes_no_glued_value_and_no_network_path(cmd, tool):
+    assert guard.check(cmd, tool, at_root=True) is not None, cmd
+
+
+@pytest.mark.parametrize("cmd,tool", [
+    ("uv run --quiet --script scripts/validate.py --changed", "Bash"),
+    ("uv run -q --script ./scripts/validate.py --changed --private-blocks", "Bash"),
+    ("uv run --quiet --script scripts/validate.py --private-blocks --staged", "Bash"),
+    ("uv run --quiet --script scripts/validate.py --file 'notes/a=b.md' notes/c:d.md", "Bash"),
+    ("uv run --quiet --script scripts/validate.py --private-blocks --file notes/a.md", "Bash"),
+    ("uv run --quiet --script scripts/validate.py --file notes/a.md --private-blocks 2>&1 | tail -20", "Bash"),
+    ("uv run --quiet --script scripts/validate.py --changed", "PowerShell"),
+    ("uv run --quiet --script scripts\\validate.py --file 'notes\\Meeting notes.md' C:\\work\\a.md", "PowerShell"),
+])
+def test_scanner_call_in_its_plain_forms_still_passes(cmd, tool):
+    assert guard.check(cmd, tool, at_root=True) is None, cmd

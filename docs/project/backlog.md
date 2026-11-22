@@ -14,6 +14,23 @@ for users is in the [roadmap](../../ROADMAP.md).
   run in a folder whose trust dialog was accepted. A `claude -p` run does not count as trusted,
   so there the agents' own instructions are still the only guard.
 
+- **Not tried on Windows:** the read-only guard refuses, in PowerShell, every word with a
+  double quote in it, because Windows PowerShell 5.1 hands such a quote to the program
+  (`git diff '"--output=x.txt"'` would reach git as an option). That behaviour was found by
+  reading and has not been watched on a Windows machine, with 5.1 or with 7.
+- **Not tried on Windows:** a network path with mixed separators. The read-only guard refuses a
+  word that starts with `//` or two backslashes, but `cat '/\server/share/a.md'` passes (on
+  `develop` too) and so does `cat "\/\/server/share/a.md"`. Whether Windows, under Git Bash,
+  reads either as a network share is not known (see
+  [hooks-notes.md](../reference/hooks-notes.md)).
+- The scan after a shell command (`validate.py --hook shell`) still reads the whole repository
+  around a project folder and the wiki backup wherever `wiki.config.json` points; `--file` and
+  `--changed` stay inside the workspace.
+- **Second session, two cases that depend on the app:** going back to an earlier conversation
+  without a SessionStart, and a resumed session with a new id on the old transcript, each give
+  the second-session line once where no second session works (see
+  [hooks-notes.md](../reference/hooks-notes.md)).
+
 ## Updates
 
 - **Wiki files are not mapped one to one.** A workspace's wiki is translated and restructured, so
@@ -36,6 +53,23 @@ for users is in the [roadmap](../../ROADMAP.md).
   characters, and a secret written in a sentence. `SECURITY.md` lists the limits.
 - **After a shell command** the scan reads files changed in the last two minutes, within a
   budget; a commit on another branch and a stash are not followed.
+
+- Left open by the last review of the scanner and the read-only guard, none of them reachable
+  without access to the workspace already:
+  - `validate.py --file sub/link/../x.md`, with `sub/link` a link to a folder outside the
+    workspace, reads the file outside and reports it under a name that does not exist: the path
+    that is judged and the path that is read differ.
+  - The exemption for the user's own home folder also covers a few forms that are another
+    place: a variable or a path used as a host name before a colon (`$HOST:/Users/<name>`,
+    `/net/host:/Users/<name>`), a web address with the path in its query, and a folder whose
+    name is the user name followed by punctuation and a space (`<name>. Backup`).
+  - A `nest.json` that exists but cannot be read makes `--changed` skip the wiki backup without
+    saying so.
+  - `--file` on a folder that is a repository of its own is named and exits 0; for a path the
+    caller gave it should be 3.
+  - The quoted start of the other session's last prompt keeps typographic quotation marks, and
+    a session state file edited by hand is shown without the secret and term rules applied
+    again.
 
 ## Idea pages
 
