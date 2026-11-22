@@ -143,6 +143,13 @@ Preview it before tagging: `uv run --script tools/release_check.py --notes <x.y.
    ```
    and do a trial run of the setup when `SETUP.md`, a file in `setup/` or a build step changed (`CLAUDE.md`
    describes how).
+   Then the one check that needs the network: `uv run --script tools/obsidian_lock.py --check`
+   must say that the lock file is up to date. It downloads every plugin and theme again and
+   compares names, repositories, versions and checksums with `kit/scripts/obsidian.lock.json`,
+   which no offline test can do. When it names a difference, find out why before anything else.
+   A lock file that changed since the last release (a new version, a new plugin) is tried in a
+   real vault before the release: `obsidian_setup.py install`, open the vault, trust it, and see
+   that Home and the plugins work.
 5. Commit as `Docs: changelog and version for <x.y.z>`, push, and open a pull request into
    `main` titled `Release: v<x.y.z>`.
 6. Merge it with a merge commit. Then tag the merge commit and push the tag:

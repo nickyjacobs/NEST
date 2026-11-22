@@ -59,8 +59,26 @@ for users is in the [roadmap](../../ROADMAP.md).
 
 - A complete setup run has been done on macOS and on Linux (Debian), each with a fictional
   user. Not yet on Windows; CI runs the script tests and the pre-commit hook on all three.
-- Not covered by the trial runs: installing the Obsidian plugins and how Home renders (needs a
-  person), a real mail or calendar connection, and a pushed GitHub setup (B5).
+- Not covered by the trial runs: a real mail or calendar connection, and a pushed GitHub setup
+  (B5).
+- A person opened a vault that `obsidian_setup.py` had filled, on macOS: the settings stayed,
+  and Home showed its buttons after one restart of Obsidian. Still open from that trial:
+  Notebook Navigator is not the pane in front the first time the vault opens, the
+  `<!-- AUTO-INDEX -->` marker shows as text in Live Preview, six capture tiles wrap as five and
+  one, and a workspace built before this release keeps "Colorful headings" on (the updater does
+  not carry wiki settings over).
+- `obsidian_setup.py vaults` counts the notes in every vault Obsidian knows, up to 5000 each.
+  With a home folder once opened as a vault that takes long, and it prints the paths of the
+  user's other vaults into the session. The build step only needs to know whether the wiki
+  folder is in the list.
+- Step B2.5 in `setup/build.md` is one long paragraph with its check in the middle.
+- `obsidian_setup.py` has installed the plugins and the theme into a real vault on macOS only.
+  On Windows and Linux nothing of it has run for real: `obsidian_running` (`tasklist`, `pgrep`),
+  `config_dirs` and `installer_version` are tested with stand-ins for the process list, the
+  environment and the home folder, which shows the logic and not what those systems really
+  answer. The link checks are tested with symbolic links; a Windows junction is refused by the
+  same code path and has not been tried. On Linux a vault that Obsidian marks as open always
+  needs the user's word that Obsidian is closed, because the process list proves nothing there.
 - The PowerShell rules of the read-only guard and the Windows code paths of the session guards
   are tested by simulation, not on a Windows machine.
 - The session guard, the lesson hook, the plan hook and the blind seat guard are tested as

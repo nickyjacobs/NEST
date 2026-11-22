@@ -17,7 +17,35 @@ section in plain words: what it means if you already built a workspace with an e
 
 ## [Unreleased]
 
+### ✨ Added
+
+- `kit/scripts/obsidian_setup.py` installs the Obsidian plugins and the theme a vault asks for,
+  from each project's own GitHub release at the versions in `kit/scripts/obsidian.lock.json`,
+  with a checksum on every file. It refuses to write under a vault that is open in Obsidian or
+  may be, leaves installed plugins and every settings file alone, refuses a folder that holds
+  another plugin or that is reached through a link, never reads or writes through a link or
+  anything that is not a plain file, names a settings file it cannot use, and reports each
+  plugin on its own: one that fails does not stop the others. It has `status`, `restore` (moves
+  a `data.json.bak` back into place once, for the plugins in the lock file, and keeps the file
+  it replaces) and `vaults` (the vaults Obsidian knows on this computer).
+- `tools/obsidian_lock.py` writes that lock file from upstream, and `--check` says when a
+  plugin has a newer version, when a file changed under the same version, when a name or a
+  repository in the lock file differs, or when the list of plugins changed. The release steps
+  ask for that check.
+
 ### 🔧 Changed
+
+- Build step B2.5 installs the plugins and the theme after one yes, where the user used to
+  install five plugins and a theme by hand. What is left for the user is opening the vault and
+  "Trust author and enable plugins", and restarting Obsidian once. The instruction gives the
+  full path to paste, and the setup checks afterwards that Obsidian opened the wiki folder and
+  not the folder above it: in a trial that went wrong three times in a row.
+- The workspace `.gitignore` and the wiki backup leave out what `obsidian_setup.py install`
+  can put back, and nothing more: the code of the plugins and the theme in the lock file, named
+  one by one. The plugin settings stay in, and so does a plugin or theme you added yourself,
+  code and all. An existing wiki backup gets the new exclude lines on its next push. They keep
+  new files out: plugin code that a backup or a repository already holds stays in it and keeps
+  being backed up, nothing is taken out of an existing backup.
 
 - The setup prompt comes in parts. `SETUP.md` keeps what every session needs (sections 0 to 4)
   and a table of the parts; the phases moved to `setup/`: `check.md`, `interview.md`,
@@ -26,6 +54,15 @@ section in plain words: what it means if you already built a workspace with an e
   every start. `STATE.md` names parts after `read:`, and the handover copies `setup/` along.
 - `tools/release_check.py` checks that every part `SETUP.md` names exists, that every file in
   `setup/` is named, and that none is larger than one read.
+
+### 🐛 Fixed
+
+- Plugin settings the setup wrote were lost for every user: installing a plugin from inside
+  Obsidian renames an existing `data.json` to `data.json.bak` when the folder has no
+  `manifest.json` yet. The Home buttons, the excluded folders of Meta Bind and the sidebar
+  colours were gone after the installs. Found in the first run by a real user, on Windows.
+- Headings showed in a different colour per level: "Colorful headings" was on in the Minimal
+  settings while the kit's CSS does not colour headings.
 
 ---
 

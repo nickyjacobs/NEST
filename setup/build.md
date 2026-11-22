@@ -46,7 +46,7 @@ cause; never tick around it. Commits stay separate questions.
    load by path, per FACTS.md).
 6. `scripts/`: copy from `kit/scripts/` with a file copy: `validate.py`, `session_context.py`,
    `session_guard.py`, `nest_update.py`, `agent_git_readonly.py`, `wiki.py`, `skills_catalog.py`,
-   plus, each when its feature was chosen: `wiki_backup.py` (E4 a), `council_score.py` (idea),
+   `obsidian_setup.py` with its `obsidian.lock.json`, plus, each when its feature was chosen: `wiki_backup.py` (E4 a), `council_score.py` (idea),
    `idea_page.py` and `blind_seat_guard.py` (idea or blueprint), `check_style.py`
    (writing-style). Then run `uv run --script scripts/validate.py --self-test` once:
    it proves the scanner works and makes uv fetch Python now, so the first hook does not time out
@@ -133,11 +133,31 @@ Do this in the new folder, in a fresh session (the hooks are now active).
    In the Meta Bind settings (`plugins/obsidian-meta-bind-plugin/data.json`), set
    `excludedFolders` to the user's own names for the templates folder, the inbox, the raw sources
    folder and the archive, plus every other folder in `raw_folders`: a button inside text that
-   came from outside must never run. Plugins cannot be installed from here: walk the user through
-   `kit/wiki/obsidian/PLUGINS.md` (open the folder as a vault in Obsidian, trust it, install each
-   plugin they chose, enable the snippets). Wait until they confirm. The user may postpone this
-   and step 7: then record both as open items, carry on with B3, and mention them at most once per
-   session. They never block B3 or B4.
+   came from outside must never run. Write all of this before the user opens the vault; if the
+   vault is already open in Obsidian, ask them to quit Obsidian first (it rewrites these files
+   from memory). Then install the theme and the plugins yourself, as
+   `kit/wiki/obsidian/PLUGINS.md` describes: say in one or two sentences what gets downloaded
+   (the plugins they chose and the theme, each from its own project on GitHub, at a version this
+   release was tried with) and that a plugin can do anything Obsidian can, ask for one yes, and
+   run `uv run --script scripts/obsidian_setup.py install --vault wiki`, where `wiki` is the
+   wiki folder (`wiki_dir` in `wiki.config.json`, default `wiki`) (check: it ends with 0, and
+   `status` lists every plugin and the theme as installed, each plugin the setup wrote
+   settings for still has its settings file (Style Settings ships none, on purpose), and none
+   has settings set aside). When it says the vault is open in Obsidian, or may be, ask
+   the user to quit Obsidian and run it again; never add `--assume-closed` on your own, only
+   after the user has confirmed that Obsidian is closed. The user never installs a plugin
+   through Obsidian's own browser: that sets the settings you wrote aside. What is left for
+   them is three small steps, which `PLUGINS.md` spells out: open the wiki folder as a vault
+   (give the full path to paste, never "the folder wiki": people pick the folder above it),
+   choose "Trust author and enable plugins", and quit and reopen Obsidian once. Then check with
+   `uv run --script scripts/obsidian_setup.py vaults` that the wiki folder itself is in
+   Obsidian's list, not the workspace folder above it. Without a yes, record it as an open item. When `install` ends with anything but 0
+   (no connection, an Obsidian that is too old, a checksum that does not match, a folder it
+   refused, a settings file it could not use), record that as an open item too, with the reason the script printed, and tell the
+   user that reason in plain words; do not work around a refusal. The wiki works as plain notes
+   until then. The user may
+   postpone opening Obsidian and step 7: record both as open items, carry on with B3, and
+   mention them at most once per session. They never block B3 or B4.
 6. `uv run scripts/wiki.py log migrate "Wiki created by NEST"`, then `reindex`, then `lint`
    (check: lint reports zero errors; a search of `wiki/` for `customise:` and `<fill in` finds
    nothing).
