@@ -10,71 +10,71 @@ section in plain words: what it means if you already built a workspace with an e
 
 | Release | Date | In short |
 |---|---|---|
+| [1.1.0](#110---2026-11-22) | 2026-11-22 | Everything an audit of 1.0.0 found, fixed and tested: safer updates and undo, a secret scan that sees more, guards that hold, a setup that resumes where you stopped, and a roadmap. |
 | [1.0.0](#100---2026-11-22) | 2026-11-22 | The first release: an interview that builds your own Claude Code workspace, and a way to keep it up to date afterwards. |
 
 <sub>Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versions: [Semantic Versioning](https://semver.org/) · How a release is made: [docs/project/releasing.md](docs/project/releasing.md)</sub>
 
 ## [Unreleased]
 
+---
+
+## [1.1.0] - 2026-11-22
+
+> **In short:** Everything an audit of 1.0.0 found, fixed and tested: safer updates and undo, a secret scan that sees more, guards that hold, a setup that resumes where you stopped, and a roadmap.
+
 ### 🏠 For your workspace
 
-- The fixes to the setup itself are for new workspaces; nothing in yours changes because of
-  them. One thing you may want: if your commits got a "Co-Authored-By: Claude" line, let
-  `/nest-update` add the `attribution` setting to `.claude/settings.json`.
-- An idea page in a workspace without The Architects no longer points at them.
-- **The secret scan catches more, and blocks less by mistake.** It now sees a secret behind a
-  longer name (`DB_PASSWORD=`, `JWT_SECRET=`), `token:`, `Wachtwoord:` and `**Password:**`,
-  so a write or a commit that passed before can be refused. Code such as
-  `password = hashlib.sha256(x)` and example values such as `replace-me` are let through.
-- **New guard: after a shell command, the files it wrote, copied or unpacked are scanned
-  too**, also in a wiki with its own backup. It needs two new entries in
-  `.claude/settings.json`; `/nest-update` adds them after your yes.
+Nothing breaks: everything you have keeps working. What you will notice after `/nest-update`:
+
+- **The secret scan sees more, and stops less by mistake.** It now catches the everyday forms
+  (`DB_PASSWORD=`, `token:`, `Wachtwoord:`, `**Password:**`), so a write or a commit that
+  passed before can be refused. Code and example values such as `replace-me` are let through.
+- **New guard, your choice:** after a shell command, the files it wrote, copied or unpacked
+  are scanned too, also in a wiki with its own backup. It needs two new entries in your
+  settings; `/nest-update` adds them after your yes.
 - **A secret you paste into the chat is no longer kept on disk.** The file with your own
-  messages shows `[secret removed]` in its place, and that folder is readable by you alone.
-  Files from before this update are not cleaned; they go after 14 days.
-- After a long conversation is summarised, the summary gets your first message plus your
-  newest ones, and lessons are shown again.
-- **The read-only reviewer is really read-only now.** Its agent file gets new hook lines. It
-  works from a list of allowed commands and options, so now and then it has to rephrase a
-  search (`./*.md` for `*.md`, quotes around a name with `#`).
-- Editing `CLAUDE.local.md`, your sensitive terms or an ignored `.env` no longer makes the
-  assistant try to "fix" the file. A typing mistake in `nest.json` is named at the start of a
-  session. A commit with a submodule is no longer blocked.
-- **Undo is safer.** `/nest-update undo` now tells you first which update it puts back and
-  which files that concerns. It always means the last update: asking twice no longer reaches
-  back to an earlier one.
+  messages shows `[secret removed]` in its place and is readable by you alone. Older files are
+  not cleaned; they go by themselves after 14 days.
+- **Undo is safer.** `/nest-update undo` tells you first which update it puts back and which
+  files that concerns. It always means the last update, all of it, also when you brought it
+  over in parts; asking twice no longer reaches back to an earlier one.
 - **A typing mistake in `nest.json` no longer costs you your settings.** The update stops and
-  names the line instead of starting over with an empty file.
-- An update you brought over in parts no longer shows you changes you already have.
-- When your workspace could not look for a new release (no internet), it tries again the next
-  day instead of a week later.
-- When NEST changes an example that something of yours was made from, such as your wiki
-  settings, the update now tells you.
+  names the line, and the start of a session tells you the file is broken.
 - **The wiki check is stricter, and right.** A link to a folder that no longer exists used to
   pass when a note with the same name lived somewhere else. The first check after this update
   may show a few broken links: they were broken all along.
 - **New notes keep their name in every language.** A title in Greek, Arabic, Japanese or
-  Cyrillic gave a note without a name; ß, ø and ł were lost. Existing notes do not change.
+  Cyrillic gave a note without a name, and ß, ø and ł were lost. Existing notes do not change.
 - **The wiki backup protects you from three mistakes:** it stops when a note holds what looks
   like a real key, when the wiki folder is suddenly empty, and when the backup folder belongs
-  to another wiki (two workspaces with the same folder name). It says what to do in each case.
-  After moving your workspace, run the backup's `init` once with `--rebind`.
-- By hand, once, in Obsidian: open the settings of Meta Bind and add your inbox, your raw
-  sources folder and your archive to "Excluded folders", so a button inside text that came
-  from outside cannot run anything. `/nest-update` shows the exact names.
-- A blueprint page in a workspace without The Council no longer tells you to "put it to the
-  council", and its summary shows the assumption the plan really rests on.
-- The first time you read a web page into your references, the wiki check no longer warns
-  about its own log page.
-- **Mail and calendar through Microsoft:** "any new mail?" no longer fails on some mailboxes,
-  and when there is no internet or a sign-in expired you get one plain sentence with the
-  command to type, not a wall of code.
-- Before your assistant moves or cancels a meeting you organise, it now tells you that the
-  people in it get a message.
-- The Council and The Architects could stop halfway to ask permission for their own scoring
-  and saving scripts. If that bothers you, ask your assistant to add the allow rules for
-  `council_score.py`, `idea_page.py` and `wiki.py` to your settings; a new workspace gets them
-  from the setup.
+  to another wiki. It says what to do in each case. After moving your workspace, ask your
+  assistant to point the wiki backup at the new folder (it runs `wiki_backup.py init <address>
+  --rebind`).
+- **Long conversations:** when one is summarised, the summary gets your first message plus
+  your newest ones, and lessons are shown again.
+- **The read-only reviewer is really read-only now.** It can only run a fixed list
+  of read commands, so now and then it words a search differently.
+- **The Council and The Architects:** an idea page no longer points at a team you did not
+  install, and its summary shows the assumption the plan really rests on. If a run stops
+  halfway to ask permission for its own scripts, ask your assistant to add the allow rules for
+  `council_score.py`, `idea_page.py` and `wiki.py` to your settings.
+- **Mail and calendar through Microsoft:** "any new mail?" no longer fails on some mailboxes;
+  without internet or after an expired sign-in you get one plain sentence with the command to
+  type; and before a meeting you organise is moved or cancelled, you hear that the people in
+  it get a message.
+- **Updates:** an update you brought over in parts no longer shows you changes you already
+  have, a check that failed offline is tried again the next day, and you hear it when NEST
+  changes an example that something of yours was made from, such as your wiki settings.
+- **Two things by hand, once.** In Obsidian, add your inbox, your raw sources folder and your
+  archive to "Excluded folders" in the settings of Meta Bind, so a button inside text that
+  came from outside cannot run anything; `/nest-update` shows the exact names. And if your
+  commits got a "Co-Authored-By: Claude" line, let `/nest-update` add the `attribution`
+  setting.
+- Without uv on the path, the check before a commit now says so in one line and does not
+  fail with a cryptic error.
+- The fixes to the setup itself are for new workspaces; nothing in yours changes because of
+  them.
 
 ### ✨ Added
 
@@ -109,6 +109,10 @@ section in plain words: what it means if you already built a workspace with an e
   repository. The workspace folder is no longer proposed inside a downloads folder or a folder
   a cloud service syncs. In a workspace in another language the setup fills in the labels of
   the idea pages.
+- The setup now builds `.github/dependabot.yml` and the checks workflow and asks about them
+  in E7, adds an MCP server in the local scope and never in the project, and makes the
+  sensitive terms file from the kit's example with the command that opens it. The empty
+  folder `kit/claude/hooks/` is gone.
 - `kit/claude/settings.reference.json` sets `attribution` to empty, so a commit never
   carries a "Co-Authored-By" line.
 - `NEST`'s own `CLAUDE.md` says first that a session asked to follow `SETUP.md` ignores it.
@@ -119,8 +123,8 @@ section in plain words: what it means if you already built a workspace with an e
 - `validate.py --hook pre` refuses a write when it cannot read the hook input. A private key
   block counts only when key material follows the header. `pass:` and `pw:` on their own no
   longer count as a secret name. A file over 2 MB is named as skipped.
-- The compaction summary gets the first message and the newest ones, at most 9,500
-  characters, between two marker lines.
+- The compaction summary gets the first message and the newest ones, 8,000 characters by
+  default and at most 9,500, between two marker lines.
 - The agent templates ship real hooks where they had a placeholder; the blind seats pass
   `--seat`.
 - `ROADMAP.md` says where NEST is going, and the README links to it. Questions and ideas now
@@ -299,5 +303,6 @@ section in plain words: what it means if you already built a workspace with an e
   scoring, the idea page builder, the writing-style check and the wiki backup, tested on macOS,
   Linux and Windows.
 
-[Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/nickyjacobs/NEST/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/nickyjacobs/NEST/releases/tag/v1.0.0

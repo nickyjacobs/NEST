@@ -11,11 +11,11 @@ the talking and the judgement.
 The stamp. `nest.json` at the workspace root records what the workspace was built from:
 
   {"nest": {
-      "version": "1.0.0",                       the NEST release this workspace is level with
+      "version": "1.1.0",                       the NEST release this workspace is level with
       "source": "https://github.com/...",       where releases come from (git URL or local path)
       "update_check": true,                     false silences the session-start line
       "files": {"scripts/wiki.py": {"kit": "kit/scripts/wiki.py", "kind": "copy", "sha256": "...",
-                                    "version": "1.0.0"}},
+                                    "version": "1.1.0"}},
       "declined": {"kit/skills/mail/SKILL.md": "<sha256>"}
   }}
 

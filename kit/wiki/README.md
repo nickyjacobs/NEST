@@ -28,6 +28,7 @@ The setup resolves every marker and removes it; a leftover marker fails the fina
 | `_templates/_scripts/slug.js` | Templater user script `tp.user.slug` for file names: lower case with hyphens, Latin accents dropped, every other script kept, a date-time name when nothing is left; copy as is | `wiki/_templates/_scripts/` |
 | `_templates/code/*.md` | Mirrors of what the skills write (`query`, `knowledge`, `reference`, `idea`); nothing reads them | `wiki/_templates/code/` |
 | `_templates/README.md` | The template catalogue the user sees | `wiki/_templates/README.md` |
+| `decisions-log.md` | The decisions log with its format block; the session-end, inbox and career skills write entries in that format | `log.md` in the decisions section |
 | `snippets/base.css` | Palette tokens, the dashboard callouts, `[!cheatsheet]`, Bases embed styling, light and dark | `wiki/.obsidian/snippets/base.css` |
 | `snippets/idea-note.css` | Callouts and labels for the styled mode of the idea pages of The Council and The Architects | `wiki/.obsidian/snippets/idea-note.css` (only with a team) |
 | `_bases/dashboard.base` | The views Home embeds: KPIs, Inbox, Questions, New, Answers, Research, Projects, Ideas, Sessions | `wiki/_bases/` |

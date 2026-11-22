@@ -1,5 +1,5 @@
 name: Feature request
-description: An idea for the setup, a skill or the wiki
+description: A concrete change to the setup, a skill or the wiki you would like built
 labels: [enhancement]
 body:
   - type: textarea

@@ -22,8 +22,9 @@ when something needs installing. The one file you fill in yourself is a plain li
 that must stay private, and the setup gives you the command that opens it.
 
 **Does it work on Windows and Linux?**
-Yes. The scripts are tested on macOS, Windows and Linux on every change. A complete setup run by
-a person has so far only been done on macOS, so tell us what you hit: an issue is welcome.
+Yes. The scripts are tested on macOS, Windows and Linux on every change. A complete setup has been
+run from start to finish on macOS and on Linux, not yet on Windows, so tell us what you hit
+there: an issue is welcome.
 
 **Can I use my own language?**
 Yes. The first question is which language you want. Your wiki, your assistant's instructions
@@ -83,7 +84,8 @@ Next to that: your own list of sensitive terms, and a read-only reviewer agent. 
 lives in a file that git ignores. The scan knows the shapes of common keys, tokens and passwords;
 it cannot recognise a password that looks like an ordinary word, so the reviewer and your own
 eyes still count. Now and then it stops a harmless line that has the shape of a password, such
-as one that gives `minimaal12tekens` as the value of `wachtwoord`: write the value with spaces, or
+as one that gives `minimaal12tekens` (Dutch for "at least 12 characters") as the value of
+`wachtwoord` ("password"): write the value with spaces, or
 put it between `<` and `>`.
 [SECURITY.md](../../SECURITY.md) lists what is covered and what is not.
 

@@ -169,8 +169,8 @@ therefore run `uv run --script scripts/validate.py --self-test` once during inst
   commits, the checked-out branch only), because the working file may be overwritten or removed
   right after the commit. It keeps the last `HEAD` in `.claude/.session/shell-scan.json`, with a
   list of files it already scanned clean; without a remembered `HEAD` it reads the newest commit
-  when that is younger than two minutes. and the wiki's own backup repository when
-  `nest.json` names one, since the workspace ignores that folder. A file git ignores, or a file
+  when that is younger than two minutes. It reads the wiki's own backup repository the same
+  way when `nest.json` names one, since the workspace ignores that folder. A file git ignores, or a file
   outside a git work tree, is not seen that way.
 - Three things the read-only guard cannot see. A read command without a file (`cat`,
   `grep pattern`, `rg pattern` with its input left open) waits for input until the call times
@@ -188,7 +188,7 @@ therefore run `uv run --script scripts/validate.py --self-test` once during inst
   minutes ago.
 - Limits of secret recognition: a value that is an address (`https://...`) or names a password
   manager counts as a pointer, not a secret; a password without a digit, shorter than ten
-  characters or with spaces passes; a line that gives `minimaal12tekens` as the value of
+  characters or with spaces passes; a line that gives `minimaal12tekens` (Dutch for "at least 12 characters") as the value of
   `wachtwoord` has the shape of a password and is stopped, so such a value is written with
   spaces or between `<` and `>`.
 

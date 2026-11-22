@@ -9,7 +9,7 @@ without the key uses the default. Your assistant can change these for you: just 
 
 ```json
 {
-  "nest": {"version": "1.0.0", "update_check": true},
+  "nest": {"version": "1.1.0", "update_check": true},
   "session_guard": {"live_minutes": 30, "keep_days": 14},
   "size_ceiling": {"lines": 400},
   "morning_nudge": {"before": "11:00", "text": "say good morning for your briefing"},
@@ -83,7 +83,7 @@ Read by `scripts/blind_seat_guard.py`. Only with The Council or The Architects i
 
 ## wiki_backup
 
-Read by `scripts/wiki_backup.py` and the session-start line. Only when your wiki has its own
+Read by `scripts/wiki_backup.py`, the session-start line and the scan after a shell command. Only when your wiki has its own
 backup repository.
 
 | Key | Default | Meaning |
