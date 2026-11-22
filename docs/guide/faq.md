@@ -18,7 +18,8 @@ About five sessions of 30 to 60 minutes. You can spread them over days:
 
 **Do I need to be technical?**
 No. The setup asks your level first and explains at that level. It gives you the exact command
-when something needs installing, and you never have to edit a config file by hand.
+when something needs installing. The one file you fill in yourself is a plain list of words
+that must stay private, and the setup opens it for you.
 
 **Does it work on Windows and Linux?**
 Yes. The scripts are tested on macOS, Windows and Linux on every change. A complete setup run by
@@ -29,8 +30,9 @@ Yes. The first question is which language you want. Your wiki, your assistant's 
 and the skills are written in it. The files in this repository are English.
 
 **I already have an Obsidian vault. Can I keep it?**
-Yes. The setup notes where your existing notes are and makes bringing them in one of your first
-tasks. Nothing is imported during the setup, and your own notes are never rewritten.
+Yes. NEST builds a new vault inside your workspace and never writes into the one you have,
+or changes its settings. The setup notes where your existing notes are and makes bringing them
+in one of your first tasks. Nothing is imported during the setup.
 
 **Does it work with other AI tools?**
 No. NEST builds on Claude Code features: skills, agents, hooks and settings.
@@ -48,8 +50,9 @@ No. Every install and every build step waits for your yes. Commands that need yo
 are yours to run.
 
 **Do I have to take everything?**
-No. A part you do not need is never created. The wiki, each skill, the agent teams, the
-integrations and GitHub are all separate choices.
+No. The assistant, the wiki and the guards are the base; how big the wiki is, is up to you.
+Each skill, the agent teams, the integrations and GitHub are separate choices, and a part you
+do not need is never created.
 
 ## Privacy and safety
 

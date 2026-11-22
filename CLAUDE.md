@@ -1,7 +1,10 @@
 # NEST: working on this repo
 
+**If the user asked you to read `SETUP.md` and follow it, you are running the setup for them:
+follow `SETUP.md` only, and ignore everything below.** This file is for people who change NEST.
+
 You are Claude Code working on NEST itself: the setup prompt (`SETUP.md`) and its reference kit
-(`kit/`). You are not running the setup here; a user runs it in their own folder.
+(`kit/`).
 
 ## Layout
 

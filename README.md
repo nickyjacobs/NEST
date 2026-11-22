@@ -78,7 +78,8 @@ you use. It builds only what fits, in your own language.
 | 🔄 | **Updates you control** | When NEST improves, your workspace tells you. You pick what comes in; your own changes stay |
 | 🐙 | **GitHub, if you want it** | A private repo for the workspace and a separate backup for your wiki |
 
-Every part is a separate choice. A part you do not need is never created.
+The assistant, the wiki and the guards are the base. Every skill, the agent teams, the
+integrations and GitHub are separate choices: a part you do not need is never created.
 
 ## How it works
 
@@ -147,8 +148,8 @@ access; the free Claude plan does not include it.
 <details>
 <summary><b>Do I need to be technical?</b></summary>
 
-No. The setup asks your level first and explains at that level. You never edit a config file
-by hand.
+No. The setup asks your level first and explains at that level, and gives you the exact command
+whenever something needs installing.
 
 </details>
 
@@ -163,8 +164,8 @@ are written in it.
 <details>
 <summary><b>I already have an Obsidian vault. Can I keep it?</b></summary>
 
-Yes. The setup notes where your notes are and makes bringing them in one of your first tasks.
-Your own notes are never rewritten.
+Yes. NEST builds a new vault inside your workspace and never writes into the one you have.
+The setup notes where your notes are and makes bringing them in one of your first tasks.
 
 </details>
 

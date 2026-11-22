@@ -28,7 +28,10 @@ The setup suggests five sessions of 30 to 60 minutes. You start each one with th
 | 2 | Your wiki, your skills and apps, GitHub, the names | You create the workspace folder with one command |
 | 3 | The skeleton: your assistant, the rules, the guards | A restart, so the guards load |
 | 4 | The wiki, then the skills and agents | A restart, so the skills load |
-| 5 | Integrations, tests, GitHub, the wrap-up | Your first real task |
+| 5 | Tests, GitHub, the wrap-up | Your first real task |
+
+Connecting mail or a calendar adds one session before the last, because Claude Code has to
+restart before a new connection can be tested.
 
 ```mermaid
 flowchart LR
@@ -61,8 +64,8 @@ a cheat sheet for daily use. The [README](../../README.md#what-you-get) has the 
 
 ## Stopping and continuing
 
-Stop whenever you want. The setup writes its progress to a state file after every step, so the
-next session picks up exactly where you left off with the same line:
+Stop whenever you want. The setup writes your answers and its progress to files as it goes, so
+the next session picks up where you left off with the same line:
 
 ```
 Read SETUP.md and follow it.
