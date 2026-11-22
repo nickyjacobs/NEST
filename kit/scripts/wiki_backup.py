@@ -67,6 +67,12 @@ DEFAULT_EXCLUDES = """\
 .obsidian/workspaces.json
 .obsidian/cache/
 .obsidian/plugins/*/data.json.bak
+.obsidian/plugins/*/data.json.before-restore
+# Plugin and theme code: other people's programs, put back by obsidian_setup.py install.
+.obsidian/plugins/*/main.js
+.obsidian/plugins/*/manifest.json
+.obsidian/plugins/*/styles.css
+.obsidian/themes/
 .trash/
 .DS_Store
 Thumbs.db
@@ -74,6 +80,30 @@ desktop.ini
 *.tmp
 ~$*
 """
+
+
+def ensure_excludes(b) -> Path:
+    """Write the default excludes once, and add lines a newer version of this script brought.
+
+    Lines the user added or removed by hand stay as they are, except that a default line they
+    removed comes back: the file has no way to tell "removed" from "not there yet".
+    """
+    exclude = b.git_dir / "info" / "exclude"
+    exclude.parent.mkdir(parents=True, exist_ok=True)
+    current = exclude.read_text(encoding="utf-8") if exclude.exists() else ""
+    if "wiki_backup.py" not in current:
+        with exclude.open("a", encoding="utf-8", newline="\n") as fh:
+            fh.write("\n" + DEFAULT_EXCLUDES)
+        return exclude
+    have = {line.strip() for line in current.splitlines()}
+    missing = [
+        line for line in DEFAULT_EXCLUDES.splitlines()
+        if line.strip() and not line.startswith("#") and line.strip() not in have
+    ]
+    if missing:
+        with exclude.open("a", encoding="utf-8", newline="\n") as fh:
+            fh.write(("" if current.endswith("\n") else "\n") + "\n".join(missing) + "\n")
+    return exclude
 
 
 SCAN_BATCH = 200
@@ -333,11 +363,7 @@ def cmd_init(b: Backup, remote: str, yes: bool, set_remote: bool = False, rebind
         b.git("remote", "set-url", "origin", remote)
     else:
         b.git("remote", "add", "origin", remote)
-    exclude = b.git_dir / "info" / "exclude"
-    exclude.parent.mkdir(parents=True, exist_ok=True)
-    if "wiki_backup.py" not in (exclude.read_text(encoding="utf-8") if exclude.exists() else ""):
-        with exclude.open("a", encoding="utf-8", newline="\n") as fh:
-            fh.write("\n" + DEFAULT_EXCLUDES)
+    exclude = ensure_excludes(b)
     if b.has_commits():
         print("The backup already has commits; run `push` to back up new changes.")
         return 0
@@ -413,6 +439,7 @@ def cmd_push(b: Backup, message: str | None, allow_empty: bool = False, no_scan:
         return 1
     if b.recorded_tree() is None:
         b.record_tree()
+    ensure_excludes(b)
     add_all(b, warn_nested(b))
     if b.staged_changes():
         if (not allow_empty and b.has_commits() and not b.git("ls-files").stdout.strip()

@@ -17,7 +17,23 @@ section in plain words: what it means if you already built a workspace with an e
 
 ## [Unreleased]
 
+### ✨ Added
+
+- `kit/scripts/obsidian_setup.py` installs the Obsidian plugins and the theme a vault asks for,
+  from each project's own GitHub release at the versions in `kit/scripts/obsidian.lock.json`,
+  with a checksum on every file. It refuses to write under a vault that is open in Obsidian,
+  leaves installed plugins and every settings file alone, and has `status`, `restore` (puts back
+  a `data.json.bak`) and `vaults` (the vaults Obsidian knows on this computer).
+- `tools/obsidian_lock.py` writes that lock file from upstream, and `--check` says when a
+  plugin has a newer version.
+
 ### 🔧 Changed
+
+- Build step B2.5 installs the plugins and the theme after one yes, where the user used to
+  install five plugins and a theme by hand. What is left for the user is opening the vault and
+  "Trust author and enable plugins".
+- The workspace `.gitignore` and the wiki backup leave plugin and theme code out; the plugin
+  settings stay in. An existing wiki backup gets the new exclude lines on its next push.
 
 - The setup prompt comes in parts. `SETUP.md` keeps what every session needs (sections 0 to 4)
   and a table of the parts; the phases moved to `setup/`: `check.md`, `interview.md`,
@@ -26,6 +42,15 @@ section in plain words: what it means if you already built a workspace with an e
   every start. `STATE.md` names parts after `read:`, and the handover copies `setup/` along.
 - `tools/release_check.py` checks that every part `SETUP.md` names exists, that every file in
   `setup/` is named, and that none is larger than one read.
+
+### 🐛 Fixed
+
+- Plugin settings the setup wrote were lost for every user: installing a plugin from inside
+  Obsidian renames an existing `data.json` to `data.json.bak` when the folder has no
+  `manifest.json` yet. The Home buttons, the excluded folders of Meta Bind and the sidebar
+  colours were gone after the installs. Found in the first run by a real user, on Windows.
+- Headings showed in a different colour per level: "Colorful headings" was on in the Minimal
+  settings while the kit's CSS does not colour headings.
 
 ---
 

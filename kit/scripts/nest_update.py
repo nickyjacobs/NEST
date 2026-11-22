@@ -330,7 +330,7 @@ def target_for(kit_rel: str, light: set[str]) -> str | None:
     if not parts:
         return None
     top, name = parts[0], parts[-1]
-    if top == "scripts" and len(parts) == 2 and name.endswith(".py"):
+    if top == "scripts" and len(parts) == 2 and (name.endswith(".py") or name == "obsidian.lock.json"):
         return f"scripts/{name}"
     if kit_rel == "kit/integrations/microsoft-graph/graph.py":
         return "scripts/graph.py"

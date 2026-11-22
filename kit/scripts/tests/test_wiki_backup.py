@@ -346,6 +346,41 @@ def test_push_skips_excluded_files(backup, remote, capsys):
     assert remote_files(remote) == ["notes/a.md"]
 
 
+def test_push_leaves_plugin_and_theme_code_out_but_keeps_settings(backup, remote, capsys):
+    capsys.readouterr()
+    plugin = backup.wiki / ".obsidian/plugins/some-plugin"
+    write(plugin / "main.js", "code")
+    write(plugin / "manifest.json", "{}")
+    write(plugin / "styles.css", "")
+    write(plugin / "data.json", "{}")
+    write(plugin / "data.json.bak", "{}")
+    write(plugin / "data.json.before-restore", "{}")
+    write(backup.wiki / ".obsidian/themes/Minimal/theme.css", "")
+    write(backup.wiki / ".obsidian/appearance.json", "{}")
+    assert wb.main(["push"]) == 0
+    assert remote_files(remote) == [
+        ".obsidian/appearance.json",
+        ".obsidian/plugins/some-plugin/data.json",
+        "notes/a.md",
+    ]
+
+
+def test_push_adds_new_default_excludes_to_an_older_backup(backup, remote, capsys):
+    exclude = backup.git_dir / "info" / "exclude"
+    older = "# Written by wiki_backup.py. An older version.\n.trash/\nmy-own-line/\n"
+    exclude.write_text(older, encoding="utf-8")
+    write(backup.wiki / ".obsidian/themes/Minimal/theme.css", "")
+    write(backup.wiki / "my-own-line/x.md")
+    assert wb.main(["push"]) == 0
+    text = exclude.read_text(encoding="utf-8")
+    assert text.startswith(older) and ".obsidian/themes/" in text
+    assert text.count(".trash/") == 1 and text.count("Written by wiki_backup.py") == 1
+    assert remote_files(remote) == ["notes/a.md"]
+    before = text
+    assert wb.main(["push"]) == 0
+    assert exclude.read_text(encoding="utf-8") == before
+
+
 def test_push_sends_a_commit_that_stayed_local(backup, remote, capsys):
     write(backup.wiki / "b.md")
     backup.git("add", "-A")

@@ -24,7 +24,7 @@ open question.
 | C2 | `wiki.config.json` labels, templates, `how-this-wiki-works` page |
 | C4 | `wiki/Home.md`, `_bases/dashboard.base`, Meta Bind button templates |
 | C5 | `wiki/.obsidian/snippets/base.css` tokens, `appearance.json`, Notebook Navigator colours |
-| C6 | `wiki/.obsidian/` settings (`community-plugins.json`, the enabled snippets in `appearance.json`); the plugin checklist the user follows in B2 |
+| C6 | `wiki/.obsidian/` settings (`community-plugins.json`, the enabled snippets in `appearance.json`); what `obsidian_setup.py install` downloads in B2 |
 | C7 | `CLAUDE.local.md` (where the old notes are); first tasks. The old vault itself is never touched |
 | D1 to D3 | `.claude/skills/`, `.claude/agents/`, the skills list in `CLAUDE.md`, `docs/skills.md`; the course list in the study-inbox skill |
 | D4 | the integration skill files, `tool-map.md`, `.claude/settings.json` permissions, `mail-folders.md` in the workspace root (gitignored), the blocks in the morning-briefing skill; failed or postponed routes in STATE.md "Open" |

@@ -1141,3 +1141,9 @@ def test_the_dry_run_of_two_parts_says_what_the_real_one_does(ws, capsys):
     assert out.count("Nothing was changed.") == 1
     assert run("restore") == 0
     assert not (ws / "docs/skills.md").exists()
+
+
+def test_the_obsidian_lock_file_travels_with_the_scripts():
+    assert nu.target_for("kit/scripts/obsidian_setup.py", set()) == "scripts/obsidian_setup.py"
+    assert nu.target_for("kit/scripts/obsidian.lock.json", set()) == "scripts/obsidian.lock.json"
+    assert nu.target_for("kit/scripts/wiki.config.example.json", set()) is None

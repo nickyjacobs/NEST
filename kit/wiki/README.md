@@ -79,8 +79,11 @@ installed; whether there is an audits section.
 ## Notes for the build
 
 - The plugin settings files are full settings objects, not fragments: a plugin that finds a key
-  missing can fail on load. Write them while Obsidian is closed, then let the user install the
-  plugins (`PLUGINS.md`); the plugin keeps the settings it finds.
+  missing can fail on load. Write them while Obsidian is closed, then run
+  `scripts/obsidian_setup.py install` (`PLUGINS.md`), which puts each plugin's code next to its
+  settings. Never let the user install a configured plugin from inside Obsidian instead: when a
+  plugin folder holds a `data.json` but no `manifest.json`, Obsidian's installer renames the
+  settings to `data.json.bak` and the plugin starts with its defaults.
 - The KPI views read one note's frontmatter: `goal-done`, `goal-total` (numbers), `goal-date`
   (ISO date) and `next-step` (text), default path `00-context/goal.md`. Create that note with
   those fields when the user names a goal.

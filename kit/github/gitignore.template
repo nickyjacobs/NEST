@@ -37,3 +37,11 @@ _setup/
 wiki/.obsidian/workspace*.json
 wiki/.obsidian/cache
 wiki/.trash/
+# Plugin and theme code: other people's programs, put back by scripts/obsidian_setup.py install.
+# The settings (data.json) stay in the repo.
+wiki/.obsidian/plugins/*/main.js
+wiki/.obsidian/plugins/*/manifest.json
+wiki/.obsidian/plugins/*/styles.css
+wiki/.obsidian/plugins/*/data.json.bak
+wiki/.obsidian/plugins/*/data.json.before-restore
+wiki/.obsidian/themes/

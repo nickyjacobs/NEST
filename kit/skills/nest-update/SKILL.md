@@ -195,6 +195,15 @@ is written again for them (`backup <path>`, write, `mark <path>=<kit path>`).
    `uv run --script scripts/nest_update.py backup docs/skills.md`, then regenerate the
    catalogue with `uv run scripts/skills_catalog.py`. A check that fails: fix it or put that
    one file back, and say which.
+   <!-- customise: Obsidian check (remove when the workspace has no wiki) -->
+   When `scripts/obsidian_setup.py` is there (it came with this update or an earlier one), run
+   `uv run --script scripts/obsidian_setup.py status --vault wiki` once. It names plugins or a
+   theme the vault asks for that are not installed, and settings Obsidian set aside as
+   `data.json.bak` (that happened when a plugin was installed from inside Obsidian after the
+   setup wrote its settings: the Home buttons or the sidebar colours are then missing). Offer
+   what applies in plain words, and after a yes, with Obsidian closed: `install --vault wiki`
+   for what is missing, `restore --vault wiki` for the settings. Both are outside the update's
+   restore point: `restore` keeps the file it replaces as `data.json.before-restore`.
 3. `uv run --script scripts/nest_update.py finish` closes the update. It moves the workspace
    to the new version only when nothing is open. Items left for later keep it on the old
    version; that is fine, say so. When the user wants no part of this release and no reminder:

@@ -1,0 +1,123 @@
+{
+  "generated": "2026-11-22",
+  "plugins": {
+    "obsidian-minimal-settings": {
+      "name": "Minimal Theme Settings",
+      "repo": "kepano/obsidian-minimal-settings",
+      "version": "9.0.0",
+      "minAppVersion": "1.13.0",
+      "files": {
+        "main.js": {
+          "sha256": "f754e0ce6523e433bff8e7995a848f7d7fac205399f9ab3b1258430261fd90c4",
+          "size": 26403
+        },
+        "styles.css": {
+          "sha256": "50084760da927a5bf5ac1b9d3b960dc52e1d0a3bf690e54df8f4d76f8212628c",
+          "size": 89
+        },
+        "manifest.json": {
+          "sha256": "2038f9c1f5ca026ebc1f3e156bad97c671d2c401a20718384508ef72071e8c5f",
+          "size": 347
+        }
+      }
+    },
+    "templater-obsidian": {
+      "name": "Templater",
+      "repo": "SilentVoid13/Templater",
+      "version": "2.27.0",
+      "minAppVersion": "1.13.0",
+      "files": {
+        "main.js": {
+          "sha256": "0b4a22e7a3871f929e18656d9f3c7defd8588c9dc5845620b9a16e0adb7c9a2f",
+          "size": 455254
+        },
+        "styles.css": {
+          "sha256": "67a6dd2d1d6dedca1287c334ca884ec4196433f71ca47388a0bd3eac14cf8b5f",
+          "size": 4201
+        },
+        "manifest.json": {
+          "sha256": "a9d10df447b9ce60e72df775cea66f246dacaac1f2e508b023585552f08be900",
+          "size": 756
+        }
+      }
+    },
+    "notebook-navigator": {
+      "name": "Notebook Navigator",
+      "repo": "johansan/notebook-navigator",
+      "version": "3.5.1",
+      "minAppVersion": "1.13.0",
+      "files": {
+        "main.js": {
+          "sha256": "64de05f2f0cec9225979956f173a1443e3f041974b7d7845fd81bbf972a13f0c",
+          "size": 2712902
+        },
+        "styles.css": {
+          "sha256": "0ee78c84fb943cbc246b388464aaa49d7cf1ec8e469be0daa3b9dda8a38f416f",
+          "size": 339852
+        },
+        "manifest.json": {
+          "sha256": "a4e2b0358be831dec4e1d662b7bbbf76898328491648c9bbe93351d15de33cb0",
+          "size": 498
+        }
+      }
+    },
+    "obsidian-style-settings": {
+      "name": "Style Settings",
+      "repo": "obsidian-community/obsidian-style-settings",
+      "version": "1.0.9",
+      "minAppVersion": "0.11.5",
+      "files": {
+        "main.js": {
+          "sha256": "1828abaacdab4c5578b705a625c585b30512f8efad4c7cfc5a18e70cc3557468",
+          "size": 154561
+        },
+        "styles.css": {
+          "sha256": "ee7937d2be50653a89ccb30ae5f0572b23507d5b7f1328d005271a363075bfd8",
+          "size": 13906
+        },
+        "manifest.json": {
+          "sha256": "9cffdc20cf2aa1354820e0050b694b0f9b576446e3d5d44a36ae8b0187e5bfb8",
+          "size": 321
+        }
+      }
+    },
+    "obsidian-meta-bind-plugin": {
+      "name": "Meta Bind",
+      "repo": "mProjectsCode/obsidian-meta-bind-plugin",
+      "version": "1.5.1",
+      "minAppVersion": "1.13.1",
+      "files": {
+        "main.js": {
+          "sha256": "d328bfaa4d1f48259074b28f249a9f911ea34327e7e1123d8a1f2afc3e9784b3",
+          "size": 1014942
+        },
+        "styles.css": {
+          "sha256": "97069e183224c55428fe0b983d42435aa2cd4ac14d0f50186138b4751ad55d61",
+          "size": 14988
+        },
+        "manifest.json": {
+          "sha256": "3c1dff1e36a17811851f3c7446b875cf901288b73261caea61bc0d440d3c4325",
+          "size": 445
+        }
+      }
+    }
+  },
+  "themes": {
+    "Minimal": {
+      "name": "Minimal",
+      "repo": "kepano/obsidian-minimal",
+      "version": "9.1.4",
+      "minAppVersion": "1.14.0",
+      "files": {
+        "theme.css": {
+          "sha256": "b63ef8a162529a06a945b51a4dacf73333b1d273660be26c86def455584996a8",
+          "size": 266817
+        },
+        "manifest.json": {
+          "sha256": "67a4ff8e848607644a3092bb5b016c934dba0672a3411143e314348ac6d4f7e7",
+          "size": 200
+        }
+      }
+    }
+  }
+}

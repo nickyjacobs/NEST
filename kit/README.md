@@ -6,7 +6,7 @@ created in their workspace.
 
 | Folder | What is in it | How the setup uses it |
 |---|---|---|
-| `scripts/` | Python tools: wiki lint and reindex, secret scan, session-start line, session guards, the updater, wiki backup, Council scoring, skills catalogue | Copied as files (`cp`, never retyped); configured through `wiki.config.json` and `nest.json` |
+| `scripts/` | Python tools: wiki lint and reindex, secret scan, session-start line, session guards, the updater, wiki backup, Council scoring, skills catalogue, the installer for the Obsidian plugins and theme | Copied as files (`cp`, never retyped); configured through `wiki.config.json` and `nest.json` |
 | `claude/` | `settings.json` reference with the hook wiring, rules, example lists of sensitive terms and style words | Merged into the workspace's `.claude/`, values from the interview |
 | `agents/full/`, `agents/light/` | The Council and The Architects in two sizes, plus `researcher` and `security-reviewer` | Only the chosen team and size; names and output language adjusted |
 | `skills/` | One reference `SKILL.md` per recommended skill, with "customise from the interview" points | Rewritten per user: paths, labels, apps, language |
@@ -15,8 +15,8 @@ created in their workspace.
 | `github/` | Workspace README skeleton, `.gitignore`, `.gitattributes`, pre-commit hook, workflows | The ignore file always; the pre-commit hook when the user wants it; the README and the workflows only with GitHub |
 
 Always part of a workspace, whatever the user chose: the scripts `validate.py`,
-`session_context.py`, `session_guard.py`, `nest_update.py`, `agent_git_readonly.py`, `wiki.py` and
-`skills_catalog.py`, the
+`session_context.py`, `session_guard.py`, `nest_update.py`, `agent_git_readonly.py`, `wiki.py`,
+`skills_catalog.py` and `obsidian_setup.py` (with `obsidian.lock.json`), the
 `nest-update` skill and the `security-reviewer` agent. Everything else follows the interview.
 
 A built workspace records in `nest.json` which release it came from and which kit file each

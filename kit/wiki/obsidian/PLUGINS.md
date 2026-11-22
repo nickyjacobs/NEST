@@ -1,19 +1,40 @@
 # Obsidian: theme and plugins
 
-<!-- customise: translate the user-facing steps to the user's language; drop a plugin the user declined, and its settings file, the Home buttons or icons that depend on it -->
+<!-- customise: say the user-facing parts in the user's language; drop a plugin the user declined from `community-plugins.json`, with its settings file and the Home buttons or icons that depend on it -->
 
-The setup cannot install Obsidian plugins or themes itself: Obsidian downloads them from inside the
-app, and the setup never copies a plugin's `main.js` from anywhere. What the setup does is write the
-settings files in this folder into the vault's `.obsidian/` (before the user opens the vault, or
-while Obsidian is closed), and then walk the user through the installs below, one at a time,
-checking after each one that it works.
+The setup installs the theme and the plugins itself, with `scripts/obsidian_setup.py`. The user
+does not click through a list, and never installs one of these from inside Obsidian.
 
-## Before the first plugin
+## How it goes
 
-1. Open the vault folder in Obsidian (*Open folder as vault*).
-2. Settings → Community plugins → **Turn on community plugins** (this switches off Restricted mode).
-   Obsidian warns that plugins run code; the five below are widely used and open source.
-3. Close and reopen Obsidian after the installs, so every plugin reads the settings file the setup wrote.
+1. The setup writes the settings files in this folder into the vault's `.obsidian/`, while the
+   vault is not open in Obsidian. Obsidian rewrites `appearance.json` and
+   `community-plugins.json` from memory, so a change made under an open vault is lost.
+2. After one yes from the user, `uv run --script scripts/obsidian_setup.py install --vault wiki`
+   downloads each plugin in `community-plugins.json` and the theme in `appearance.json` from its
+   own project on GitHub, at the version in `scripts/obsidian.lock.json`, checks every file
+   against the checksum in that lock file, and puts it next to the settings. A plugin the user
+   declined is not in `community-plugins.json`, so it is not downloaded.
+3. The user opens the folder in Obsidian (*Open folder as vault*) and chooses **Trust author and
+   enable plugins**. That is the one step no file can take: Obsidian keeps the choice in the
+   app, per vault and per device. If they close the question instead, Obsidian asks again the
+   next time, and until then the theme and the snippets are off too.
+4. `uv run --script scripts/obsidian_setup.py status --vault wiki` shows what is installed.
+
+Why not let the user install them in Obsidian: when a plugin folder holds a `data.json` but no
+`manifest.json`, Obsidian's installer sets the settings aside as `data.json.bak` and the plugin
+starts with its defaults. If that happened in a vault (an older setup, or a plugin installed by
+hand), `obsidian_setup.py restore --vault wiki` puts the settings back, with Obsidian closed.
+
+What to tell the user before the yes, in their language and at their level: these are five
+widely used open source plugins and one theme; a plugin can do anything Obsidian itself can, so
+they are downloaded from their makers at a fixed version and checked, never from anywhere else;
+Obsidian updates them from then on, like any plugin.
+
+On a second computer or a phone the vault arrives through the user's sync or backup. Plugin code
+is left out of the git backup on purpose (it is other people's code): run `install` again on a
+computer, or let the sync service carry `.obsidian/plugins`. "Trust author and enable plugins"
+is asked again on every device.
 
 ## Theme: Minimal
 
@@ -21,22 +42,25 @@ checking after each one that it works.
 |---|---|
 | What it does here | The look of the whole vault; `base.css` and `idea-note.css` build on it, and Home uses its helper classes `max` (full width) and `base-plain` (no Bases toolbars) |
 | Why | Clean, fast, and well maintained; the snippets are tested against it |
-| Install | Settings → Appearance → Themes → **Manage** → search **Minimal** → Install and use |
-| Settings | `appearance.json` sets the theme, the accent colour and the two snippets |
+| Settings | `appearance.json` sets the theme (`cssTheme`), light or dark (`theme`), the accent colour and the two snippets (`enabledCssSnippets`) |
+| Needs | A recent Obsidian (the lock file names the version). `install` says so when Obsidian is too old: the user updates Obsidian and the setup runs `install` again |
 
 ## Plugins
 
-Install each one through Settings → Community plugins → **Browse** → search the name → Install →
-**Enable**. The id is what `community-plugins.json` lists; check it on the plugin's page if two
-plugins have similar names.
+The id is what `community-plugins.json` lists and what the lock file is keyed on.
 
-| Plugin (search for) | Id | What it does here | Why this one |
+| Plugin | Id | What it does here | Why this one |
 |---|---|---|---|
 | **Minimal Theme Settings** | `obsidian-minimal-settings` | Colour schemes, line width and contrast for Minimal | The supported way to tune Minimal without CSS |
 | **Templater** | `templater-obsidian` | `Alt+N` and the Home tiles make a note from a template that asks for a title and moves itself to the right folder | The core Templates plugin cannot prompt or move a note |
 | **Notebook Navigator** | `notebook-navigator` | The sidebar: folder tree with an icon and colour per section, pinned notes, `Home.md` as the start page | Replaces the file explorer and a separate homepage plugin in one |
 | **Style Settings** | `obsidian-style-settings` | Sliders and toggles for the theme's CSS variables | Minimal exposes its options through it |
 | **Meta Bind** | `obsidian-meta-bind-plugin` | The buttons on Home (`BUTTON[id]`), defined once as button templates, so they also work in Live Preview | Buttons without JavaScript |
+
+Two settings follow Obsidian's own, not the plugin file: Minimal Theme Settings copies the font
+size, folding, line numbers and readable line length from `app.json` into its `data.json` every
+time it loads. Set those in `app.json`. "Colorful headings" is off in the kit: `base.css` does
+not colour headings, and with it on Minimal paints each heading level in another colour.
 
 ## Safety settings (do not change)
 
@@ -62,8 +86,9 @@ plugins have similar names.
 - **Core Templates plugin: off** (`core-plugins.json`). It would compete with Templater for the
   `_templates` folder.
 
-## After the installs, check
+## After the user opened the vault, check
 
+- `status` lists every plugin with its settings, and no `data.json.bak`.
 - Home opens as the start page and shows tiles, panels and (when configured) the KPI row.
 - A tile creates a note in the right folder with a kebab-case name.
 - The sidebar shows an icon and colour per section, and hides `_bases` and `_templates`.
