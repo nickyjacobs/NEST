@@ -785,11 +785,15 @@ def lint(cfg: Config, all_pages: bool = False) -> LintResult:
                 res.error("missing-fields", f"missing fields ({', '.join(missing)}): {rel}")
             # A section's own index page is a catalogue page: it keeps the top-level words.
             own_index = rel == f"{name}/{INDEX}"
-            allowed = set(sec["status_words"]) if sec["status_words"] is not None and not own_index else statuses
+            # (a workspace built before that rule may have given it one of the section's words: both pass)
+            allowed = set(sec["status_words"]) if sec["status_words"] is not None else statuses
+            if own_index:
+                allowed = allowed | statuses
             if fm is None:
                 res.error("invalid-yaml", f"invalid YAML (Obsidian shows no properties): {rel}")
             elif "status" in fm and status_of(fm) not in allowed:
-                res.error("unknown-status", f"unknown status '{status_of(fm)}': {rel}")
+                res.error("unknown-status", f"unknown status '{status_of(fm)}': {rel} "
+                                            f"(allowed here: {', '.join(sorted(map(str, allowed)))})")
             if fm is not None and fname != INDEX:
                 named = authors_of(fm)
                 author = ", ".join(named)

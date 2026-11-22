@@ -716,8 +716,12 @@ def point_at(ws: Path, source: Path) -> None:
     (ws / "nest.json").write_text(json.dumps(data), encoding="utf-8")
 
 
-def test_a_second_undo_never_reaches_for_an_older_update(ws, nest_repo, tmp_path, capsys):
+def test_a_second_undo_never_reaches_for_an_older_update(ws, nest_repo, tmp_path, capsys, monkeypatch):
     finished_update(ws)                                   # update A: wiki.py and guard.py
+    first = next((ws / nu.HISTORY_DIR).glob("nest-update-*"))
+    kept = json.loads((first / "nest.json").read_text(encoding="utf-8"))
+    kept["nest"]["version"] = "0.9.0"                     # A began from another release: its own update
+    (first / "nest.json").write_text(json.dumps(kept), encoding="utf-8")
     (ws / "scripts/validate.py").write_text("print('validate 1')  # my own line\n", encoding="utf-8")
     time.sleep(1.1)                                       # run folders are named by the second
     assert run("plan", "--json") == 0                     # update B: validate.py is a merge now
@@ -1025,3 +1029,115 @@ def test_the_dry_run_says_what_happens_to_the_stamp(ws, capsys):
     assert "declined change(s) again" in out and "at session start again" in out
     finished = stamp(ws)
     assert finished["declined"] and finished["skipped_version"] == "1.1.0"
+
+
+def test_undo_covers_every_part_of_one_update(ws, capsys):
+    """`finish` with something left for later closes a part; the next change starts another.
+    To the user that is still one update, and undo puts all of it back."""
+    before = json.loads((ws / "nest.json").read_text(encoding="utf-8"))
+    finished_update(ws)                                   # part one: wiki.py and guard.py, the rest for later
+    assert stamp(ws)["version"] == "1.0.0"
+    time.sleep(1.1)
+    assert run("backup", "scripts/validate.py") == 0      # part two, a moment later
+    (ws / "scripts/validate.py").write_text(V110["kit/scripts/validate.py"], encoding="utf-8")
+    assert run("mark", "scripts/validate.py=kit/scripts/validate.py", "--kind", "copy") == 0
+    assert len(list((ws / nu.HISTORY_DIR).glob("nest-update-*"))) == 2
+    capsys.readouterr()
+    assert run("restore", "--dry-run") == 0
+    out = capsys.readouterr().out
+    assert "2 parts" in out and "scripts/validate.py" in out and "scripts/wiki.py" in out and "scripts/guard.py" in out
+    assert (ws / "scripts/guard.py").is_file()            # the dry run changed nothing
+    assert run("restore") == 0
+    assert (ws / "scripts/validate.py").read_text(encoding="utf-8") == V100["kit/scripts/validate.py"]
+    assert (ws / "scripts/wiki.py").read_text(encoding="utf-8") == V100["kit/scripts/wiki.py"]
+    assert not (ws / "scripts/guard.py").exists()
+    assert json.loads((ws / "nest.json").read_text(encoding="utf-8")) == before
+    assert run("restore") == 1                            # all of it is put back; nothing older is taken
+
+
+def test_parts_from_another_release_are_not_one_update(ws, capsys):
+    finished_update(ws)
+    first = next((ws / nu.HISTORY_DIR).glob("nest-update-*"))
+    kept = json.loads((first / "nest.json").read_text(encoding="utf-8"))
+    kept["nest"]["version"] = "0.9.0"                     # that update began from another release
+    (first / "nest.json").write_text(json.dumps(kept), encoding="utf-8")
+    time.sleep(1.1)
+    assert run("backup", "scripts/validate.py") == 0
+    capsys.readouterr()
+    assert run("restore", "--dry-run") == 0
+    out = capsys.readouterr().out
+    assert "parts" not in out and "scripts/wiki.py" not in out
+
+
+def two_parts(ws: Path) -> None:
+    """One update in two parts: wiki.py and guard.py first, validate.py a moment later."""
+    finished_update(ws)
+    time.sleep(1.1)
+    assert run("backup", "scripts/validate.py") == 0
+    (ws / "scripts/validate.py").write_text(V110["kit/scripts/validate.py"], encoding="utf-8")
+    assert run("mark", "scripts/validate.py=kit/scripts/validate.py", "--kind", "copy") == 0
+    assert run("finish") == 0
+
+
+def test_force_reaches_what_an_older_part_left_alone(ws, capsys):
+    two_parts(ws)
+    (ws / "scripts/wiki.py").write_text("print('wiki 2')  # my own line\n", encoding="utf-8")   # a file of part one
+    capsys.readouterr()
+    assert run("restore") == 0
+    out = capsys.readouterr().out
+    assert "Left alone" in out and "scripts/wiki.py" in out
+    assert "my own line" in (ws / "scripts/wiki.py").read_text(encoding="utf-8")
+    assert (ws / "scripts/validate.py").read_text(encoding="utf-8") == V100["kit/scripts/validate.py"]
+    assert run("restore", "--force") == 0                 # the step the message advises
+    assert (ws / "scripts/wiki.py").read_text(encoding="utf-8") == V100["kit/scripts/wiki.py"]
+    assert run("restore") == 1 and run("restore", "--force") == 1
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="read-only files behave differently on Windows")
+def test_a_failure_in_an_older_part_can_be_run_again(ws, capsys):
+    two_parts(ws)
+    parts = sorted((ws / nu.HISTORY_DIR).glob("nest-update-*"))
+    blocked = parts[0] / "files/scripts/wiki.py"          # the kept version in the older part cannot be read
+    blocked.chmod(0o000)
+    try:
+        capsys.readouterr()
+        assert run("restore") == 1
+        assert "scripts/wiki.py" in capsys.readouterr().err
+    finally:
+        blocked.chmod(0o644)
+    assert (parts[1] / "restored").is_file() and not (parts[0] / "restored").exists()
+    assert run("restore") == 0                            # picks up the older part, not "already put back"
+    assert (ws / "scripts/wiki.py").read_text(encoding="utf-8") == V100["kit/scripts/wiki.py"]
+    assert not (ws / "scripts/guard.py").exists() and stamp(ws)["version"] == "1.0.0"
+    assert run("restore") == 1
+
+
+def test_parts_a_day_apart_are_still_one_update(ws, capsys):
+    two_parts(ws)
+    parts = sorted((ws / nu.HISTORY_DIR).glob("nest-update-*"))
+    older = parts[0].with_name("nest-update-20200101-080000")
+    parts[0].rename(older)                                # "the rest tomorrow", and then some
+    capsys.readouterr()
+    assert run("restore", "--dry-run") == 0
+    assert "2 parts" in capsys.readouterr().out
+    assert run("restore") == 0
+    assert (ws / "scripts/wiki.py").read_text(encoding="utf-8") == V100["kit/scripts/wiki.py"]
+
+
+def test_the_dry_run_of_two_parts_says_what_the_real_one_does(ws, capsys):
+    assert run("plan", "--json") == 0
+    assert run("apply", "scripts/wiki.py") == 0
+    assert run("backup", "docs/skills.md") == 0
+    write_tree(ws, {"docs/skills.md": "catalogue after part one\n"})
+    assert run("finish") == 0
+    time.sleep(1.1)
+    assert run("backup", "docs/skills.md") == 0           # the same file again in part two
+    write_tree(ws, {"docs/skills.md": "catalogue after part two\n"})
+    assert run("finish") == 0
+    capsys.readouterr()
+    assert run("restore", "--dry-run") == 0
+    out = capsys.readouterr().out
+    assert "leave alone" not in out
+    assert out.count("Nothing was changed.") == 1
+    assert run("restore") == 0
+    assert not (ws / "docs/skills.md").exists()

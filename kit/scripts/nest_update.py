@@ -1173,6 +1173,53 @@ def cmd_restore(root: Path, args) -> int:
     # Always the newest update, never silently an older one: putting back an update that was
     # followed by another would also undo choices and edits made since.
     folder = runs[-1]
+    if args.run:
+        return restore_part(root, args, folder, runs)
+    # One update can be done in parts: `finish` with something left for later closes a part,
+    # and the next change starts another. Parts that began from the same release are one update
+    # to the user (the version only moves when everything is done), so undo covers them all.
+    # The group is written down when an undo begins, so a second `restore` (after a failure, or
+    # with --force for files that were left alone) works on the same parts.
+    names = read_json(folder / "group.json").get("parts")
+    if isinstance(names, list) and names:
+        group = [root / HISTORY_DIR / name for name in names if isinstance(name, str) and (root / HISTORY_DIR / name).is_dir()]
+    else:
+        group, base = [folder], run_before(folder)
+        if not (folder / "restored").is_file():
+            for prev in reversed(runs[:-1]):
+                if (prev / "restored").is_file() or base is None or run_before(prev) != base:
+                    break
+                group.append(prev)
+    todo = [part for part in group if not (part / "restored").is_file()
+            or (args.force and read_json(part / "left.json").get("left"))]
+    if not todo:
+        older = "" if len(runs) <= len(group) else \
+            " An older update is only put back by name: `restore --list` shows them, `restore --run <name>` picks one."
+        raise Problem(f"{folder.name} was already put back.{older}")
+    if len(group) > 1:
+        print(f"The last update was done in {len(group)} parts; undo covers all of them, newest first.")
+    if not args.dry_run:
+        for part in group:
+            write_json(part / "group.json", {"parts": [g.name for g in group]})
+    assumed: dict[str, str | None] = {}
+    for i, part in enumerate(todo):
+        code = restore_part(root, args, part, runs, assumed=assumed, last=i == len(todo) - 1)
+        if code:
+            return code
+    return 0
+
+
+def run_before(folder: Path) -> str | None:
+    """The release the workspace was on when this part of an update began."""
+    before = read_json(folder / "nest.json").get("nest")
+    return before.get("version") if isinstance(before, dict) else None
+
+
+def restore_part(root: Path, args, folder: Path, runs: list[Path], assumed: dict | None = None,
+                 last: bool = True) -> int:
+    """Put back one part of an update. `assumed` carries, in a dry run over several parts, what
+    the newer parts would have put back, so an older part is judged against that state."""
+    assumed = {} if assumed is None else assumed
     only: list[str] | None = None
     if (folder / "restored").is_file():
         left_before = [rel for rel in read_json(folder / "left.json").get("left") or [] if isinstance(rel, str)]
@@ -1192,18 +1239,24 @@ def cmd_restore(root: Path, args) -> int:
 
     def changed_since(ws_rel: str) -> bool:
         """Did the user change this file after the update finished?"""
-        return written is not None and not args.force and ws_rel in written and sha(root / ws_rel) != written[ws_rel]
+        current = assumed[ws_rel] if ws_rel in assumed else sha(root / ws_rel)
+        return written is not None and not args.force and ws_rel in written and current != written[ws_rel]
 
     if args.dry_run:
         print(describe_run(root, folder))
         back = [rel for rel in kept if not changed_since(rel)]
-        away = [rel for rel in made if (root / rel).is_file() and not changed_since(rel)]
+        away = [rel for rel in made if (assumed.get(rel, True) is not None and (root / rel).is_file())
+                and not changed_since(rel)]
         stay = [rel for rel in [*kept, *made] if changed_since(rel)]
         print(f"Would put back {len(back)} file(s): {', '.join(back) or 'none'}")
         print(f"Would take away {len(away)} file(s) the update added: {', '.join(away) or 'none'}")
         if stay:
             print(f"Would leave alone, because they were changed after the update finished: {', '.join(stay)}")
-        before = read_json(folder / "nest.json").get("nest") if only is None else None
+        for rel in back:
+            assumed[rel] = sha(folder / "files" / rel)
+        for rel in away:
+            assumed[rel] = None
+        before = read_json(folder / "nest.json").get("nest") if only is None and last else None
         if isinstance(before, dict):
             now = load_stamp(root)
             if before.get("version") != now.get("version"):
@@ -1213,7 +1266,8 @@ def cmd_restore(root: Path, args) -> int:
                 print(f"Would offer {undone} declined change(s) again.")
             if now.get("skipped_version") and now.get("skipped_version") != before.get("skipped_version"):
                 print(f"Would mention NEST {now['skipped_version']} at session start again.")
-        print("Nothing was changed.")
+        if last:
+            print("Nothing was changed.")
         return 0
 
     if in_progress:

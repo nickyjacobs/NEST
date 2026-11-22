@@ -139,6 +139,19 @@ section in plain words: what it means if you already built a workspace with an e
 
 ### 🐛 Fixed
 
+- A secret in a stored message is replaced on its own: the words after it were removed with
+  it when two rules found the same token.
+- **Undo covered only the last part of an update.** An update with something left for later
+  is closed in parts; `restore` now puts back every part that began from the same release,
+  the dry run lists them, and a second `restore` (after a failure, or with `--force`) works on
+  the same parts.
+- The stricter status check refused the ideas index of a workspace built with 1.0.0, which
+  carries one of the section's own words. Both forms pass now, and an unknown status names
+  the words that are allowed.
+- The nest-update skill asked for a restart before the commit question was settled, so the
+  next session committed the user's own notes along with the update. The commit comes first.
+- The setup wrote "yes" for an answer to a proposal without the proposal itself, so a session
+  that continued built something else than the user agreed to.
 - **The setup lost answers when a session ended without warning.** Answers are now written
   after every message, and a new session reads the interview files, the facts file and the
   log back before it continues.

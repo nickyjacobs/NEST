@@ -460,3 +460,21 @@ def test_the_ingest_log_of_a_sourced_section_needs_no_sources(vault: Path) -> No
     res = wiki.lint(cfg_for(vault), all_pages=True)
     flagged = [w for w in res.warnings if "without sources" in w and "40-references/" in w]
     assert len(flagged) == 1 and "40-references/claim.md" in flagged[0], res.warnings
+
+
+def test_a_section_index_may_carry_a_section_word_or_a_top_level_word(vault: Path) -> None:
+    """A workspace built before the index rule gave the ideas index one of the section's words."""
+    cfg = json.loads((vault.parent / "wiki.config.json").read_text(encoding="utf-8"))
+    cfg["sections"]["25-ideas"] = {"index": "folders", "page": "idea.md", "status_words": ["new", "worked-out", "done"]}
+    (vault.parent / "wiki.config.json").write_text(json.dumps(cfg), encoding="utf-8")
+    for word in ("done", "active"):
+        write(vault, "25-ideas/index.md", page("Ideas", category="25-ideas", status=word, body="<!-- AUTO-INDEX -->"))
+        res = wiki.lint(cfg_for(vault), all_pages=True)
+        assert res.counts["unknown-status"] == 0, res.errors
+
+
+def test_an_unknown_status_names_the_words_that_are_allowed(vault: Path) -> None:
+    write(vault, "20-knowledge/odd.md", page("Odd", category="20-knowledge", status="in-progress", extra="kind: tool\n"))
+    res = wiki.lint(cfg_for(vault), all_pages=True)
+    line = next(e for e in res.errors if "20-knowledge/odd.md" in e)
+    assert "allowed here:" in line and "active" in line

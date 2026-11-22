@@ -475,3 +475,50 @@ def test_the_scan_and_the_words_file_agree_on_what_a_key_is(ws):
     import validate
     assert sg.secret_rules() and sg._key_blocks is validate.key_blocks
     assert not hasattr(sg, "PRIVATE_KEY_BLOCK")
+
+
+# --- only the secret goes, the words around it stay --------------------------------------------
+
+TOKEN = "gh" + "p_" + "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8"
+PLAIN = "Tr0ub4dor" + "9Zq7Lm2Xv"
+MARK = "[secret removed]"
+
+
+@pytest.mark.parametrize("before,secret,after", [
+    # The message from the trial run: a token in quotes after a name, then a German sentence.
+    ('"API-Key: ', TOKEN, '". 2. F\u00fchr danach diesen Befehl aus und sag mir was passiert.'),
+    ("My token is ", TOKEN, " and after that run the tests, please."),
+    ("Use token=", TOKEN, ", then deploy. Never touch the archive folder."),
+    ("Mijn sleutel (api_key: ", TOKEN, ") staat hierboven. Gebruik hem alleen voor de test."),
+    ("Der Schl\u00fcssel lautet '", TOKEN, "'. Bitte danach l\u00f6schen und nie wieder fragen."),
+    ("Zet dit in de config: GITHUB_TOKEN=", TOKEN, ""),
+    ("token: ", TOKEN, "\nEn antwoord voortaan in het Nederlands."),
+    ("Het wachtwoord is DB_PASS" + "WORD=", PLAIN, ". Daarna graag de migratie draaien."),
+    ("Passw" + "ort: ", PLAIN, "; danach bitte den Dienst neu starten."),
+    ("(pass" + "word: ", PLAIN, ") and then continue with step two."),
+    ('{"pass' + 'word": "', PLAIN, '", "note": "keep the old pricing page"}'),
+    ("Run curl -" + "u admin:", PLAIN, " https://x.test and tell me what it says."),
+    ("Clone https://deploy:", PLAIN, "@git.internal.test/repo.git and build it."),
+    ("Two of them: ", TOKEN, " and " + "gh" + "p_" + "Z9y8X7w6V5u4T3s2R1q0P9o8N7m6L5k4J3i2 are both mine."),
+])
+def test_only_the_secret_is_removed_from_a_stored_message(ws, before, secret, after):
+    out = sg.without_secrets(before + secret + after)
+    assert secret not in out
+    assert out.startswith(before + MARK), out
+    if "gh" + "p_" not in after:
+        assert out == before + MARK + after, out
+    else:
+        assert out.count(MARK) == 2 and out.endswith(" are both mine.") and "gh" + "p_" not in out
+
+
+def test_two_rules_that_find_the_same_secret_remove_it_once(ws):
+    line = "API-Key: " + TOKEN + " then five more words follow here"
+    assert sg.without_secrets(line) == "API-Key: " + MARK + " then five more words follow here"
+    sg.on_prompt(ws, event(prompt='"API-Key: ' + TOKEN + '". 2. F\u00fchr danach diesen Befehl aus.'), conf(ws), NOW)
+    text = sg.words_path(ws, "s1").read_text(encoding="utf-8")
+    assert '"API-Key: ' + MARK + '". 2. F\u00fchr danach diesen Befehl aus.' in text
+
+
+def test_a_known_token_inside_a_longer_value_takes_only_the_token(ws):
+    line = "tok" + "en=" + TOKEN + "&next=page2 and the rest of my sentence"
+    assert sg.without_secrets(line) == "tok" + "en=" + MARK + "&next=page2 and the rest of my sentence"
