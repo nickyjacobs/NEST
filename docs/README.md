@@ -10,7 +10,8 @@ Everything beyond the [README](../README.md), sorted by who it is for.
 | Change how your workspace behaves | [reference/nest-json.md](reference/nest-json.md) |
 | Understand the hooks the scripts rely on | [reference/hooks-notes.md](reference/hooks-notes.md) |
 | See how a release is made | [project/releasing.md](project/releasing.md) |
-| See what is not built yet, and why | [project/backlog.md](project/backlog.md) |
+| See where NEST is going | [ROADMAP.md](../ROADMAP.md) |
+| See what is not built or tested yet, and why | [project/backlog.md](project/backlog.md) |
 
 ## The folders
 
@@ -21,5 +22,6 @@ Everything beyond the [README](../README.md), sorted by who it is for.
 | [`project/`](project/) | People who work on NEST itself | The release steps and templates, the backlog |
 
 Elsewhere in the repo: [CONTRIBUTING.md](../CONTRIBUTING.md) (branches, commits, pull requests),
-[CHANGELOG.md](../CHANGELOG.md) (every release), [SECURITY.md](../SECURITY.md) (reporting a
+[CHANGELOG.md](../CHANGELOG.md) (every release), [ROADMAP.md](../ROADMAP.md) (what is
+coming), [SECURITY.md](../SECURITY.md) (reporting a
 problem), [kit/README.md](../kit/README.md) (what the reference kit holds).

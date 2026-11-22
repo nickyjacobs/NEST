@@ -68,6 +68,8 @@ section in plain words: what it means if you already built a workspace with an e
 
 ### 🔧 Changed
 
+- `ROADMAP.md` says where NEST is going, and the README links to it. Questions and ideas now
+  go to Discussions: the README, the FAQ, `CONTRIBUTING.md` and the issue chooser point there.
 - `wiki_backup.py` leaves nested git repositories out of the backup and never waits for a
   password. `check_style.py --strict` exits 2 when the check could not run. `dashboard.base`
   uses `file.hasTag("query")`, which also works for a note without tags.

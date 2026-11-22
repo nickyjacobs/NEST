@@ -25,6 +25,7 @@
   <a href="#your-data">Your data</a> ·
   <a href="#staying-up-to-date">Updates</a> ·
   <a href="#faq">FAQ</a> ·
+  <a href="ROADMAP.md">Roadmap</a> ·
   <a href="docs/README.md">Docs</a>
 </p>
 
@@ -192,6 +193,13 @@ Delete the workspace folder. Everything NEST built lives inside it.
 
 More questions: [docs/guide/faq.md](docs/guide/faq.md).
 
+## Roadmap
+
+Three things the next releases work on: your assistant from your phone, a board for your
+projects and ideas on your Home page, and a place in your own workspace for what your
+assistant remembers. What comes after, and what NEST will not become:
+[ROADMAP.md](ROADMAP.md).
+
 ## Documentation
 
 | Page | What it covers |
@@ -202,6 +210,7 @@ More questions: [docs/guide/faq.md](docs/guide/faq.md).
 | [nest.json](docs/reference/nest-json.md) | Every setting of a workspace |
 | [The kit](kit/README.md) | The reference files the setup adapts |
 | [Changelog](CHANGELOG.md) | Every release, with what it means for your workspace |
+| [Roadmap](ROADMAP.md) | What is coming, and what NEST will not become |
 | [Contributing](CONTRIBUTING.md) | Branches, commits, pull requests, releases |
 
 ## Feedback

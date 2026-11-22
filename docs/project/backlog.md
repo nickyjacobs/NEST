@@ -2,7 +2,8 @@
 
 # Backlog
 
-Things NEST does not do yet, with why they wait.
+Things NEST does not do yet, with why they wait. This is the technical list; what is planned
+for users is in the [roadmap](../../ROADMAP.md).
 
 ## Guards
 
