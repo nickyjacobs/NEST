@@ -129,7 +129,7 @@ views:
       and:
         - file.inFolder("26-research")
         - file.basename != "index"
-        - tags.contains("query")
+        - file.hasTag("query")
     order:
       - formula.title
       - formula.by
@@ -144,7 +144,7 @@ views:
       and:
         - file.inFolder("26-research")
         - file.basename != "index"
-        - '!tags.contains("query")'
+        - '!file.hasTag("query")'
     order:
       - formula.title
       - status

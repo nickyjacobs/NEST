@@ -5,14 +5,14 @@ const title = await tp.system.prompt("Title (empty: taken from the page later)",
 await tp.file.move("/_inbox/source-" + tp.user.slug(title));
 -%>
 ---
-title: "<% title.replace(/"/g, "'") %>"
+title: "<% title.replace(/\\/g, "\\\\").replace(/"/g, "'") %>"
 created: <% tp.date.now("YYYY-MM-DD") %>
 updated: <% tp.date.now("YYYY-MM-DD") %>
 tags: []
 category: _inbox
 status: draft
 kind: link
-source-url: <% url %>
+source-url: "<% url.replace(/\\/g, "\\\\").replace(/"/g, "'") %>"
 author: <fill in: user author value>
 ---
 

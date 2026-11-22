@@ -389,3 +389,72 @@ def test_config_folder_names_and_cli(ws: Path) -> None:
     assert "> [!info]" in idea_text(ws)
     lint_clean()
     shutil.rmtree(ws / ".runs")
+
+
+# Real workspaces: status words from the top level, headings in desk reports, renamed labels, odd titles
+
+def test_status_words_fall_back_to_the_top_level_list(ws: Path, capsys) -> None:
+    c = json.loads((ws / "wiki.config.json").read_text(encoding="utf-8"))
+    del c["sections"][IDEAS]["status_words"]
+    (ws / "wiki.config.json").write_text(json.dumps(c), encoding="utf-8")
+    assert save_blueprint(architects_run(ws)) == 2  # lint would refuse 'worked-out' afterwards
+    assert "worked-out" in capsys.readouterr().err
+    assert not (ws / "wiki" / IDEAS / SLUG).exists()
+
+
+def test_a_heading_in_a_desk_report_does_not_cut_the_desks_off(ws: Path) -> None:
+    run = architects_run(ws)
+    write(run / "surveyor.report.md", "## Findings\n\nClosest: RouteCo | https://example.com\n\n# Loud\n")
+    assert save_blueprint(run) == 0
+    text = idea_text(ws)
+    assert "**Line:** A shared sheet per group" in text and "**Monday:**" in text and "**Hours:**" in text
+    bp = next((ws / "wiki" / IDEAS / SLUG / "blueprints").glob("*.md")).read_text(encoding="utf-8")
+    assert "#### Findings" in bp and "\n## Findings" not in bp and "\n# Loud" not in bp
+
+
+def test_ticks_survive_a_renamed_open_points_heading(ws: Path, tmp_path: Path) -> None:
+    assert save_blueprint(architects_run(ws)) == 0
+    page = ws / "wiki" / IDEAS / SLUG / "idea.md"
+    page.write_text(idea_text(ws).replace("- [ ] Spreadsheet", "- [x] Spreadsheet", 1), encoding="utf-8")
+    labels = write(tmp_path / "labels.json", json.dumps({"headings": {"open": "Open punten"}}))
+    assert idea_page.main(["rebuild", "--slug", SLUG, "--labels", str(labels)]) == 0
+    assert "## Open punten" in idea_text(ws) and "- [x] Spreadsheet" in idea_text(ws)
+
+
+def test_written_pages_are_readable_like_any_other_file(ws: Path) -> None:
+    if os.name == "nt":
+        pytest.skip("POSIX permission bits")
+    assert save_blueprint(architects_run(ws)) == 0
+    page = ws / "wiki" / IDEAS / SLUG / "idea.md"
+    plain = write(ws / "plain.txt", "x")
+    assert page.stat().st_mode & 0o777 == plain.stat().st_mode & 0o777
+    page.chmod(0o640)
+    assert idea_page.main(["rebuild", "--slug", SLUG]) == 0
+    assert page.stat().st_mode & 0o777 == 0o640
+
+
+@pytest.mark.parametrize("title", ["Yes", "Null", "2026", "1.5", "2026-01-02", "~", "Two\nlines", "on"])
+def test_titles_yaml_would_misread_are_quoted(ws: Path, title: str) -> None:
+    run = architects_run(ws)
+    assert idea_page.main(["save-blueprint", "--slug", SLUG, "--title", title, "--file", str(run / "blueprint.md")]) == 0
+    assert frontmatter(idea_text(ws))["title"] == " ".join(title.split())
+    assert f"# {' '.join(title.split())}\n" in idea_text(ws)
+
+
+@pytest.mark.parametrize("verdict", [
+    {"verdict": "GO", "score": 7.6, "jury": ["x"]}, {"verdict": "GO", "score": 7.6, "mismatches": ["x"]},
+    {"verdict": "GO", "score": "abc"}, {"verdict": "GO", "score": 85}, {"verdict": "GO", "score": 7.6, "jury": {}},
+    {"verdict": "GO", "score": 7.6, "mismatches": [{"judge": 1, "notes": "text"}]},
+])
+def test_a_malformed_verdict_file_is_an_input_error(ws: Path, capsys, verdict: dict) -> None:
+    run = council_run(ws)
+    write(run / "verdict.json", json.dumps(verdict))
+    assert save_review(run) == 1
+    assert "verdict.json" in capsys.readouterr().err
+    assert not (ws / "wiki" / IDEAS / SLUG).exists()
+
+
+def test_first_sentence_in_other_scripts() -> None:
+    assert idea_page.first_sentences("Ça marche. Écrire vient après.") == "Ça marche."
+    assert idea_page.first_sentences("Это работает. Потом пишем.") == "Это работает."
+    assert idea_page.first_sentences("Costs e.g. five euros. Then more.") == "Costs e.g. five euros."

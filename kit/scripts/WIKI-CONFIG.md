@@ -17,7 +17,8 @@ uv run scripts/wiki.py log <op> "<title>" ["<line>" ...]
 
 `--config <path>` works before or after the command. Without it the script reads the path in
 `NEST_WIKI_CONFIG`, and otherwise walks up from the current directory to the first
-`wiki.config.json`. Exit codes: 0 clean (warnings allowed), 1 lint errors, 2 usage or config error.
+`wiki.config.json`. Exit codes: 0 clean (warnings allowed), 1 lint errors, 2 usage or config error
+(a value of the wrong kind is named in one line, never shown as a Python traceback).
 
 The file is plain JSON: no comments. Keys that start with `_` are ignored, so `"_note": "..."` is a
 place for a remark. Every key is optional; a missing key takes the default below.
@@ -48,10 +49,16 @@ Warnings (listed with `-v`, exit code 0):
 | `duplicate-titles` | the same title in more than one section |
 | `unknown-kind` | a `kind` that is not a key of the section's `kinds` |
 
-Links inside code (fenced or inline) are ignored. A link with a path resolves as a vault path or
-relative to the linking page; a bare name resolves when exactly one file carries it. Pages in the
-vault root (`index.md`, `log.md`, `Home.md`) may be linked by name. Hidden folders (`.obsidian`,
-`.git`, `.trash`) are never scanned.
+Links inside code (fenced with backticks or tildes, or inline) and inside comments (`%% ... %%`,
+`<!-- ... -->`) are ignored. A link with a folder in it must be that path, from the vault root or
+relative to the linking page: it never falls back to the file name alone, so a link to a folder
+that was renamed or moved is broken, as it is in Obsidian. A bare name resolves when exactly one
+file carries it. Upper and lower case are the same, and so are the two ways a file system can store
+an accented letter. Pages in the vault root (`index.md`, `log.md`, `Home.md`) may be linked by
+name. Hidden folders (`.obsidian`, `.git`, `.trash`) are never scanned.
+
+`author` may be one name or a list (Obsidian writes a list once the property type is List); every
+name in it must be one of `authors`.
 
 `lint` without `--all` skips sections with `lint_active: false` and every folder named in
 `raw_folders` below the section level. `--all` includes them. Sections with `lint: false` are never
@@ -59,19 +66,20 @@ linted.
 
 `--fix` changes two things and leaves everything else to a person: a bare `[[name]]` in a content
 section becomes `[[section/path|name]]` when exactly one page carries the name (an alias or anchor
-is kept), and `category` becomes the section folder name. It never touches raw material (a
-`raw: true` section, a `raw_subdirs` folder, a `raw_folders` folder), code spans or embeds. Line
-endings (LF or CRLF) and a BOM are kept as they were. Then it reindexes.
+is kept), and `category` becomes the section folder name. Inside a table the link is written
+`[[section/path\|name]]`, since a bare pipe would split the cell. It never touches raw material (a
+`raw: true` section, a `raw_subdirs` folder, a `raw_folders` folder), code spans, comments or
+embeds. Line endings (LF or CRLF) and a BOM are kept as they were. Then it reindexes.
 
 ## Top-level keys
 
 | Key | Default | Meaning |
 |---|---|---|
 | `wiki_dir` | `"wiki"` | The vault folder, relative to the config file (or absolute; `~` works). |
-| `index_marker` | `"<!-- AUTO-INDEX -->"` | Reindex rewrites everything below this line of a section's `index.md`. |
+| `index_marker` | `"<!-- AUTO-INDEX -->"` | Reindex rewrites everything below this line of a section's `index.md`. The marker counts only on a line of its own; when the page has several such lines, the last one. |
 | `index_empty` | `"_Nothing here yet._"` | What an index says when its section has no pages. |
 | `log.file` | `"log.md"` | The operations log, relative to the vault. |
-| `log.marker` | `"<!-- Begin of the log -->"` | New blocks go right below this line, newest first. |
+| `log.marker` | `"<!-- Begin of the log -->"` | New blocks go right below this line (the marker on a line of its own), newest first. |
 | `log.title` | `"Operations log"` | Title and heading of a log file the script creates. |
 | `log.ops` | `["ingest", "distill", "query", "lint", "migrate"]` | The operations `log` accepts. |
 | `status_words` | `["draft", "active", "done", "parked", "archived", "question"]` | Allowed `status` values. A section can override them. |
@@ -101,7 +109,7 @@ endings (LF or CRLF) and a BOM are kept as they were. Then it reindexes.
 | `dated` | `false` | Page names start with a date: the flat index lists newest first. |
 | `stale` | `false` | Warn about active pages not updated for `stale_days`. |
 | `sourced` | `false` | Pages by `unsourced_authors` must name a source. |
-| `status_words` | `null` | A list replaces the top-level `status_words` for this section (a section whose pages carry their own workflow words). |
+| `status_words` | `null` | A list replaces the top-level `status_words` for this section (a section whose pages carry their own workflow words). The section's own `index.md` is a catalogue page and keeps the top-level words. |
 | `kinds` | `{}` | `kind` value to group label, in display order. Used by `by_kind`, and lint warns on any other `kind`. |
 | `other_label` | `"Other"` | `by_kind`: the group for pages without a known `kind`. |
 | `readme` | `"README.md"` | `projects`: the page that represents a project folder. |
@@ -117,9 +125,10 @@ endings (LF or CRLF) and a BOM are kept as they were. Then it reindexes.
 
 Every index line has the form `- [[section/path|Title]]: summary`. The summary is the frontmatter
 `summary`, else the first plain paragraph or opening callout of the page, cut at 120 characters.
-Reindex only writes a section that has an `index.md`, and only below `index_marker`: the text above
-the marker stays. An `index.md` without the marker gets one appended, unless it already holds
-links: then it counts as hand-written and is left alone.
+Reindex only writes a section that has an `index.md`, and only below the `index_marker` line: the
+text above it stays, also when that text mentions the marker inside a sentence. An `index.md`
+without a marker line gets one appended, unless it already holds links: then it counts as
+hand-written and is left alone.
 
 | Type | Writes |
 |---|---|
@@ -128,7 +137,7 @@ links: then it counts as hand-written and is left alone.
 | `flat` | One line per page in the section folder, by file name (newest first with `dated`). |
 | `by_kind` | A `## Label` group per `kinds` entry in config order, then `other_label`; alphabetical by title within a group. |
 | `projects` | `## Projects`, then one line per subfolder that has `readme`: `- [[section/folder/README\|Title]]: *status*`. |
-| `references` | Collections (subfolders, linked to their `index.md` or `00-index.md`, with a page count), loose pages, a `## Raw sources` list per `raw_subdirs` folder, and the ingest log. |
+| `references` | Collections (subfolders that hold pages, linked to their `index.md` or `00-index.md`, with a page count; a folder without any page, such as `attachments`, is left out), loose pages, a `## Raw sources` list per `raw_subdirs` folder, and the ingest log. |
 | `folders` | One line per subfolder that has `page`, most recently `updated` first, with its `fields`; then loose pages, newest file name first. |
 
 ## The log
@@ -140,8 +149,9 @@ links: then it counts as hand-written and is left alone.
 - 0 errors, 3 short links fixed
 ```
 
-A vault without the log file gets one with frontmatter, a heading and the marker. A log without
-the marker gets it inserted after the frontmatter.
+A vault without the log file gets one with frontmatter (the status is the word in
+`status_roles.active`), a heading and the marker. A log without a marker line gets one above its
+first block, or at the end when it has no blocks yet: the heading and the introduction stay on top.
 
 ## Status words in another language
 

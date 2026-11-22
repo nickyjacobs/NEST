@@ -190,3 +190,52 @@ def test_cli_invalid_json(tmp_path):
     p.write_text("{nope", encoding="utf-8")
     r = subprocess.run(check=False, args=[sys.executable, str(SCRIPT), "check", str(p)], capture_output=True, text=True)
     assert r.returncode == 1 and "not valid JSON" in r.stderr
+
+
+# A judge that cannot be checked is absent; numbers outside the rubric are refused
+
+def test_unchecked_judge_counts_as_absent():
+    loose = {"criteria": {"value": 4, "fit": 3}, "verdict": "GO", "score": 9.0}
+    r = cs.decide([judge(3, 3, 3, 3, 3, verdict="RESHAPE", score=5.0), loose, loose])
+    assert (r["score"], r["verdict"], r["jury_incomplete"], r["median_judge"]) == (5.0, "RESHAPE", True, 1)
+    assert r["confidence"] == "low" and r["borderline"] is True
+    two = cs.decide([judge(verdict="GO", score=7.5), loose, judge(verdict="GO", score=7.5)])
+    assert two["jury_incomplete"] is True and two["score"] == 7.5 and two["median_judge"] is None
+    none = cs.decide([loose, loose, loose])
+    assert none["verdict"] is None and none["score"] is None and none["confidence"] == "none"
+
+
+def test_translated_criteria_keys_are_named_in_the_note():
+    r = cs.check_judge({"criteria": {"Waarde": 4, "Fit": 3, "Tijd": 2, "Risico": 3, "Kosten": 4},
+                        "verdict": "GO", "score": 5.0})
+    assert not r["checked"]
+    note = " ".join(r["mismatches"])
+    assert "Waarde" in note and "Kosten" in note and "value, fit, time, risk, cost" in note
+
+
+@pytest.mark.parametrize("field,bad", [("score", -3), ("score", 85), ("score", float("nan")), ("score", float("inf")),
+                                       ("idea_alone", 11), ("idea_alone", float("nan"))])
+def test_scores_outside_zero_to_ten_are_refused(field, bad):
+    with pytest.raises(cs.InvalidJudge, match="0 to 10"):
+        cs.check_judge({**judge(verdict="GO", score=7.5), field: bad})
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), 1e999])
+def test_non_finite_criteria_are_refused_not_a_crash(bad):
+    with pytest.raises(cs.InvalidJudge, match="whole number"):
+        cs.check_judge(judge(value=bad))
+
+
+def test_comma_decimal_score_is_read():
+    assert cs.check_judge(judge(verdict="GO", score="7,5"))["stated"]["score"] == 7.5
+
+
+def test_cli_never_shows_a_traceback(tmp_path):
+    for i, text in enumerate(('{"criteria": {"value": NaN, "fit": 3, "time": 2, "risk": 3, "cost": 4}}',
+                              '{"criteria": {"value": 4, "fit": 3}, "verdict": "GO", "score": -3}',
+                              '{"criteria": "none", "score": 1e999}')):
+        p = tmp_path / f"j{i}.json"
+        p.write_text(text, encoding="utf-8")
+        r = subprocess.run([sys.executable, str(SCRIPT), "decide", str(p), str(p)], capture_output=True, text=True,
+                           check=False)
+        assert r.returncode == 1 and "Traceback" not in r.stderr and json.loads(r.stderr)["error"]

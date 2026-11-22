@@ -4,7 +4,7 @@ const question = await tp.system.prompt("What do you want to know?", "", true);
 await tp.file.move("/_inbox/question-" + tp.user.slug(question));
 -%>
 ---
-title: "<% question.replace(/"/g, "'") %>"
+title: "<% question.replace(/\\/g, "\\\\").replace(/"/g, "'") %>"
 created: <% tp.date.now("YYYY-MM-DD") %>
 updated: <% tp.date.now("YYYY-MM-DD") %>
 tags: []

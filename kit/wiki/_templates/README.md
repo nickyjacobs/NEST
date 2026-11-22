@@ -24,7 +24,7 @@ Optional field `summary`: one sentence that becomes the page's line in the secti
 | `knowledge-note` | Knowledge about a concept (`kind: concept`) | `20-knowledge/<title>` |
 | `knowledge-tool` | A tool, technique, procedure or skill, with a cheat sheet | `20-knowledge/<title>` |
 | `project-readme` | A new project with its own folder | `10-projects/<name>/README` |
-| `reference-page` | An outside source with a review date three months on | `40-references/<title>` |
+| `reference-page` | An outside source with a review date three months on (no raw copy; `/wiki-ingest` makes a reference with one) | `40-references/<title>` |
 | `audit` | An audit with findings and a roadmap | `60-audits/audit-YYYY-MM-DD-<subject>` |
 | `session` | A session log (normally written by `/session-end`) | `30-sessions/YYYY-MM-DD-<focus>` |
 
@@ -36,4 +36,4 @@ Optional field `summary`: one sentence that becomes the page's line in the secti
 ## Mirrors, not for new notes
 
 - `code/`: `query` (an answer from the wiki, filed back), `knowledge` (a knowledge note or a dated addition), `reference` (an ingest with its raw copy) and `idea` (the dashboard page of one idea of The Council and The Architects). They show what the skills write; nothing reads them. Change a skill, then change its mirror.
-- `_scripts/slug.js`: the Templater user script (`tp.user.slug`) for kebab-case file names.
+- `_scripts/slug.js`: the Templater user script (`tp.user.slug`) for file names: lower case with hyphens, in any script.

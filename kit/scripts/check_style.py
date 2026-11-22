@@ -6,7 +6,8 @@
 
 Usage:
   check_style.py <file>...        report hits with line numbers; exit 0 (advisory)
-  check_style.py --strict <file>  exit 1 when there is a hit (for CI)
+  check_style.py --strict <file>  exit 1 when there is a hit (for CI), 2 when the check could not
+                                  run (no word list, a file that cannot be read)
   check_style.py --text "<text>"  check a piece of text without writing a file
   check_style.py -                read the text from stdin (also: echo ... | check_style.py -)
   check_style.py --hook           PostToolUse hook: checks the written file when it matches the
@@ -24,7 +25,10 @@ The word list (.claude/style-words.txt at the workspace root) has sections; # st
   [options]         connector_max = 3     em_dash = true     spaced_hyphen = true
 
 Entries match case-insensitively on word boundaries. A trailing * matches any word ending
-("streamlin*" catches "streamlined" and "streamlining"). Frontmatter, fenced code blocks
+("streamlin*" catches "streamlined" and "streamlining"). In scripts written without spaces
+(Chinese, Japanese, Korean, Thai, Lao, Khmer, Burmese) an entry matches anywhere. A plain
+apostrophe in an entry also matches a typographic one. Only the five section names above are
+sections: any other line in brackets, such as [sic], is an entry. Frontmatter, fenced code blocks
 (also inside > callouts) and `inline code` are skipped.
 """
 
@@ -63,8 +67,8 @@ def parse_words(text: str) -> WordList:
         if not line:
             continue
         m = re.fullmatch(r"\[([a-z_]+)\]", line.lower())
-        if m:
-            section = m.group(1) if m.group(1) in SECTIONS else ""
+        if m and m.group(1) in SECTIONS:  # any other bracketed line, such as [sic], is an entry
+            section = m.group(1)
             continue
         if section == "banned":
             wl.banned.append(line.lower())
@@ -85,11 +89,22 @@ def parse_words(text: str) -> WordList:
     return wl
 
 
+# Scripts written without spaces between words: a word boundary means nothing there.
+UNSPACED = ((0x0E00, 0x0EFF), (0x1000, 0x109F), (0x1780, 0x17FF), (0x2E80, 0x9FFF), (0xAC00, 0xD7AF),
+            (0xF900, 0xFAFF), (0xFF66, 0xFF9F), (0x20000, 0x3FFFF))
+
+
+def unspaced(ch: str) -> bool:
+    return any(lo <= ord(ch) <= hi for lo, hi in UNSPACED)
+
+
 def entry_pattern(entry: str) -> re.Pattern[str]:
     stem, wild = (entry[:-1], True) if entry.endswith("*") else (entry, False)
-    body = r"\s+".join(re.escape(part) for part in stem.split())
+    body = r"\s+".join(re.escape(part) for part in stem.split()).replace("'", "['\u2019\u2018]")
     tail = r"\w*" if wild else ""
-    return re.compile(r"(?<!\w)" + body + tail + r"(?!\w)", re.IGNORECASE)
+    before = "" if stem[:1] and unspaced(stem[0]) else r"(?<!\w)"
+    after = "" if stem[-1:] and unspaced(stem[-1]) and not wild else r"(?!\w)"
+    return re.compile(before + body + tail + after, re.IGNORECASE)
 
 
 def glob_to_regex(glob: str) -> re.Pattern[str]:
@@ -117,7 +132,7 @@ def wanted(rel: str, wl: WordList) -> bool:
 def prose_lines(text: str):
     """(line number, text) for the lines that are prose: no frontmatter, no code."""
     in_front = in_code = False
-    for n, raw in enumerate(text.splitlines(), 1):
+    for n, raw in enumerate(text.lstrip("\ufeff").splitlines(), 1):
         line = re.sub(r"^(\s*>\s*)+", "", raw)
         if n == 1 and line.strip() == "---":
             in_front = True
@@ -172,7 +187,7 @@ def workspace_root() -> Path:
 def load_words(path: Path | None, root: Path) -> WordList | None:
     p = path or root / WORDS_FILE
     try:
-        return parse_words(p.read_text(encoding="utf-8"))
+        return parse_words(p.read_text(encoding="utf-8-sig"))
     except OSError:
         return None
 
@@ -223,18 +238,19 @@ def main(argv: list[str] | None = None) -> int:
         if args.hook:
             return 0
         print(f"No word list at {(args.words or WORDS_FILE).as_posix()}; nothing to check.", file=sys.stderr)
-        return 0
+        return 2 if args.strict else 0
     if args.hook:
         try:
             return run_hook(wl, root)
         except Exception:
             return 0
-    total = 0
+    total = unread = 0
     pieces: list[tuple[str, str]] = []
     if args.text is not None:
         pieces.append(("text", args.text))
     if "-" in args.files:
-        pieces.append(("stdin", sys.stdin.read()))
+        raw = getattr(sys.stdin, "buffer", None)  # bytes as utf-8: a Windows console pipe says cp1252
+        pieces.append(("stdin", raw.read().decode("utf-8", errors="replace") if raw else sys.stdin.read()))
     for label, text in pieces:
         hits = check_text(text, wl)
         if hits:
@@ -246,10 +262,13 @@ def main(argv: list[str] | None = None) -> int:
             hits = check_text(p.read_text(encoding="utf-8", errors="replace"), wl)
         except OSError as e:
             print(f"[style] cannot read {f}: {e.strerror}", file=sys.stderr)
+            unread += 1
             continue
         if hits:
             print(format_hits(f, hits))
             total += len(hits)
+    if args.strict and unread:
+        return 2
     return 1 if args.strict and total else 0
 
 

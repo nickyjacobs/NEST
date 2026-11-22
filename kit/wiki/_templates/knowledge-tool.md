@@ -5,7 +5,7 @@ const kind = await tp.system.suggester(["Tool", "Technique", "Procedure", "Skill
 await tp.file.move("/20-knowledge/" + tp.user.slug(title));
 -%>
 ---
-title: "<% title.replace(/"/g, "'") %>"
+title: "<% title.replace(/\\/g, "\\\\").replace(/"/g, "'") %>"
 kind: <% kind %>
 created: <% tp.date.now("YYYY-MM-DD") %>
 updated: <% tp.date.now("YYYY-MM-DD") %>
@@ -49,4 +49,4 @@ author: <fill in: user author value>
 - Key commands: one [!example]- per group, collapsed by default; one command per code block,
   the explanation as plain text above it, no inline # comment (it gets copied along).
 - Gotchas: your own experience, surprises, common mistakes.
-- Links as vault paths: [[20-knowledge/<note>]], [[10-projects/<project>/README]]. %%
+- Links as vault paths: `[[20-knowledge/<note>]]`, `[[10-projects/<project>/README]]`. %%

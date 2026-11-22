@@ -4,7 +4,7 @@ const title = await tp.system.prompt("Which topic?", "", true);
 await tp.file.move("/20-knowledge/" + tp.user.slug(title));
 -%>
 ---
-title: "<% title.replace(/"/g, "'") %>"
+title: "<% title.replace(/\\/g, "\\\\").replace(/"/g, "'") %>"
 kind: concept
 created: <% tp.date.now("YYYY-MM-DD") %>
 updated: <% tp.date.now("YYYY-MM-DD") %>
