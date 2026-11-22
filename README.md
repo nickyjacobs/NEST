@@ -195,10 +195,13 @@ More questions: [docs/guide/faq.md](docs/guide/faq.md).
 
 ## Roadmap
 
-Three things the next releases work on: your assistant from your phone, a board for your
+<p align="center">
+  <a href="ROADMAP.md"><img src="assets/roadmap.png" alt="NEST roadmap. Now: your assistant from your phone, a board on your Home page, what your assistant remembers is yours. Next: capture on the go, tried on Windows by a person. Later: upkeep that runs by itself, no plugin homework." width="100%"></a>
+</p>
+
+The next releases work on three things: your assistant from your phone, a board for your
 projects and ideas on your Home page, and a place in your own workspace for what your
-assistant remembers. What comes after, and what NEST will not become:
-[ROADMAP.md](ROADMAP.md).
+assistant remembers. The rest, and what NEST will not become: [ROADMAP.md](ROADMAP.md).
 
 ## Documentation
 
