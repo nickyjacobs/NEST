@@ -509,6 +509,7 @@ def test_init_refuses_the_git_dir_of_another_wiki(backup, remote, tmp_path, monk
 
 def test_init_rebind_takes_over_after_the_wiki_moved(backup, remote, tmp_path, monkeypatch, capsys):
     new_root = tmp_path / "renamed"
+    monkeypatch.chdir(tmp_path)  # Windows cannot rename the folder a process stands in
     backup.wiki.parent.rename(new_root)
     monkeypatch.setenv("CLAUDE_PROJECT_DIR", str(new_root))
     monkeypatch.chdir(new_root)
