@@ -71,7 +71,8 @@ puts back what the last update changed and takes away what it added. You are tol
 update it is and which files it concerns, and you say yes before anything moves. A file you
 changed yourself after the update is left alone, and you are told which one.
 
-Undo always means the last update. Asking twice does not reach further back: an earlier update
+Undo always means the last update, also when you brought it over in parts (some things first,
+the rest a little later): all parts go back together. Asking twice does not reach further back: an earlier update
 is only put back when you ask for that one by name.
 
 ## Turning the reminder off

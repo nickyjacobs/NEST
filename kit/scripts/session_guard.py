@@ -241,7 +241,6 @@ def second_session_line(root: Path, sid: str, conf: dict, now: float) -> str:
 
 
 SECRET_MARK = "[secret removed]"
-VALUE_GROUPS = ("v", "dq", "sq", "bq", "raw")
 _rules: list | None = None
 _key_blocks = None
 
@@ -260,9 +259,51 @@ def secret_rules() -> list:
     return _rules
 
 
+# Rules that go by the name in front of a value, not by the shape of the value itself.
+BY_NAME = {"secret_assignment", "cli_password", "xml_secret", "table_secret"}
+QUOTED_GROUPS = ("dq", "sq", "bq")
+# What may close a sentence or a bracket right after an unquoted value: not part of the secret.
+TRAILING = ".,;)]}>"
+
+
+def secret_spans(line: str, rules: list) -> list[tuple[int, int]]:
+    """Where the secrets in one line start and end, without overlap, left to right.
+
+    A rule that knows the shape of a token (a GitHub token, a key with a prefix) marks that token
+    and nothing else. A rule that goes by the name in front (`password: ...`) marks the value up
+    to the first white space or quote, without the punctuation that closes the sentence; when a
+    token of a known shape lies inside that value, the token alone is marked. Two rules that find
+    the same secret count once."""
+    by_shape: list[tuple[int, int]] = []
+    by_name: list[tuple[int, int]] = []
+    for rule in rules:
+        for m in rule.regex.finditer(line):
+            if not rule.accepts(m):
+                continue
+            start, end = m.span()
+            groups = m.re.groupindex
+            quoted = next((g for g in QUOTED_GROUPS if g in groups and m.group(g) is not None), None)
+            plain = next((g for g in ("raw", "v") if g in groups and m.group(g) is not None), None)
+            if quoted:
+                start, end = m.span(quoted)
+            elif plain:
+                start, end = m.span(plain)
+                while end - start > 1 and line[end - 1] in TRAILING:
+                    end -= 1
+            (by_name if rule.name in BY_NAME else by_shape).append((start, end))
+    by_name = [(a, b) for a, b in by_name if not any(a <= c and d <= b for c, d in by_shape)]
+    merged: list[tuple[int, int]] = []
+    for start, end in sorted(by_shape + by_name):
+        if merged and start <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+        else:
+            merged.append((start, end))
+    return merged
+
+
 def without_secrets(text: str) -> str:
-    """The text with every secret replaced by a marker: the value alone where a rule knows which
-    part is the value (so `DB_PASSWORD=` stays readable), the whole match otherwise."""
+    """The text with every secret replaced by a marker, and nothing else touched: the words
+    before and after a secret are the user's, and this file exists to keep them."""
     rules = secret_rules()
     if not rules:
         return text
@@ -271,20 +312,8 @@ def without_secrets(text: str) -> str:
             text = text[:start] + SECRET_MARK + text[end:]
     lines = []
     for line in text.split("\n"):
-        spans: list[tuple[int, int]] = []
-        for rule in rules:
-            for m in rule.regex.finditer(line):
-                if not rule.accepts(m):
-                    continue
-                span = m.span()
-                for name in VALUE_GROUPS:
-                    if name in m.re.groupindex and m.group(name) is not None:
-                        span = m.span(name)
-                        break
-                spans.append(span)
-        for start, end in sorted(spans, reverse=True):
-            if not any(start >= a and end <= b for a, b in spans if (a, b) != (start, end) and (b - a) > (end - start)):
-                line = line[:start] + SECRET_MARK + line[end:]
+        for start, end in reversed(secret_spans(line, rules)):
+            line = line[:start] + SECRET_MARK + line[end:]
         lines.append(line)
     return "\n".join(lines)
 

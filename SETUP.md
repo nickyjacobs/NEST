@@ -230,7 +230,10 @@ Ask if you can start.
 - **At most four questions per message.** Fewer is better for story questions.
 - **Write answers down as they come.** After every message with answers, append them verbatim
   to `_setup/interview/<block>.md` and move `next:` in STATE.md to the next question, before
-  you ask anything else. The recap at the end of a block confirms what is already on file.
+  you ask anything else. When the answer is a yes to something you proposed (a folder tree, a
+  dashboard, a palette, a list of skills), write the proposal itself with it, in full: "yes" on
+  its own tells a later session nothing, and it would build something else than the user
+  agreed to. The recap at the end of a block confirms what is already on file.
 - Give an example or a proposal with every question, so the user corrects instead of writing from
   nothing. Where earlier answers already suggest the answer, propose it and ask for a yes.
 - Never ask what you already know from an earlier answer or from the machine check.
@@ -382,9 +385,9 @@ with what NEST would build for it. This is a preview, not a decision; blocks C a
 
 *Why:* the wiki is the long-term memory; its shape decides whether the user keeps using it.
 *Lands in:* `wiki.config.json`, the folder tree, templates, the CSS, the dashboard. The wiki is
-part of every workspace: the assistant's context pages live in it. A user who wants no notes
-beyond that gets the backbone only (context, sessions, decisions, archive) and none of the wiki
-skills.
+part of every workspace: the assistant's context pages live in it. Say so at the start of this
+block, with the small option next to it: a user who wants no notes beyond that gets the
+backbone only (context, sessions, decisions, archive) and none of the wiki skills.
 
 Explain the idea first in three lines, at the user's level: a vault in Obsidian; the user drops
 things in an inbox; the assistant files them into sections, links and indexes them; nothing is
@@ -392,7 +395,9 @@ deleted.
 
 - **C1** **Sections.** Propose a folder tree derived from A and B, with every folder name
   written exactly as it will be on disk (lowercase, hyphens, no spaces, for example
-  `30-weiterbildung`) and the readable label next to it; what the user confirms is what you build. Keep the generic backbone:
+  `30-weiterbildung`) and the readable label next to it; what the user confirms is what you
+  build, letter for letter. Letters of the user's language are fine in a folder name
+  (`70-privé`); never drop an accent on your own. Keep the generic backbone:
   numbered sections with gaps (00, 10, 20 ...) so new ones fit between, plus `_inbox`,
   `_templates`, `_bases` and an archive section (90). Typical sections: context (who you are,
   goals, priorities), projects, knowledge, research, sessions, references, decisions, archive. Add
@@ -418,8 +423,9 @@ deleted.
   once: all of them (recommended), or which to leave out. The same for the base look CSS
   snippet (the snippet for idea pages is asked in D2, with the teams). Mention the safety settings (Templater does not run on file
   creation; Meta Bind has JavaScript off) and why.
-- **C7** **Existing notes.** The wiki is always a new vault inside the workspace; NEST never
-  writes into a vault the user already has, and never changes its settings. Do they have notes
+- **C7** **Existing notes.** Tell the user, whatever they have today: the wiki is always a new
+  vault inside the workspace; NEST never writes into a vault they already have, and never
+  changes its settings. Do they have notes
   elsewhere (an older vault, another app) they want in? Do not import now: record where (path
   in `CLAUDE.local.md`) and plan it as a first task with `/wiki-ingest` or a copy into the inbox.
 
@@ -447,7 +453,8 @@ proposals first). Read the `<!-- customise: ... -->` markers in the skill's refe
   recommend full for someone who will use it for real decisions, light for curiosity. Use the
   names The Council and The Architects (and the seat names) as they are, in every language,
   unless the user asks for a translation here; then use that translation everywhere from then on.
-  Record the choice in STATE.md (`teams:`); the name of the ideas section is added there in D7.
+  Record the choice in STATE.md by filling in the `teams:` line at the top (replace it, do not
+  add a second one); the name of the ideas section is added to that line in D7.
   With a team chosen, ask here whether the idea pages get the styled look (the idea snippet
   from C6's list) or the plain one.
 - **D3** career, study-inbox, research, session-end, writing-style, release, skill-builder: per
@@ -571,7 +578,7 @@ Recap of the whole interview in at most ten lines. Yes, then the handover.
 **The handover.** The workspace folder lies outside the folder this session was started in, and
 Claude Code may not write there. So the user creates it with one command:
 
-1. Update STATE.md first: `workspace:` the absolute path, `assistant:` the name,
+1. After the yes to the recap, update STATE.md first: `workspace:` the absolute path, `assistant:` the name,
    `next: handover (the user creates the workspace folder; then B1 there)`,
    `read: section 8 (B1)`, `trigger: Read _setup/nest/SETUP.md and follow it.`
 2. Give the user one command for their OS that creates the folder and copies `_setup/` into it
@@ -587,7 +594,8 @@ A session that starts while `next:` still says `handover`: if the current folder
 workspace path from STATE.md and `_setup/nest/SETUP.md` exists, the copy worked: set
 `next: B1` and go on with B1. If you are still in the NEST folder: check whether the workspace
 folder exists. If it does, tell the user to open Claude Code there and type the new trigger
-line; if it does not, give the copy command again. Never start B1 from the NEST folder.
+line; if it does not, give the copy command again. If you cannot look there, ask the user
+whether they ran the command; never assume they did not. Never start B1 from the NEST folder.
 
 ---
 
@@ -641,8 +649,9 @@ cause; never tick around it. Commits stay separate questions.
    nothing here). Writes into `.claude/` ask for permission in Claude Code; tell
    the user before B1 starts so they expect those prompts and approve them. If a write there is
    refused anyway, build the files under `_setup/build/dot-claude/` and give the user one copy
-   command for their OS. A refusal counts for that moment only: at the start of each later
-   phase try one write into `.claude/` again before you fall back.
+   command for their OS; after they say it ran, run the stamp of step 11 again, so the files
+   under `.claude/` are in it. A refusal counts for that moment only: at the start of each
+   later phase try one write into `.claude/` again before you fall back.
 2. `git init -b main` (some systems still start on `master`; the rules and the workflows expect
    `main`), the commit identity from E5 set for this repo (`git config user.name` and
    `user.email` without `--global`), and a `.gitignore` from `kit/github/gitignore.template`:
@@ -758,7 +767,8 @@ Do this in the new folder, in a fresh session (the hooks are now active).
    and step 7: then record both as open items, carry on with B3, and mention them at most once per
    session. They never block B3 or B4.
 6. `uv run scripts/wiki.py log migrate "Wiki created by NEST"`, then `reindex`, then `lint`
-   (check: lint reports zero errors).
+   (check: lint reports zero errors; a search of `wiki/` for `customise:` and `<fill in` finds
+   nothing).
 7. Ask the user to open Home in Obsidian and say what looks wrong. Fix, lint again.
 
 ### B3. Skills and agents

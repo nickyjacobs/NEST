@@ -23,6 +23,9 @@ for users is in the [roadmap](../../ROADMAP.md).
 - **Not tried on Windows by a person:** the update check stops git and its helper processes as
   a group when the time is up, and a test on Windows covers that. A slow real connection on a
   Windows machine has not been watched.
+- **Undo after carrying on:** when an undo fails in an older part of an update and the user
+  starts a new update without running `restore` again, that older part is only reachable by
+  name (`restore --run`). `restore --list` does not show which parts belong together.
 - **Undo of an update nobody closed:** an update that was started and left without `finish`
   counts as the update's own work when it is put back, also for edits made days later. Those
   edits are kept in the history folder, not in place.
@@ -33,6 +36,11 @@ for users is in the [roadmap](../../ROADMAP.md).
   characters, and a secret written in a sentence. `SECURITY.md` lists the limits.
 - **After a shell command** the scan reads files changed in the last two minutes, within a
   budget; a commit on another branch and a stash are not followed.
+
+## Idea pages
+
+- With only one of the two teams installed, an idea page still shows the empty section and
+  the counter of the other (a "Blueprint" section in a workspace with only The Council).
 
 ## Language
 

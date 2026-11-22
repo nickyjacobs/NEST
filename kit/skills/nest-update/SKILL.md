@@ -60,8 +60,9 @@ uv run --script scripts/nest_update.py plan --json
 ## 2. Tell the user what is new
 
 Build one short overview from the plan. `notes` holds the release notes: use `in_short` and
-`for_your_workspace`, they are written for users. `items` holds the files; group them by
-`group` so the user chooses about parts, never about single files.
+`for_your_workspace`, they are written for users. Leave out the lines about parts this
+workspace does not have (a team, mail, a backup they never set up). `items` holds the files;
+group them by `group` so the user chooses about parts, never about single files.
 
 ```
 NEST 1.2.0 is out. You are on 1.0.0.
@@ -96,7 +97,9 @@ so the workspace moves to the new version.
 
 If `scripts/nest_update.py` itself or this skill is in the list: say you bring those over first
 ("the updater updates itself first"), do it after their yes (step 3 for the script, step 4 for
-the skill), then run the plan again and continue with the fresh one.
+the skill), then run the plan again and continue with the fresh one. The newer updater can
+see changes the old one could not: when the fresh plan holds parts your first overview did not
+show, show the overview again before anything else changes.
 
 Wait for the answer. "Later" for an item leaves it open; "no" for an item means decline it
 (step 5). Never start changing files before the user chose.
@@ -163,7 +166,10 @@ history folder. Never delete a file yourself.
 For `wiki`: read the diff, compare with the user's version of that template or style, and
 propose the change in their wiki's terms. Their wiki is translated and restructured, so most
 changes need a rewrite, and some do not apply at all. Back up the wiki file before you change
-it. When it is handled, or does not apply: `uv run --script scripts/nest_update.py done <kit path>`.
+it. When the change is to Meta Bind's excluded folders, use the user's own folder names and
+every raw folder their `wiki.config.json` names (`raw_folders` and `raw_subdirs`, also the ones
+inside a project or a course). When it is handled, or does not apply:
+`uv run --script scripts/nest_update.py done <kit path>`.
 For `reference`: read the diff and the user's own file that was made from that example
 (`wiki.config.json` for `wiki.config.example.json` and `WIKI-CONFIG.md`,
 `.claude/sensitive-terms.txt` and the style word list for their examples, the permission rules
@@ -201,15 +207,19 @@ Updated: the wiki check, the inbox skill (your wording kept).
 Added: the study skill.
 Skipped: the old_tool cleanup (I will not ask again).
 The old versions are in .claude/.history/nest-update-20260108-1430/. "/nest-update undo" puts them back.
-Restart Claude Code to load the changed skills and hooks.
 ```
 
-5. Offer a commit of the update on its own, with a message like `Update: NEST 1.2.0`. Commit
-   only after a yes.
+5. Offer a commit of the update on its own, with a message like `Update: NEST 1.2.0`: only the
+   files the update touched, never the user's own notes that happen to be uncommitted. Commit
+   only after a yes, and settle it in this session.
+6. Last of all, when the commit question is answered: ask the user to restart Claude Code, so
+   the changed skills and hooks load.
 
 ## Undo
 
-Undo means the last update, never an earlier one.
+Undo means the last update, never an earlier one. An update that was done in parts (some
+things first, the rest a little later) counts as one: the dry run says "in N parts" and lists
+every part, and all of them are put back.
 
 1. `uv run --script scripts/nest_update.py restore --dry-run` says which update it is (when it
    ran, which release the workspace was on before) and which files would be put back, taken
@@ -220,9 +230,12 @@ Undo means the last update, never an earlier one.
 3. A file the user changed after the update finished is left alone, and the script names it.
    Pass that on. Only when they want those back too: `restore --force`, which puts back
    exactly those files and keeps today's versions in the history folder first.
-4. "Could not put back" means a file was open in another program or not writable. Everything
+4. After an undo this session still has the newer hooks loaded while the scripts are the older
+   ones again, so a hook can report an error until Claude Code is restarted. Say that before
+   it happens, and ask for a restart at the end.
+5. "Could not put back" means a file was open in another program or not writable. Everything
    else was put back. Ask the user to close that program, then run `restore` again.
-5. Check that nothing broke: `uv run --script scripts/validate.py --self-test` and
+6. Check that nothing broke: `uv run --script scripts/validate.py --self-test` and
    `uv run --script scripts/skills_catalog.py --check`. When the catalogue is stale, regenerate
    it with `uv run scripts/skills_catalog.py`. Do not run `backup` here: that would start a new
    update.
