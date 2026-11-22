@@ -128,5 +128,30 @@ def test_versions_must_agree(tmp_path, capsys):
     assert rc.main(["--root", str(tmp_path)]) == 1
 
 
+def test_setup_parts_must_exist_be_named_and_fit_in_one_read(tmp_path, capsys):
+    write_repo(tmp_path)
+    setup = tmp_path / "SETUP.md"
+    setup.write_text(setup.read_text(encoding="utf-8") + "\nRead `setup/check.md` first.\n", encoding="utf-8")
+    assert rc.main(["--root", str(tmp_path)]) == 1
+    assert "setup/check.md, which does not exist" in capsys.readouterr().err
+
+    (tmp_path / "setup").mkdir()
+    (tmp_path / "setup" / "check.md").write_text("See `setup/build.md`.\n", encoding="utf-8")
+    assert rc.main(["--root", str(tmp_path)]) == 1
+    assert "setup/check.md names setup/build.md" in capsys.readouterr().err
+
+    (tmp_path / "setup" / "check.md").write_text("Fine.\n", encoding="utf-8")
+    assert rc.main(["--root", str(tmp_path)]) == 0
+
+    (tmp_path / "setup" / "stray.md").write_text("Nobody reads me.\n", encoding="utf-8")
+    assert rc.main(["--root", str(tmp_path)]) == 1
+    assert "setup/stray.md is not named in SETUP.md" in capsys.readouterr().err
+    (tmp_path / "setup" / "stray.md").unlink()
+
+    (tmp_path / "setup" / "check.md").write_text("x" * (rc.PART_LIMIT + 1), encoding="utf-8")
+    assert rc.main(["--root", str(tmp_path)]) == 1
+    assert "over the" in capsys.readouterr().err
+
+
 def test_the_real_repository_passes():
     assert rc.main([]) == 0
