@@ -211,7 +211,8 @@ Review and blueprint files carry `status: done`. The ideas section's entry in
 ```
 
 A section `status_words` replaces the top-level list for every page under the section,
-`reviews/` and `blueprints/` included, so these seven words are all lint accepts there.
+`reviews/` and `blueprints/` included, so these seven words are all lint accepts there. The one
+exception is the section's own `index.md`, which keeps the top-level words (`status: active`).
 The section also needs an `index.md` with the `<!-- AUTO-INDEX -->` marker (the folders
 index lists each `<slug>/idea.md` with `status · verdict · score`, newest first). Don't add
 the section to `content_sections`: lint would warn on the short and repeated links of the
