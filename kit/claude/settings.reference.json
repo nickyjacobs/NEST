@@ -5,6 +5,10 @@
     "ask": [],
     "deny": []
   },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "claudeMdExcludes": [],
   "hooks": {
     "PreToolUse": [

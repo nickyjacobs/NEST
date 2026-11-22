@@ -18,6 +18,10 @@ section in plain words: what it means if you already built a workspace with an e
 
 ### 🏠 For your workspace
 
+- The fixes to the setup itself are for new workspaces; nothing in yours changes because of
+  them. One thing you may want: if your commits got a "Co-Authored-By: Claude" line, let
+  `/nest-update` add the `attribution` setting to `.claude/settings.json`.
+- An idea page in a workspace without The Architects no longer points at them.
 - **The secret scan catches more, and blocks less by mistake.** It now sees a secret behind a
   longer name (`DB_PASSWORD=`, `JWT_SECRET=`), `token:`, `Wachtwoord:` and `**Password:**`,
   so a write or a commit that passed before can be refused. Code such as
@@ -98,6 +102,16 @@ section in plain words: what it means if you already built a workspace with an e
 
 ### 🔧 Changed
 
+- **The setup.** The wiki is part of every workspace and is always a new vault: NEST never
+  writes into a vault you already have. An integration you want "later" is built with its
+  not-connected path, without researching routes first. Without GitHub the setup still asks
+  for a commit identity and offers the pre-commit scan, and the wiki goes into the local
+  repository. The workspace folder is no longer proposed inside a downloads folder or a folder
+  a cloud service syncs. In a workspace in another language the setup fills in the labels of
+  the idea pages.
+- `kit/claude/settings.reference.json` sets `attribution` to empty, so a commit never
+  carries a "Co-Authored-By" line.
+- `NEST`'s own `CLAUDE.md` says first that a session asked to follow `SETUP.md` ignores it.
 - `agent_git_readonly.py` works from an allow list of commands and of options per command.
   `sort`, `uniq`, `file` and `tree` on their own, `git -C`, `--git-dir`, a path starting with
   `~`, a word starting with a wildcard and a network path are refused; a name or pattern
@@ -125,6 +139,24 @@ section in plain words: what it means if you already built a workspace with an e
 
 ### 🐛 Fixed
 
+- **The setup lost answers when a session ended without warning.** Answers are now written
+  after every message, and a new session reads the interview files, the facts file and the
+  log back before it continues.
+- **The setup after the handover.** The state said "build" before the workspace folder
+  existed; a session started in the wrong folder now knows what to do. Every stop point names
+  the folder and the line that starts the next session, and the state file ends on `done`.
+  The kit copy in `_setup/nest` stays where it is, so nothing points at a moved folder.
+- The stamp was not written again after the integrations and the GitHub step; a new
+  connection was tested in the session that added it, before it could load; the backup
+  repository for the wiki was never created.
+- The pre-commit hook could be written without its executable bit, after which git skips it
+  without a word. The setup now copies it, makes it executable and tests a refused commit.
+- The pain point list had more options than the choice dialog can hold; references to steps
+  and files that do not exist are gone; `git init` starts on `main` on every system; a write
+  into `.claude/` that was refused once is tried again in the next phase.
+- An idea page pointed at The Architects in a workspace without them. The inbox skill left
+  the source field empty on a page it made from a note, which gave a lint warning that never
+  went away.
 - **The read-only reviewer's guard could be passed.** zsh `=( )` and glob qualifiers,
   PowerShell parentheses, `sort -o`, `file -C`, git pointed at another repository,
   `find -rm` (which deletes inside Claude Code), an option behind `--` or behind an option

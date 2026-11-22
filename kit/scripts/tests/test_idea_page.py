@@ -474,3 +474,12 @@ def test_a_workspace_without_the_council_does_not_point_at_it(tmp_path, monkeypa
     assert not idea_page.council_installed()
     (tmp_path / ".claude/skills/idea").mkdir()
     assert idea_page.council_installed()
+
+
+def test_a_workspace_without_the_architects_does_not_point_at_them(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    assert idea_page.architects_installed()                   # no workspace here: unknown counts as yes
+    (tmp_path / ".claude/skills/idea").mkdir(parents=True)
+    assert not idea_page.architects_installed()
+    (tmp_path / ".claude/skills/blueprint").mkdir()
+    assert idea_page.architects_installed()

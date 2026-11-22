@@ -141,6 +141,7 @@ DEFAULT_LABELS: dict[str, dict[str, str]] = {
              "no_reviews": "_Not reviewed yet. Say \"put it to the council\"._",
              "no_reviews_plain": "_Not reviewed._",
              "no_blueprint": "No blueprint yet. The Architects can work it out: \"work this idea out\".",
+             "no_blueprint_plain": "No blueprint.",
              "full_blueprint": "Full blueprint", "updated": "Updated", "blueprints": "Blueprints",
              "reviews": "Reviews", "blueprint_link": "Blueprint", "review_link": "Review",
              "full_run": "full run", "review": "review", "reviewed_event": "reviewed by The Council",
@@ -418,6 +419,12 @@ def council_installed() -> bool:
     runs from the workspace root, and a folder without `.claude/skills` is a test or a kit copy."""
     skills = Path.cwd() / ".claude" / "skills"
     return not skills.is_dir() or (skills / "idea").is_dir()
+
+
+def architects_installed() -> bool:
+    """Is the blueprint skill (The Architects) part of this workspace? Unknown counts as yes."""
+    skills = Path.cwd() / ".claude" / "skills"
+    return not skills.is_dir() or (skills / "blueprint").is_dir()
 
 
 def lead_item(text: str) -> str:
@@ -804,7 +811,7 @@ def build_idea(s: Settings, f: Folder, title: str, existing_text: str) -> tuple[
         fold = [f"> [!{'blueprint' if styled else 'quote'}]- {T['full_blueprint']} v{bp.version}"]
         fold += fold_blueprint(blueprint_text(bp), s.style)
     else:
-        fold = [f"> [!{'open' if styled else 'info'}] {T['no_blueprint']}"]
+        fold = [f"> [!{'open' if styled else 'info'}] {T['no_blueprint'] if architects_installed() else T['no_blueprint_plain']}"]
 
     # History
     hist = [f"| {T['table_date']} | {T['table_version']} | {T['table_event']} | {T['table_full']} |",
