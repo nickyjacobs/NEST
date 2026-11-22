@@ -67,6 +67,11 @@ for users is in the [roadmap](../../ROADMAP.md).
   `<!-- AUTO-INDEX -->` marker shows as text in Live Preview, six capture tiles wrap as five and
   one, and a workspace built before this release keeps "Colorful headings" on (the updater does
   not carry wiki settings over).
+- `obsidian_setup.py vaults` counts the notes in every vault Obsidian knows, up to 5000 each.
+  With a home folder once opened as a vault that takes long, and it prints the paths of the
+  user's other vaults into the session. The build step only needs to know whether the wiki
+  folder is in the list.
+- Step B2.5 in `setup/build.md` is one long paragraph with its check in the middle.
 - `obsidian_setup.py` has installed the plugins and the theme into a real vault on macOS only.
   On Windows and Linux nothing of it has run for real: `obsidian_running` (`tasklist`, `pgrep`),
   `config_dirs` and `installer_version` are tested with stand-ins for the process list, the

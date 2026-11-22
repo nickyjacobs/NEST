@@ -28,13 +28,22 @@ does not click through a list, and never installs one of these from inside Obsid
 6. `uv run --script scripts/obsidian_setup.py vaults` lists the vaults Obsidian knows. The wiki
    folder itself must be in it. `status --vault wiki` shows what is installed.
 
-**No question about trusting the author appeared?** Then Obsidian opened another folder,
-usually the workspace folder above the wiki: `vaults` shows that folder and not the wiki. That
-made a new, empty vault there, with an `.obsidian` folder of its own in the workspace root. The
-user removes that entry in Obsidian (the vault switcher, "Manage vaults", "Remove from list");
-after a yes you remove the stray `.obsidian` in the workspace root, which holds only Obsidian's
-defaults (never the one inside the wiki); then they open the wiki folder again by pasting the
-path.
+**The wiki folder is not in the list?** Then Obsidian opened another folder, usually the
+workspace folder above the wiki: `vaults` shows that folder and not the wiki, and the user saw
+no question about trusting the author. That made a new, empty vault there, with an `.obsidian`
+folder of its own in the workspace root. Put it right in this order:
+
+1. The user removes that entry in Obsidian (the vault switcher, "Manage vaults", "Remove from
+   list"). That removes no files.
+2. Look at `<workspace root>/.obsidian` by its full path. It is the stray one only when it is
+   not the wiki's own (`<wiki folder>/.obsidian` stays, always) and holds no `plugins` folder
+   and no `community-plugins.json`. Anything else means the user once made this folder a vault
+   on purpose: leave it, and say so.
+3. After a yes, move the stray folder to `_setup/stray-obsidian-<date>/`. Do not delete it.
+4. The user opens the wiki folder again by pasting the path, and you run `vaults` again.
+
+No trust question while `vaults` does list the wiki folder is fine: the user declined every
+plugin, or trusted this vault before.
 
 `install` ends with 0 when everything the vault asks for is in place and with 1 when something
 was skipped, refused or failed; it says what and why per plugin, and one that fails does not
@@ -126,7 +135,8 @@ not colour headings, and with it on Minimal paints each heading level in another
 - `vaults` lists the wiki folder itself, not the folder above it.
 - `status` lists every plugin as installed, each plugin the setup wrote settings for still has
   its settings file (Style Settings ships none, on purpose), and none has settings set aside.
-- Home opens as the start page and shows tiles, panels and (when configured) the KPI row.
+- Home opens as the start page and shows tiles, panels and (when configured) the KPI row. The
+  tiles hold buttons; text such as `BUTTON[mk-note]` means Obsidian was not restarted yet.
 - A tile creates a note in the right folder with a kebab-case name.
 - The sidebar shows an icon and colour per section, and hides `_bases` and `_templates`.
 - Settings → Appearance → CSS snippets shows `base` switched on, and `idea-note` when you have The Council or The Architects with the styled look.
