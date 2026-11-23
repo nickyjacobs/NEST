@@ -4,6 +4,7 @@ Everything beyond the [README](../README.md), sorted by who it is for.
 
 | If you want to... | Read |
 |---|---|
+| Start from nothing: install what you need and type the first sentence | [guide/getting-started.md](guide/getting-started.md) |
 | Know what the setup will ask and how long it takes | [guide/what-to-expect.md](guide/what-to-expect.md) |
 | Bring a newer NEST release into your workspace | [guide/updating.md](guide/updating.md) |
 | Read and write your notes on a phone or a second computer | [guide/devices.md](guide/devices.md) |

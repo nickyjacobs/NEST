@@ -1,0 +1,3 @@
+# The untouched screenshots can show private folders; only the composed pictures are kept.
+raw/
+*.built.html
