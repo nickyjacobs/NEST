@@ -52,6 +52,11 @@ section in plain words: what it means if you already built a workspace with an e
 - The interview asks who saves the snapshots: the assistant by itself, when a piece of work is
   done and at the end of a session, or after a yes every time. The commits rule and the
   session-end skill come in both variants. A push stays a question in both.
+- `docs/guide/getting-started.md`: from nothing to the first sentence, for people who have
+  never opened a terminal, with a picture of every click: VS Code, the Claude Code extension,
+  Obsidian, the release as a zip, opening and trusting the folder, and starting the setup. The
+  README names it as the first route. The pictures are real screenshots with numbered marks
+  (`assets/start/`, drawn by `assets/start/src/compose.py`).
 
 ### 🔧 Changed
 

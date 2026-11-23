@@ -35,9 +35,13 @@
 
 ## Quick start
 
-You need [Claude Code](https://code.claude.com/docs/en/overview) (a paid Claude plan or API
-access) and [Obsidian](https://obsidian.md). NEST checks the rest and tells you what to
-install for your system.
+**Never opened a terminal?** Follow [Getting started, step by step](docs/guide/getting-started.md):
+three free programs, one folder to download, one sentence to type, with a picture of every
+click. You work in VS Code, with your files on the left and a chat with Claude on the right.
+
+**At home in a terminal?** You need [Claude Code](https://code.claude.com/docs/en/overview) (a
+paid Claude plan or API access) and [Obsidian](https://obsidian.md). NEST checks the rest and
+tells you what to install for your system.
 
 ```bash
 git clone https://github.com/nickyjacobs/NEST.git
