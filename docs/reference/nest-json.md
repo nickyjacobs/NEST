@@ -9,7 +9,7 @@ without the key uses the default. Your assistant can change these for you: just 
 
 ```json
 {
-  "nest": {"version": "1.1.0", "update_check": true},
+  "nest": {"version": "1.2.0", "update_check": true},
   "session_guard": {"live_minutes": 30, "keep_days": 14},
   "size_ceiling": {"lines": 400},
   "morning_nudge": {"before": "11:00", "text": "say good morning for your briefing"},
