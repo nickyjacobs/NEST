@@ -100,6 +100,33 @@ section in plain words: what it means if you already built a workspace with an e
   README names it as the first route. The pictures are real screenshots with numbered marks
   (`assets/start/`, drawn by `assets/start/src/compose.py`).
 
+- The updater recognises files of a renamed part that were taken out earlier in the same
+  update. The 1.1.0 updater has no rename table and lists such a part as "no longer in NEST",
+  and its `retire` moves the files into the update's history and drops their records. `plan`
+  now reads those records from the update's own copies of the stamp, in every part of the
+  update in progress (also a part that `finish` with open points or a pause of more than
+  twelve hours closed, the parts `restore` takes together), and shows one `rename` item with
+  `taken`; `rename` and `decline` bring the files back from the update's `files/` with their
+  records before they do their own work, so the result equals a run in which nothing was taken
+  out, and `restore` still returns the starting state. `restore --run` on a part that brought
+  such files back takes its whole update along: alone it would take them away again while the
+  earlier part still keeps them out, with nothing left to offer them. When the user wants the
+  part gone, `done` on its `rename` item leaves its files out (their copies stay in the
+  history), provided all of them were taken out. Files in a folder of the user's own (a
+  translated name) are a `taken` item each, never `missing` or `unchanged`, and the new command
+  `bring-back` puts them back where they were. A copy someone put back by hand is recognised
+  when it equals the kept one and blocks when it does not. A new version built at the new
+  place in the meantime (`fresh`) stops both commands: nothing is merged, and the message points
+  to undo. `apply`, `apply --new` and `mark` refuse the old and the new place of a taken file.
+  `decline` is only stopped by something at a taken file's old place, not by a file of the
+  user's own at the new one. A file comes back through a temporary copy in the history folder
+  and a rename, so a run that stops never leaves half a file. A file that names the part stays
+  a `merge` while its files are out.
+- `plan` decides whether the update is still open before it builds the plan, so it never shows
+  an offer that the next command no longer sees.
+- `diff` takes the workspace path of a recorded or offered file as well as the kit path, and
+  `apply --new` takes several `KIT=PATH` pairs after one flag as well as one flag per pair.
+
 ### 🔧 Changed
 
 - The Council's skill is called `verdict` (the command `/verdict`), after what it gives, the

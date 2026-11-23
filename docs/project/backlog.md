@@ -47,6 +47,37 @@ for users is in the [roadmap](../../ROADMAP.md).
   folder `Verdict` of the user's own is the folder `verdict` the rename moves into. Files with
   the same name block the rename, as they should; when none collide, the part's files land in
   the user's folder, next to theirs, under the user's spelling. An undo takes them out again.
+- **Files taken out before the rename was known, in an update that is over:** `rename`,
+  `decline` and `bring-back` read every part of the update in progress (the parts `restore`
+  takes together), so a part closed by `finish` or a pause still counts. An update that was
+  put back, or one that began from another release, is not read: undo by name
+  (`restore --run`) is what brings its files back.
+- **A fresh skill built while the old one was taken out:** when an older updater took the
+  part's files out and the new version was then built at the new place (`fresh`), `rename` and
+  `decline` refuse. The user keeps only the new version with `done`, or gets their own back by
+  undoing the whole update, every merge in it included. After that undo the older updater and
+  its skill are back, one careless "take them out" away from the same state; the skill's "the
+  updater updates itself first" is what prevents it.
+- **Leaving out a renamed part that is half taken out:** `done` on a `rename` item with `taken`
+  leaves the part out only when all its recorded files were taken out (`left-out.txt` in the
+  part). With some still in the workspace it refuses: the choice is the name again, and there
+  is no command that takes the rest out.
+- **Two checks with no test of their own:** that `plan` decides whether the update is open
+  before it builds the plan changes nothing a test can see (the plan reads only the history
+  folders), and that a part that was put back ends `update_parts` matters in no state a user
+  can reach (after an undo the records are back in the stamp). Reverting either passes the suite.
+- **Leftovers of a stopped start:** a `.nest-update-<time>.starting` folder stays in the history
+  when `plan` begins a new update after the stop (it is ignored), and a kept copy in the history
+  that was replaced by a symbolic link is skipped without a word (that needs a hand in the
+  history folder).
+- **A part that brought taken files back, put back by name:** `restore --run` on it takes its
+  whole update along (`brought-back.txt` in the part), because alone it would take the files
+  away again while the earlier part still keeps them out. `restore --run` on any other part
+  still goes alone, as before.
+- **`renamed.txt` changed by hand:** the file in an update's history folder tells a part that
+  update renamed itself apart from files that were taken out. Removed by hand, it can show a
+  false `rename` item (with `fresh`, so both commands refuse); added by hand, it can hide a real
+  one. Neither changes a file.
 - **A `renaming` marker that does not match the disk:** the marker in `nest.json` says a rename
   was begun. When it is there while nothing was moved (a hand edit, a `nest.json` from another
   backup than the files, a run that was killed before its first move), a folder with the old
