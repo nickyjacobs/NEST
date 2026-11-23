@@ -15,7 +15,8 @@ reference kit (`kit/`).
 - `kit/`: reference files the setup adapts per user (`kit/README.md` explains each folder).
   `kit/scripts/` holds the Python tools and their tests; `kit/skills/`, `kit/agents/`,
   `kit/wiki/`, `kit/claude/`, `kit/integrations/`, `kit/github/` the rest.
-- `assets/`: banner and the quick start GIF (source in `assets/quickstart-src/`).
+- `assets/`: banner, the quick start GIF (built by `assets/quickstart-src/slides.py` from the
+  same real screenshots as the getting-started guide, `assets/start/`) and the update GIF.
   `assets/roadmap.png` is drawn from `assets/roadmap.svg`: when `ROADMAP.md` changes, change the
   SVG to match and render it again with headless Chrome at twice the size
   (`--headless=new --force-device-scale-factor=2 --default-background-color=00000000
