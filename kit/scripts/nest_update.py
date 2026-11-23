@@ -45,15 +45,19 @@ Commands:
               missing   changed in NEST, deleted here
               rename    a part got another name in NEST (the RENAMES table below): one item for
                         the whole part, with the files that move in `moves`
+              taken     a file of a renamed part in a place of the user's own (a folder with a
+                        translated name), taken out earlier in this update because an older
+                        updater listed it as dropped: `bring-back` puts it back
             A `new` item carries `exists`: true means a file is already at that place, and it
             may be the user's own.
             `--json` for the skill; without it a short text overview.
-  diff      The change NEST made to one kit file, as a unified diff.
+  diff      The change NEST made to one kit file, as a unified diff. Takes the kit path, or the
+            workspace path of a file that is recorded or in the plan.
   backup    Keep the current version of workspace files in this update's history folder. Always
             before a file is written; a file that does not exist yet is noted as new.
   apply     Replace `replace` files with the new kit file, bring back a deleted copy file, or add
-            a new copy file with `--new KIT=PATH`. Refuses a file the user changed, and never
-            overwrites a file.
+            a new copy file with `--new KIT=PATH` (several pairs after one `--new`, or one
+            `--new` per pair). Refuses a file the user changed, and never overwrites a file.
   mark      After a merge or a new adapted file: record that PATH now reflects the new kit file.
             Refuses a file that was not backed up in this update.
   rename    Move a part to its new name: every file in it, the user's own included, each
@@ -62,9 +66,21 @@ Commands:
             as an ordinary replace or merge under the new name. A file is moved by renaming it
             and the stamp is saved after each one, so a run that stopped halfway is carried on
             by running the command again, and no file is ever in two places.
+            Files of the part that were taken out earlier in the same update (an older updater
+            listed them as dropped, and its `retire` moved them into the history; also in an
+            earlier part of the update that `finish` or a pause closed) come back first, from
+            the update's own copies and with their records; `decline` does the same under the
+            old name. A new version built at the new place in the meantime stops both: nothing
+            is merged, and undo is the way back. `apply`, `apply --new` and `mark` refuse the
+            places of such files, old and new.
   decline   Remember that the user does not want a change, so it is not offered again. For a
             rename: the files stay where they are and follow the kit file under its new name.
   done      The same record for a change that was dealt with by hand (a wiki file, a deleted file).
+            For a `rename` item whose files were all taken out earlier in this update: the user
+            wants the part gone, so its files stay out (their copies stay in the history).
+  bring-back  Put `taken` files back where they were, with their records, from the update's own
+            copies. Never over a file; a run that stops leaves no half file and is carried on
+            by running it again.
   retire    Take a file NEST dropped out of the workspace; its last version stays in the history.
   finish    Close the update: set the version when nothing is left open; `--skip` silences the
             session-start line for this release.
@@ -106,8 +122,10 @@ FETCH_TIMEOUT = 120.0
 VERSION_RE = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)$")
 SKIP_NAMES = {"README.md", ".gitkeep", "uv.lock", "pyproject.toml", ".DS_Store"}
 SKIP_PARTS = {"tests", "__pycache__", ".venv", ".pytest_cache", ".ruff_cache"}
-OPEN_STATUSES = ("rename", "replace", "merge", "new", "removed", "wiki", "reference", "missing")
+OPEN_STATUSES = ("rename", "taken", "replace", "merge", "new", "removed", "wiki", "reference", "missing")
 RUN_HOURS = 12
+BROUGHT_BACK = "brought-back.txt"  # in a part that brought back files an earlier part took out
+LEFT_OUT = "left-out.txt"  # in a part where the user chose to leave a taken-out renamed part out
 RETRY_DAYS = 1.0  # after a check that could not reach the source, look again this soon
 SIZE_FILES = ("SKILL.md", "SKILL.light.md", "formats.md", "formats.light.md")
 LIGHT_SKILLS = ("verdict", "blueprint")  # the skills that come in two sizes, by today's name
@@ -762,6 +780,12 @@ def build_plan(root: Path, stamp: dict, latest: tuple[int, int, int]) -> dict:
         items.append(item)
         return item
 
+    # Files of a renamed part that were taken out earlier in this open update (by an updater from
+    # before the rename table, which listed them as dropped) still count as the user's: the plan
+    # reads the stamp with their records in it, so the part is one rename offer and not nothing.
+    taken = taken_out(root, stamp)
+    stamp = {**stamp, "files": {**stamp["files"], **{ws_rel: entry for ws_rel, (entry, _) in taken.items()}}}
+
     elsewhere = parts_under_another_name(stamp)
 
     def name_kept(kit_rel: str) -> str | None:
@@ -796,6 +820,20 @@ def build_plan(root: Path, stamp: dict, latest: tuple[int, int, int]) -> dict:
         if kept:
             item["name_kept"] = kept
 
+    def taken_item(ws_rel: str, entry: dict, kit_rel: str, copy: Path) -> None:
+        """A recorded file in a place of the user's own that an older updater's `retire` took out."""
+        item = add("taken", kit_rel, ws_rel, entry.get("kind", "adapted"))
+        here = os.path.lexists(root / ws_rel)
+        item["blocked"] = here and not same_bytes(root / ws_rel, copy)
+        item["how"] = (f"Taken out earlier in this update, when an older updater listed it as dropped. NEST did not drop "
+                       f"it: it follows {kit_rel} now, in this folder of the user's own. `bring-back {ws_rel}` (or the "
+                       "folder) puts the user's own version back where it was, with its record, from the update's own "
+                       "backup; the next `plan` lists what NEST changed in it. To leave it out after all: "
+                       f"`done {kit_rel}`. Do not copy it back by hand or write it again from the kit.")
+        if item["blocked"]:
+            item["how"] += (f" Something else is at {ws_rel} now, not the copy that was kept: nothing is brought back "
+                            "over it. Show the user both; `restore` puts the whole update back.")
+
     mapped = set()
     moving: dict[tuple[str, str], list[tuple[str, dict]]] = {}
     for ws_rel, entry in sorted(stamp["files"].items()):
@@ -811,18 +849,25 @@ def build_plan(root: Path, stamp: dict, latest: tuple[int, int, int]) -> dict:
 
     open_renames = []
     for (old, new), entries in moving.items():
-        item, stay = rename_item(root, stamp, old, new, entries, new_files)
+        item, stay = rename_item(root, stamp, old, new, entries, new_files,
+                                 {ws_rel: copy for ws_rel, (_, copy) in taken.items()})
         if item:
             items.append(item)
             open_renames.append(item)
         for ws_rel, entry in entries:
             kit_old = entry.get("kit", "")
-            if ws_rel in stay:
+            if ws_rel in stay and ws_rel in taken:
+                # Somewhere of its own and taken out earlier in this update: not a file the user
+                # deleted, and not one NEST left alone. It comes back where it was, then is judged.
+                mapped.add(swap(kit_old, old, new))
+                if swap(kit_old, old, new) in new_files:
+                    taken_item(ws_rel, entry, swap(kit_old, old, new), taken[ws_rel][1])
+            elif ws_rel in stay:
                 # Installed somewhere of its own (a folder with a translated name, say): nothing changes
                 # for the user, so there is nothing to ask. The file just follows the kit file's new name.
                 mapped.add(swap(kit_old, old, new))
                 judge(ws_rel, entry, swap(kit_old, old, new))
-            elif not item:  # nothing of it is both here and in the new release: dropped files like any other
+            elif not item and ws_rel not in taken:  # nothing of it is both here and in the new release: dropped files like any other
                 add("removed" if os.path.lexists(root / ws_rel) else "gone", kit_old, ws_rel, entry.get("kind", "adapted"))
 
     homes = skill_homes(stamp)
@@ -917,6 +962,133 @@ def names_the_rename(before: str | None, after: str, old: str, new: str) -> bool
     return False
 
 
+def update_parts(root: Path, stamp: dict) -> list[Path]:
+    """The history folders of the update that is going on now, newest first.
+
+    One update can be done in parts: `finish` with things left open closes a part, and so does a
+    pause of more than RUN_HOURS. The parts are the folders, from the newest back, that began
+    from the release this workspace is still on and were not put back: the same group `restore`
+    takes together. A finished update moved the version, so its folders are never in it."""
+    parts = []
+    for folder in reversed(history_runs(root)):
+        if (folder / "restored").is_file() or run_before(folder) != stamp.get("version"):
+            break
+        parts.append(folder)
+    return parts
+
+
+def taken_out(root: Path, stamp: dict) -> dict[str, tuple[dict, Path]]:
+    """The files of renamed parts that this update took out of the workspace: {path: (the record
+    it had, its kept copy)}.
+
+    The updater of a release from before the rename table shows a renamed part as files NEST
+    dropped, and its `retire` then moves them into the update's history and drops their records.
+    That is not what the user meant by it. What is needed to see it is all in the update's parts:
+    the stamp as it was when each part began (`nest.json` in its folder) and the copy of each
+    file (`files/`). The newest part whose stamp still has the record is the part that took the
+    file out, and its copy is the one that counts. A part this update renamed itself is left out
+    (`renamed.txt` in any part, or a rename that is half done), and so is a part the user chose
+    to leave out (LEFT_OUT, written by `done`) and anything from another update: that is for undo."""
+    parts = update_parts(root, stamp)
+    done = set(begun_renames(stamp))
+    for folder in parts:
+        for name in ("renamed.txt", LEFT_OUT):
+            try:
+                done |= set((folder / name).read_text(encoding="utf-8").split("\n"))
+            except OSError:
+                pass
+    have = {key.lower() for key in stamp["files"]}
+    seen: set[str] = set()
+    taken = {}
+    for folder in parts:
+        before = read_json(folder / "nest.json").get("nest")
+        files = before.get("files") if isinstance(before, dict) else None
+        for ws_rel, entry in sorted(files.items()) if isinstance(files, dict) else []:
+            if ws_rel.lower() in seen:
+                continue
+            seen.add(ws_rel.lower())
+            line = rename_line(str(entry.get("kit", ""))) if isinstance(entry, dict) else None
+            if not line or line[0] in done or ws_rel.lower() in have:
+                continue
+            copy = folder / "files" / ws_rel
+            try:
+                if safe_rel(ws_rel) != ws_rel or not copy.is_file() or copy.is_symlink():
+                    continue
+            except Problem:
+                continue
+            taken[ws_rel] = (dict(entry), copy)
+    return taken
+
+
+def put_back(root: Path, stamp: dict, paths: list[str]) -> list[str]:
+    """Bring files that were taken out earlier in this update back to where they were, from the
+    update's own copies, with the records they had. Nothing is overwritten: a file that is there
+    already is the same one (the plan blocks the item otherwise). Each copy is written next to
+    the update's history first and then renamed into place, so a run that stops never leaves
+    half a file; a file that came from an earlier, closed part is noted as new in this one, so an
+    undo takes it away again before the older part puts its own copy back. Such a part is noted
+    in BROUGHT_BACK, so it is never put back without that older part (`brought_back_group`)."""
+    taken = taken_out(root, stamp)
+    back = []
+    for ws_rel in paths:
+        if ws_rel not in taken:
+            continue
+        entry, copy = taken[ws_rel]
+        no_symlink(root, ws_rel)
+        here = run_dir(root)
+        if here not in copy.parents:  # from an earlier part: noted before anything comes back
+            listed = (here / BROUGHT_BACK).read_text(encoding="utf-8").splitlines() if (here / BROUGHT_BACK).is_file() else []
+            if ws_rel not in listed:
+                with (here / BROUGHT_BACK).open("a", encoding="utf-8", newline="\n") as note:
+                    note.write(ws_rel + "\n")
+        target = root / ws_rel
+        if not os.path.lexists(target):
+            backup(root, ws_rel)
+            incoming = run_dir(root) / "incoming" / ws_rel
+            try:
+                incoming.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(copy, incoming)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                if os.path.lexists(target):
+                    raise FileExistsError(17, "A file is already there", str(target))
+                os.replace(incoming, target)
+            except OSError as exc:
+                raise Problem(f"Stopped while bringing back {ws_rel}: {exc.strerror or exc}. Nothing half is left at its "
+                              f"place; {len(back)} file(s) before it are back and recorded. Run the same command again "
+                              "once that is solved: it carries on. `restore` puts the whole update back.") from exc
+        stamp["files"][ws_rel] = entry
+        save_stamp(root, stamp)
+        back.append(ws_rel)
+    return back
+
+
+def taken_place(plan: dict, ws_rel: str) -> str | None:
+    """Why nothing may be written at `ws_rel`, when it is the place of a file this update took out
+    (or where such a file goes under its new name), or None."""
+    low = ws_rel.lower()
+    for item in plan["items"]:
+        if item["status"] == "taken" and (item["path"] or "").lower() == low:
+            return (f"{ws_rel} was taken out earlier in this update, and it is the user's own version that belongs "
+                    f"there. `bring-back {ws_rel}` puts it back from the update's own backup; `done {item['kit']}` "
+                    "leaves it out. Nothing was changed.")
+        if item["status"] == "rename":
+            for f in item["files"]:
+                if f.get("taken") and low in (f["path"].lower(), f["to"].lower()):
+                    return (f"{ws_rel} is a place of {item['path'] or item['from']}, whose files were taken out earlier "
+                            "in this update. Their copies are in the update's own backup, and a new file here would "
+                            f"stand in for them. `rename {item['from']}` brings them back under the new name, "
+                            f"`decline {item['from']}` under the old one. Nothing was changed.")
+    return None
+
+
+def fresh_problem(item: dict) -> Problem:
+    return Problem(f"A new version of {item['to'] or item['kit']} was built here ({', '.join(item['fresh'])}) while the "
+                   f"user's own files of {item['path'] or item['from']} were taken out earlier in this update. NEST will "
+                   "not merge the two or put one over the other. Nothing was changed. Tell the user, and after their yes "
+                   "`restore` puts the whole update back: their own files return, the new ones go to the history, and "
+                   "the rename can then be chosen from a fresh `plan`.")
+
+
 def begun_renames(stamp: dict) -> list[str]:
     """The renames this workspace started and did not finish, by old kit path (`renaming` in the stamp)."""
     marks = stamp.get("renaming")
@@ -958,7 +1130,7 @@ def folder_contents(root: Path, src: str) -> tuple[list[str], list[str]]:
 
 
 def rename_item(root: Path, stamp: dict, old: str, new: str, entries: list[tuple[str, dict]],
-                new_files: dict[str, Path]) -> tuple[dict | None, set[str]]:
+                new_files: dict[str, Path], taken: dict[str, Path] | None = None) -> tuple[dict | None, set[str]]:
     """One plan item for a part that got another name, and the recorded files that stay where they are.
 
     The item is None when nothing of the part is left to move: no recorded file of it is both in
@@ -971,8 +1143,12 @@ def rename_item(root: Path, stamp: dict, old: str, new: str, entries: list[tuple
     user's own files in the same folder, which move along; `moves` every (from, to) pair still to
     do; `blocked` the places a file would land that hold something this rename did not put
     there; `links` the symbolic links in the folder, which stay where they are; `new` what the
-    part gained; `half` says a rename of it was begun before (run it again, or undo).
+    part gained; `half` says a rename of it was begun before (run it again, or undo). `taken`
+    are the recorded files that were taken out earlier in this update, with their kept copies in
+    the argument (`rename` and `decline` bring them back first); `fresh` the files that were
+    built at the new place in the meantime, which stop both.
     """
+    taken = taken or {}
     half = old in begun_renames(stamp)
     files = []
     for ws_rel, entry in entries:
@@ -997,9 +1173,21 @@ def rename_item(root: Path, stamp: dict, old: str, new: str, entries: list[tuple
                     f["to"] = dst + f["path"][len(src):]
     stay = {f["path"] for f in files if f["path"] == f["to"]}
     files = [f for f in files if f["path"] not in stay]
-    moves, blocked = [], []
+    moves, blocked, fresh = [], [], []
     for f in files:
         here, there = os.path.lexists(root / f["path"]), os.path.lexists(root / f["to"])
+        if f["path"] in taken:
+            # Taken out earlier in this update: its copy is in the update's history, and that is
+            # the file the rename is about. Something else at its old place is in the way.
+            f["taken"] = True
+            f["change"] = "dropped" if f["kit"] not in new_files else \
+                "same" if sha(new_files[f["kit"]]) == stamp["files"][f["path"]].get("sha256") else "changed"
+            moves.append([f["path"], f["to"]])
+            if here and not same_bytes(root / f["path"], taken[f["path"]]):
+                blocked.append(f["path"])
+            if there:
+                fresh.append(f["to"])
+            continue
         if not here:
             # Gone from its old place. In a rename that was begun, a file at the new place is the one
             # that was moved just before the first run stopped: only its record is behind.
@@ -1030,15 +1218,28 @@ def rename_item(root: Path, stamp: dict, old: str, new: str, entries: list[tuple
         return None, stay
     whole = files[0] if len(files) == 1 and files[0]["from"] == old else None
     pair = (whole["path"], whole["to"]) if whole else next(iter(folders.items())) if len(folders) == 1 else (None, None)
+    gone = sorted(f["path"] for f in files if f.get("taken"))
+    how = (f"One part under a new name, not a dropped part plus a new one. The new name: `rename {old}` moves "
+           "every file as it is (each backed up) and sets the `name:` line of a skill to its new folder name, "
+           "then `plan` again lists what NEST changed in them. "
+           + ("This rename was begun and did not finish: `rename` again carries on, `restore` puts everything back."
+              if half else
+              f"The old name: `decline {old}` leaves them where they are and still brings later changes."))
+    if fresh:
+        how = ("The user's own files of this part were taken out earlier in this update, and a new version was built at "
+               f"the new place since ({', '.join(fresh)}). Nothing is moved and nothing is merged: tell the user, and "
+               "after their yes `restore` puts the whole update back, their own files included. When the user wants "
+               f"only the new version, `done {old}` leaves their old files out (they stay in the history).")
+    elif gone:
+        how = ("One part under a new name. Its files were taken out earlier in this update, when they were listed as "
+               f"dropped; their copies are in the update's own backup. The new name: `rename {old}` brings them back and "
+               f"moves them, as if they had never left. The old name: `decline {old}` brings them back where they were. "
+               "Do not copy them back by hand, build the part again from the kit, or `restore` the whole update for this. "
+               f"When the user wants the part gone: `done {old}` leaves its files out (they stay in the history).")
     return {"status": "rename", "kit": new, "from": old, "path": pair[0], "to": pair[1], "kind": None,
             "group": group_of(new), "was": group_of(old), "files": files, "also": also, "moves": moves,
             "folders": folders, "blocked": blocked, "links": links, "half": half, "new": [],
-            "how": (f"One part under a new name, not a dropped part plus a new one. The new name: `rename {old}` moves "
-                    "every file as it is (each backed up) and sets the `name:` line of a skill to its new folder name, "
-                    "then `plan` again lists what NEST changed in them. "
-                    + ("This rename was begun and did not finish: `rename` again carries on, `restore` puts everything back."
-                       if half else
-                       f"The old name: `decline {old}` leaves them where they are and still brings later changes."))}, stay
+            "taken": gone, "fresh": fresh, "how": how}, stay
 
 
 def same_file(a: Path, b: Path) -> bool:
@@ -1158,8 +1359,11 @@ def cmd_plan(root: Path, args) -> int:
         else:
             print(line)
         return 0
+    # Whether the update is still open is decided before the plan is made: a part that a pause
+    # closes here must not be offered in a form the next command no longer sees.
+    open_now = current_run(root, begin=True)
     plan = current_plan(root, stamp, fresh=True, latest=newest)
-    plan["run"] = current_run(root, begin=True)
+    plan["run"] = open_now
     cache = read_json(root / CACHE_FILE)
     cache["planned"] = plan["latest"]
     write_json(root / CACHE_FILE, cache)
@@ -1176,7 +1380,8 @@ def cmd_plan(root: Path, args) -> int:
         print(plan["note"])
     for note in plan["notes"]:
         print(f"\n{note['version']}: {note['in_short'] or '(no summary)'}")
-    labels = {"rename": "has a new name in NEST", "replace": "safe to replace", "merge": "needs a merge", "new": "new", "removed": "no longer in NEST",
+    labels = {"rename": "has a new name in NEST", "taken": "taken out earlier in this update, not dropped by NEST",
+              "replace": "safe to replace", "merge": "needs a merge", "new": "new", "removed": "no longer in NEST",
               "wiki": "wiki reference changed", "reference": "example or reference file changed",
               "missing": "changed in NEST, deleted here"}
     for status in OPEN_STATUSES:
@@ -1189,6 +1394,16 @@ def cmd_plan(root: Path, args) -> int:
                     if item["half"]:
                         print(f"    begun and not finished: part of it has the new name already. `rename {item['from']}` "
                               "carries on with what is left; `restore` puts everything back.")
+                    elif item["fresh"]:
+                        print("    its own files were taken out earlier in this update and a new version was built at the "
+                              "new place since: nothing is moved or merged; `restore` puts the whole update back.")
+                    elif item["taken"]:
+                        print(f"    taken out earlier in this update ({len(item['taken'])} file(s), kept in its backup): "
+                              f"`rename {item['from']}` brings them back under the new name, `decline {item['from']}` "
+                              "under the old one.")
+                elif status == "taken":
+                    print(f"  {item['path']}  [{item['group']}]  `bring-back {item['path']}` puts it back"
+                          + ("; something else is there now" if item["blocked"] else ""))
                 else:
                     print(f"  {item['path'] or item['kit']}  [{item['group']}]")
     return 0
@@ -1229,10 +1444,31 @@ def diff_base(root: Path, stamp: dict, plan: dict, kit_rel: str) -> tuple[str | 
                              "the user's file already: compare before you merge.\n")
 
 
+def kit_path_for(stamp: dict, plan: dict, given: str) -> str:
+    """The kit path `diff` works on. A workspace path is taken too: the file's record, or its
+    place in the plan (a new file, a file of a part that is being renamed), says which kit file it is."""
+    if given.startswith("kit/"):
+        return given
+    try:
+        ws_rel = stamp_key(stamp, safe_rel(given))
+    except Problem:
+        ws_rel = given
+    for item in plan["items"]:
+        if item.get("path") == ws_rel and item["status"] != "rename":
+            return item["kit"]
+        for f in item.get("files", []):
+            if ws_rel in (f["path"], f["to"]):
+                return f["kit"]
+    if ws_rel in stamp["files"]:
+        return renamed(str(stamp["files"][ws_rel].get("kit", "")))
+    raise Problem(f"{given} is not a file NEST installed here or offers in this release. `diff` takes a kit path "
+                  "(`kit/skills/<name>/SKILL.md`, the `kit` of an item in the plan) or the workspace path of such a file.")
+
+
 def cmd_diff(root: Path, args) -> int:
     stamp = need_stamp(root)
     plan = current_plan(root, stamp)
-    kit_rel = args.kit.replace("\\", "/")
+    kit_rel = kit_path_for(stamp, plan, args.kit.replace("\\", "/"))
     base_dir, label, warning = diff_base(root, stamp, plan, kit_rel)
     if base_dir is None:
         print(f"There is no copy of release {plan['installed']} to compare with; read the new file instead: "
@@ -1257,13 +1493,23 @@ def cmd_diff(root: Path, args) -> int:
 # --- changing the workspace ----------------------------------------------------------------------
 
 def run_dir(root: Path) -> Path:
+    """The history folder of this update, made on first use with the stamp as it was then.
+
+    A new folder is filled under a name of its own and renamed into place, so a folder with the
+    update's name always holds that stamp: one without it would cut the update in two, for
+    `restore` and for the files that `rename` and `bring-back` look for in its earlier parts."""
     folder = root / HISTORY_DIR / current_run(root)
     if not (folder / "nest.json").is_file() and not (folder / "no-stamp").is_file():
-        folder.mkdir(parents=True, exist_ok=True)
+        here = folder if folder.is_dir() else folder.with_name(f".{folder.name}.starting")
+        if here != folder and here.exists():
+            force_rmtree(here)  # left by a start that stopped: it holds nothing else
+        here.mkdir(parents=True, exist_ok=True)
         if (root / STAMP_FILE).is_file():
-            shutil.copy2(root / STAMP_FILE, folder / "nest.json")
+            shutil.copy2(root / STAMP_FILE, here / "nest.json")
         else:
-            (folder / "no-stamp").write_text("", encoding="utf-8")
+            (here / "no-stamp").write_text("", encoding="utf-8")
+        if here != folder:
+            os.rename(here, folder)
     return folder
 
 
@@ -1333,9 +1579,15 @@ def cmd_apply(root: Path, args) -> int:
     new_files = kit_files(Path(plan["latest_dir"]))
     by_path = {item["path"]: item for item in plan["items"] if item["path"]}
     jobs: list[tuple[str, str]] = []
-    for item in args.paths:
+    # `--new` takes one pair or several, and a pair is known by its `=`: so `--new a=b c=d`,
+    # `--new a=b --new c=d` and a path that follows a pair all mean what they say.
+    given = [*args.paths, *(args.new or [])]
+    paths, pairs = [item for item in given if "=" not in item], [item for item in given if "=" in item]
+    for item in paths:
         ws_rel = stamp_key(stamp, safe_rel(item))
         no_symlink(root, ws_rel)
+        if why := taken_place(plan, ws_rel):
+            raise Problem(why)
         found = by_path.get(ws_rel)
         if not found or ws_rel not in stamp["files"]:
             raise Problem(f"{ws_rel} is not a file NEST installed here.")
@@ -1374,10 +1626,12 @@ def cmd_apply(root: Path, args) -> int:
                 or sha(root / ws_rel) != entry.get("sha256"):
             raise Problem(f"{ws_rel} was changed in this workspace or was adapted for it: it needs a merge, not a replace.")
         jobs.append((ws_rel, found["kit"]))
-    for item in args.new or []:
+    for item in pairs:
         kit_rel, ws_raw = split_pair(item)
         ws_rel = safe_rel(ws_raw)
         no_symlink(root, ws_rel)
+        if why := taken_place(plan, ws_rel):
+            raise Problem(why)
         if kit_rel not in new_files:
             raise Problem(f"{kit_rel} is not a file in NEST {plan['latest']}.")
         if os.path.lexists(root / ws_rel):
@@ -1415,6 +1669,8 @@ def cmd_mark(root: Path, args) -> int:
         ws_raw, kit_rel = split_pair(item)
         ws_rel = stamp_key(stamp, safe_rel(ws_raw))
         no_symlink(root, ws_rel)
+        if why := taken_place(plan, ws_rel):
+            raise Problem(why)
         if kit_rel not in new_files:
             raise Problem(f"{kit_rel} is not a file in NEST {plan['latest']}.")
         if not (root / ws_rel).is_file():
@@ -1451,6 +1707,34 @@ def cmd_decline(root: Path, args) -> int:
                                   f"the old name now would leave it in two folders. `rename {item['from']}` carries on "
                                   "with what is left; `restore` puts everything back, and then it can be declined. "
                                   "Nothing was changed.")
+                if args.command == "done" and item["taken"]:
+                    # The user wants the part gone: what was taken out stays out. Only when all of it
+                    # was taken out, or the part would still be half here and on offer.
+                    here = [f["path"] for f in item["files"] if not f.get("taken")]
+                    if here:
+                        raise Problem(f"Files of {item['path'] or item['from']} are still in this workspace ({', '.join(here)}), "
+                                      "so it cannot be left out: only a part whose files were all taken out can. Keep the "
+                                      f"old name (`decline {item['from']}`) or take the new one (`rename {item['from']}`). "
+                                      "Nothing was changed.")
+                    with (run_dir(root) / LEFT_OUT).open("a", encoding="utf-8", newline="\n") as note:
+                        note.write(item["from"] + "\n")
+                    own = f" The user's own files in its folder stay where they are: {', '.join(item['also'])}." if item["also"] else ""
+                    print(f"{item['path'] or item['from']} stays out: its {len(item['taken'])} file(s) taken out earlier in "
+                          "this update stay in the update's history and are not offered again in it. `restore` puts them "
+                          f"back with the rest of the update.{own}")
+                    continue
+                if item["fresh"]:
+                    raise fresh_problem(item)
+                if item["taken"]:
+                    # Keeping the old name moves nothing, so only the old places of the taken files matter.
+                    in_way = [path for path in item["blocked"] if path in item["taken"]]
+                    if in_way:
+                        raise Problem(f"In the way: {', '.join(in_way)}. The files of this part were taken out "
+                                      "earlier in this update, and these are not the copies that were kept. Nothing was "
+                                      "changed. Move them aside, or `restore` to put everything back.")
+                    run_dir(root)
+                    back = put_back(root, stamp, item["taken"])
+                    print(f"Brought back {len(back)} file(s) from this update's own backup: {', '.join(back)}")
                 # The files stay where they are and are recorded against the kit file's new name:
                 # nothing is left to offer, and later changes to it still arrive here.
                 for f in item["files"]:
@@ -1540,26 +1824,49 @@ def cmd_rename(root: Path, args) -> int:
     changes, to the new folder name. The stamp is saved after every file, so a run that stops
     halfway (a file another program holds, a crash) is carried on by running the command again."""
     stamp = need_stamp(root)
-    plan = current_plan(root, stamp)
-    todo = [item for item in plan["items"] if item["status"] == "rename"]
-    jobs: list[dict] = []
-    for raw in args.names:
-        wanted = raw.replace("\\", "/").rstrip("/")
-        hits = [item for item in todo if wanted in (item["from"], item["kit"], item["path"], item["to"])]
-        if not hits:
-            raise Problem(f"Nothing open has the old or the new name {raw}; nothing was moved.")
-        jobs += [item for item in hits if item not in jobs]
-    for item in jobs:
+
+    def chosen() -> list[dict]:
+        """The open rename items the arguments name, each checked: nothing in the way, no link."""
+        plan = current_plan(root, stamp)
+        todo = [item for item in plan["items"] if item["status"] == "rename"]
+        jobs: list[dict] = []
+        for raw in args.names:
+            wanted = raw.replace("\\", "/").rstrip("/")
+            hits = [item for item in todo if wanted in (item["from"], item["kit"], item["path"], item["to"])]
+            if not hits:
+                raise Problem(f"Nothing open has the old or the new name {raw}; nothing was moved.")
+            jobs += [item for item in hits if item not in jobs]
+        for item in jobs:
+            check(item)
+        return jobs
+
+    def check(item: dict) -> None:
+        if item["fresh"]:
+            raise fresh_problem(item)
         if item["blocked"]:
             way_out = ("Part of this rename was done before; nothing more was moved now. Move those files out of the "
                        "way and run `rename` again, or `restore` to put everything back as it was."
                        if item["half"] else
+                       "The files of this part were taken out earlier in this update, and these are not the copies "
+                       "that were kept. Nothing was moved. Move them aside, or `restore` to put everything back."
+                       if item["taken"] and any(path in item["taken"] for path in item["blocked"]) else
                        f"Nothing was moved. Keeping the old name is `decline {item['from']}`.")
             raise Problem(f"In the way: {', '.join(item['blocked'])}. This rename did not put them there, NEST will not "
                           f"write over a file, and they may be the user's own. {way_out}")
         for src, dst in item["moves"]:
             no_symlink(root, src)
             no_symlink(root, dst)
+
+    jobs = chosen()
+    if any(item["taken"] for item in jobs):
+        # Taken out earlier in this update: back where they were first, from the update's own
+        # copies and with their records, so what follows is the rename of a part that never left.
+        run_dir(root)
+        for item in jobs:
+            back = put_back(root, stamp, item["taken"])
+            if back:
+                print(f"Brought back {len(back)} file(s) from this update's own backup: {', '.join(back)}")
+        jobs = chosen()
     done, at = 0, ""
     current, moved_here = None, 0
     left: list[tuple[str, str]] = []  # the SKILL.md files whose name line was not the old folder name
@@ -1612,6 +1919,8 @@ def cmd_rename(root: Path, args) -> int:
                     name_line(f["path"], f["to"])
             for src in item["folders"]:
                 remove_empty_folders(root, src)
+            with (run_dir(root) / "renamed.txt").open("a", encoding="utf-8", newline="\n") as done_file:
+                done_file.write(item["from"] + "\n")  # this update renamed the part itself: nothing of it was "taken out"
             stamp["renaming"].pop(item["from"], None)
             if not stamp["renaming"]:
                 del stamp["renaming"]
@@ -1642,6 +1951,32 @@ def cmd_rename(root: Path, args) -> int:
         raise Problem(f"Stopped at {at}: {exc.strerror or exc}. That file is still where it was; {done} file(s) before "
                       "it were moved and recorded. Run `rename` again once that is solved: it carries on with what is "
                       "left. `restore` puts everything back.") from exc
+    return 0
+
+
+def cmd_bring_back(root: Path, args) -> int:
+    """Put back files that sit in a place of the user's own and were taken out earlier in this
+    update (`taken` items): the user's own version, with its record, where it was."""
+    stamp = need_stamp(root)
+    plan = current_plan(root, stamp)
+    todo = [item for item in plan["items"] if item["status"] == "taken"]
+    jobs: list[dict] = []
+    for raw in args.paths:
+        wanted = safe_rel(raw).rstrip("/").lower()
+        hits = [item for item in todo if item["path"].lower() == wanted or item["path"].lower().startswith(wanted + "/")]
+        if not hits:
+            why = taken_place(plan, safe_rel(raw))
+            raise Problem(why or f"Nothing taken out earlier in this update is at {raw}; nothing was brought back.")
+        jobs += [item for item in hits if item not in jobs]
+    in_way = [item["path"] for item in jobs if item["blocked"]]
+    if in_way:
+        raise Problem(f"In the way: {', '.join(in_way)}. These were taken out earlier in this update, and what is there "
+                      "now is not the copy that was kept. Nothing was changed. Move them aside, or `restore` to put "
+                      "everything back.")
+    run_dir(root)  # the stamp as it is now, before a record comes back
+    back = put_back(root, stamp, [item["path"] for item in jobs])
+    print(f"Brought back {len(back)} file(s) from this update's own backup, each where it was: {', '.join(back)}. "
+          "Run `plan` again: what NEST changed in them is listed there.")
     return 0
 
 
@@ -1743,8 +2078,35 @@ def prune_empty(root: Path, folder: Path) -> None:
         folder = folder.parent
 
 
+def brought_back_group(runs: list[Path], folder: Path) -> list[Path]:
+    """The parts that go back together with `folder` when it is put back by name, newest first,
+    or [] when it can go back alone.
+
+    A part that brought back files an earlier part of the same update had taken out (BROUGHT_BACK)
+    cannot go alone: its undo would take those files away again while the earlier part still
+    keeps them out, and behind a part that was put back no plan offers them any more. It takes
+    its whole update along: the parts around it that began from the same release and were not
+    put back. That works for an update that was followed by another one too, where `restore`
+    without `--run` no longer reaches."""
+    base = run_before(folder)
+    if base is None or (folder / "restored").is_file() or not (folder / BROUGHT_BACK).is_file():
+        return []
+    at = runs.index(folder)
+
+    def along(parts: list[Path]) -> list[Path]:
+        taken = []
+        for part in parts:
+            if (part / "restored").is_file() or run_before(part) != base:
+                break
+            taken.append(part)
+        return taken
+
+    older = along(list(reversed(runs[:at])))
+    return [*reversed(along(runs[at + 1:])), folder, *older] if older else []
+
+
 def cmd_restore(root: Path, args) -> int:
-    runs = history_runs(root)
+    runs = every = history_runs(root)
     if args.list:
         if not runs:
             print("There is no update in the history.")
@@ -1760,14 +2122,19 @@ def cmd_restore(root: Path, args) -> int:
     # Always the newest update, never silently an older one: putting back an update that was
     # followed by another would also undo choices and edits made since.
     folder = runs[-1]
-    if args.run:
+    together = brought_back_group(every, folder) if args.run else []
+    if args.run and not together:
         return restore_part(root, args, folder, runs)
+    if together:
+        print(f"{folder.name} brought back files that an earlier part of the same update had taken out. Put back "
+              "alone, it would take them away again while that part still keeps them out, so the whole update goes "
+              f"back: {', '.join(part.name for part in together)}.")
     # One update can be done in parts: `finish` with something left for later closes a part,
     # and the next change starts another. Parts that began from the same release are one update
     # to the user (the version only moves when everything is done), so undo covers them all.
     # The group is written down when an undo begins, so a second `restore` (after a failure, or
     # with --force for files that were left alone) works on the same parts.
-    names = read_json(folder / "group.json").get("parts")
+    names = [part.name for part in together] or read_json(folder / "group.json").get("parts")
     if isinstance(names, list) and names:
         group = [root / HISTORY_DIR / name for name in names if isinstance(name, str) and (root / HISTORY_DIR / name).is_dir()]
     else:
@@ -1977,7 +2344,7 @@ def main(argv: list[str] | None = None) -> int:
 
     p = sub.add_parser("apply", help="Replace unchanged kit copies; add new copy files with --new")
     p.add_argument("paths", nargs="*", metavar="PATH")
-    p.add_argument("--new", action="append", metavar="KIT=PATH")
+    p.add_argument("--new", action="extend", nargs="+", metavar="KIT=PATH", help="One pair or several")
 
     p = sub.add_parser("mark", help="Record that a merged or new adapted file reflects the new kit file")
     p.add_argument("pairs", nargs="+", metavar="PATH=KIT")
@@ -1991,6 +2358,9 @@ def main(argv: list[str] | None = None) -> int:
 
     p = sub.add_parser("done", help="A change that was dealt with by hand (a wiki file, a deleted file)")
     p.add_argument("kits", nargs="+", metavar="KIT")
+
+    p = sub.add_parser("bring-back", help="Put back files of a renamed part taken out earlier in this update")
+    p.add_argument("paths", nargs="+", metavar="PATH", help="A file of a `taken` item, or its folder")
 
     p = sub.add_parser("retire", help="Take a file NEST dropped out of the workspace, keeping its last version")
     p.add_argument("paths", nargs="+", metavar="PATH")
@@ -2011,7 +2381,8 @@ def main(argv: list[str] | None = None) -> int:
         except (AttributeError, OSError):
             pass
     commands = {"stamp": cmd_stamp, "check": cmd_check, "plan": cmd_plan, "diff": cmd_diff, "backup": cmd_backup,
-                "apply": cmd_apply, "mark": cmd_mark, "rename": cmd_rename, "decline": cmd_decline, "done": cmd_decline, "retire": cmd_retire,
+                "apply": cmd_apply, "mark": cmd_mark, "rename": cmd_rename, "decline": cmd_decline, "done": cmd_decline,
+                "bring-back": cmd_bring_back, "retire": cmd_retire,
                 "finish": cmd_finish, "restore": cmd_restore}
     try:
         return commands[args.command](workspace_root(), args)

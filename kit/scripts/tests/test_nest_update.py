@@ -2124,3 +2124,421 @@ def test_a_script_is_never_held_back_for_a_name(make_ws, rename_repo):
     item = next(i for i in plan(ws)["items"] if i["path"] == "scripts/idea_page.py")
     assert item["status"] == "replace" and "name_kept" not in item
     assert run("apply", "scripts/idea_page.py") == 0
+
+
+# --- the impatient path: the old updater took the skill's files out before the rename was known ----
+
+RECORDED = ("SKILL.md", "formats.md", "old-notes.md", "reference.md")
+
+
+def retire_like_1_1_0(ws: Path, names=RECORDED, folder: str = OLD) -> None:
+    """What `retire` of the 1.1.0 updater leaves behind, step by step as that command did it: the
+    file's copy in the open update's `files/`, the stamp as it was in the update's `nest.json`,
+    the file gone from the workspace and its record gone from the stamp. The old updater listed
+    the files of a renamed part as "no longer in NEST", so a user could ask for exactly this."""
+    place, run_folder = folder, ws / nu.HISTORY_DIR / nu.read_json(ws / nu.CACHE_FILE)["run"]
+    data = json.loads((ws / "nest.json").read_text(encoding="utf-8"))
+    if not (run_folder / "nest.json").is_file():
+        run_folder.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ws / "nest.json", run_folder / "nest.json")
+    for name in names:
+        rel = f"{place}/{name}"
+        (run_folder / "files" / rel).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ws / rel, run_folder / "files" / rel)
+        (ws / rel).unlink()
+        kit_rel = data["nest"]["files"].pop(rel)["kit"]
+        data["nest"].get("declined", {}).pop(kit_rel, None)
+    (ws / "nest.json").write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+
+
+def clean_run(make_ws, command: str, tmp_path: Path, n=[0]) -> tuple[dict, dict]:
+    """The skills and the stamp after `command` on a workspace nobody took anything out of."""
+    ws = make_ws("full")
+    write_tree(ws, OWN)
+    assert run("plan", "--json") == 0
+    assert run(command, "kit/skills/idea") == 0
+    result = skills(ws), stamp(ws)
+    n[0] += 1
+    ws.rename(tmp_path / f"clean-{n[0]}")
+    return result
+
+
+def taken_out(make_ws, names=RECORDED) -> tuple[Path, dict, dict]:
+    ws = make_ws("full")
+    write_tree(ws, OWN)
+    start = skills(ws), json.loads((ws / "nest.json").read_text(encoding="utf-8"))
+    assert run("plan", "--json") == 0
+    retire_like_1_1_0(ws, names)
+    return ws, *start
+
+
+def back_at_the_start(ws: Path, before: dict, stamp_before: dict) -> bool:
+    return skills(ws) == before and json.loads((ws / "nest.json").read_text(encoding="utf-8")) == stamp_before \
+        and not (ws / NEW).exists()
+
+
+def test_files_taken_out_in_this_update_are_still_one_rename_offer(make_ws, capsys):
+    ws, before, _ = taken_out(make_ws)
+    assert not [rel for rel in stamp(ws)["files"] if rel.startswith(OLD)]      # the old updater dropped the records
+    item, = about_the_skill(ws)
+    assert item["status"] == "rename" and (item["path"], item["to"]) == (OLD, NEW) and not item["half"]
+    assert item["taken"] == [f"{OLD}/{name}" for name in RECORDED] and item["fresh"] == [] and item["blocked"] == []
+    assert {f["path"]: f["change"] for f in item["files"]} == {
+        f"{OLD}/SKILL.md": "changed", f"{OLD}/formats.md": "same", f"{OLD}/old-notes.md": "dropped", f"{OLD}/reference.md": "changed"}
+    assert set(item["also"]) == set(OWN)                   # the user's own files never left the folder
+    assert "taken out" in item["how"] and "rename kit/skills/idea" in item["how"] and "decline kit/skills/idea" in item["how"]
+    capsys.readouterr()
+    assert run("plan") == 0
+    out = capsys.readouterr().out
+    assert "has a new name in NEST" in out and "taken out earlier in this update" in out
+    assert "no longer in NEST" not in out and "\nnew (" not in out
+    assert run("finish") == 0 and stamp(ws)["version"] == "1.1.0"      # still open
+
+
+@pytest.mark.parametrize("names", [RECORDED, ("SKILL.md", "old-notes.md")], ids=["all four", "two of four"])
+def test_a_rename_brings_taken_files_back_as_if_they_never_left(make_ws, tmp_path, capsys, names):
+    clean_skills, clean_stamp = clean_run(make_ws, "rename", tmp_path)
+    ws, before, stamp_before = taken_out(make_ws, names)
+    capsys.readouterr()
+    assert run("rename", "kit/skills/idea") == 0
+    assert "from this update's own backup" in capsys.readouterr().out
+    assert skills(ws) == clean_skills and stamp(ws) == clean_stamp      # byte for byte, stamp included
+    assert not (ws / OLD).exists() and not renames(ws)
+    assert status(ws)[f"{NEW}/SKILL.md"] == "merge" and status(ws)[f"{NEW}/old-notes.md"] == "removed"
+    assert run("restore") == 0
+    assert back_at_the_start(ws, before, stamp_before)
+
+
+def test_keeping_the_old_name_brings_taken_files_back_where_they_were(make_ws, tmp_path, capsys):
+    clean_skills, clean_stamp = clean_run(make_ws, "decline", tmp_path)
+    ws, before, stamp_before = taken_out(make_ws)
+    assert run("decline", "kit/skills/idea") == 0
+    assert skills(ws) == before == clean_skills and stamp(ws) == clean_stamp
+    assert not (ws / NEW).exists() and not renames(ws)
+    assert status(ws)[f"{OLD}/SKILL.md"] == "merge"         # and it follows the kit file under its new name
+    assert run("finish") == 0
+    assert run("restore") == 0
+    assert back_at_the_start(ws, before, stamp_before)
+
+
+def test_a_fresh_skill_at_the_new_place_is_never_mixed_with_the_one_taken_out(make_ws, capsys):
+    ws, before, stamp_before = taken_out(make_ws)
+    for name, text in (("SKILL.md", "---\nname: verdict\n---\nBuilt fresh from the kit.\n"), ("formats.md", "full formats\n")):
+        assert run("backup", f"{NEW}/{name}") == 0          # the way a new skill is built: backup, write, mark
+        write_tree(ws, {f"{NEW}/{name}": text})
+        assert run("mark", f"{NEW}/{name}=kit/skills/verdict/{name}") == 1     # this updater refuses that place ...
+        data = json.loads((ws / "nest.json").read_text(encoding="utf-8"))   # ... the 1.1.0 one, before it updated itself, did not
+        data["nest"]["files"][f"{NEW}/{name}"] = {"kit": f"kit/skills/verdict/{name}", "kind": "adapted",
+                                                  "sha256": nu.sha(ws / NEW / name), "version": "1.2.0"}
+        (ws / "nest.json").write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    state, state_stamp = skills(ws), stamp(ws)
+    item, = renames(ws)
+    assert item["fresh"] == [f"{NEW}/SKILL.md", f"{NEW}/formats.md"] and item["taken"]
+    assert "restore" in item["how"] and "decline kit" not in item["how"]
+    for command in ("rename", "decline"):
+        capsys.readouterr()
+        assert run(command, "kit/skills/idea") == 1
+        err = capsys.readouterr().err
+        assert "built" in err and "restore" in err and "Nothing was changed" in err and f"{NEW}/SKILL.md" in err
+        assert skills(ws) == state and stamp(ws) == state_stamp          # neither version touched, none dropped
+    kept = ws / nu.HISTORY_DIR / nu.read_json(ws / nu.CACHE_FILE)["run"] / "files" / OLD / "SKILL.md"
+    assert kept.read_text(encoding="utf-8") == MY_SKILL     # the user's own version is still what an undo puts back
+    capsys.readouterr()
+    assert run("plan") == 0 and "built" in capsys.readouterr().out
+    assert run("restore") == 0
+    assert back_at_the_start(ws, before, stamp_before)
+
+
+def walk_away(ws: Path) -> None:
+    """The update is left for more than RUN_HOURS: its history folder is named after an earlier time."""
+    cache = nu.read_json(ws / nu.CACHE_FILE)
+    older = "nest-update-20260101-090000"
+    (ws / nu.HISTORY_DIR / cache["run"]).rename(ws / nu.HISTORY_DIR / older)
+    cache["run"] = older
+    nu.write_json(ws / nu.CACHE_FILE, cache)
+
+
+@pytest.mark.parametrize("closed_by", ["finish", "a pause"])
+def test_taken_files_of_an_earlier_part_of_the_same_update_are_still_offered(make_ws, tmp_path, capsys, closed_by):
+    clean_skills, clean_stamp = clean_run(make_ws, "rename", tmp_path)
+    ws, before, stamp_before = taken_out(make_ws)
+    if closed_by == "finish":
+        assert run("finish") == 0                          # a round ends with things left open: the part is closed
+    else:
+        walk_away(ws)
+    first = nu.read_json(ws / nu.CACHE_FILE).get("run")
+    capsys.readouterr()
+    assert run("plan", "--json") == 0
+    shown = json.loads(capsys.readouterr().out)
+    assert shown["run"] != first                           # the part was closed before the plan was made ...
+    item, = [i for i in shown["items"] if i["status"] == "rename"]
+    assert len(item["taken"]) == 4                         # ... and what it offers is what `rename` can do
+    assert run("rename", "kit/skills/idea") == 0
+    assert skills(ws) == clean_skills and stamp(ws) == clean_stamp
+    assert run("restore") == 0                             # undo takes both parts together
+    assert back_at_the_start(ws, before, stamp_before)
+
+
+def test_a_part_that_stops_as_it_begins_never_cuts_the_update_in_two(make_ws, tmp_path, monkeypatch):
+    clean_skills, clean_stamp = clean_run(make_ws, "rename", tmp_path)
+    ws, before, stamp_before = taken_out(make_ws)
+    assert run("finish") == 0
+    assert run("plan", "--json") == 0
+    real = shutil.copy2
+
+    def stop(src, dst, *args, **kwargs):
+        if Path(src).name == "nest.json" and Path(src).parent == ws:
+            raise OSError(28, "No space left on device", str(dst))   # the new part's copy of the stamp
+        return real(src, dst, *args, **kwargs)
+
+    monkeypatch.setattr(nu.shutil, "copy2", stop)
+    assert run("rename", "kit/skills/idea") == 1
+    monkeypatch.setattr(nu.shutil, "copy2", real)
+    assert not [p for p in (ws / nu.HISTORY_DIR).glob("nest-update-*") if not (p / "nest.json").is_file()]
+    state = skills(ws)
+    assert run("restore", "--dry-run") == 0 and skills(ws) == state
+    assert len(renames(ws)[0]["taken"]) == 4                # the earlier part is still part of this update
+    assert run("rename", "kit/skills/idea") == 0
+    assert skills(ws) == clean_skills and stamp(ws) == clean_stamp
+    assert run("restore") == 0
+    assert back_at_the_start(ws, before, stamp_before)
+
+
+@pytest.mark.parametrize("command", ["rename", "decline"])
+def test_a_part_that_brought_taken_files_back_is_never_put_back_alone(make_ws, command, capsys):
+    ws, before, stamp_before = taken_out(make_ws)
+    assert run("finish") == 0                              # the files were taken out in a part that is closed now
+    assert run("plan", "--json") == 0
+    assert run(command, "kit/skills/idea") == 0            # a later part brings them back from it
+    assert run("finish") == 0
+    first, second = sorted(p.name for p in (ws / nu.HISTORY_DIR).glob("nest-update-*"))
+    state = skills(ws)
+    capsys.readouterr()
+    assert run("restore", "--run", second, "--dry-run") == 0
+    out = capsys.readouterr().out
+    named = [line.split("  ")[0] for line in out.splitlines() if line.startswith("nest-update-") and "  20" in line]
+    assert sorted(named) == [first, second] and skills(ws) == state   # the dry run names both parts
+    # Alone, the later part would take the files away again while the earlier part still keeps
+    # them out, and with the earlier part closed nothing would offer them any more: they go together.
+    assert run("restore", "--run", second) == 0
+    assert back_at_the_start(ws, before, stamp_before)
+    assert all((p / "restored").is_file() for p in (ws / nu.HISTORY_DIR).glob("nest-update-*"))
+
+
+def about_the_part(ws: Path) -> list[dict]:
+    return [i for i in nu.open_items(plan(ws)) if i["status"] in ("rename", "taken")]
+
+
+def test_done_leaves_a_part_whose_files_were_taken_out_out(make_ws, capsys):
+    ws, before, stamp_before = taken_out(make_ws)
+    assert run("finish") == 0                              # also from a part that is closed
+    assert run("plan", "--json") == 0
+    state = skills(ws)
+    capsys.readouterr()
+    assert run("done", "kit/skills/idea") == 0             # the user wants the Council gone
+    out = capsys.readouterr().out
+    assert "stays out" in out and "history" in out and f"{OLD}/mine.md" in out
+    assert skills(ws) == state and not (ws / NEW).exists()  # nothing came back, nothing was built
+    assert not about_the_part(ws)                          # dealt with: not offered again ...
+    assert run("rename", "kit/skills/idea") == 1 and run("bring-back", OLD) == 1
+    assert run("restore") == 0                             # ... and an undo still brings it back
+    assert back_at_the_start(ws, before, stamp_before)
+
+
+def test_done_never_leaves_half_a_part_out(make_ws, capsys):
+    ws, _, _ = taken_out(make_ws, ("SKILL.md", "formats.md"))
+    assert run("plan", "--json") == 0
+    state, recorded = skills(ws), stamp(ws)
+    capsys.readouterr()
+    assert run("done", "kit/skills/idea") == 1
+    err = capsys.readouterr().err
+    assert f"{OLD}/reference.md" in err and "decline kit/skills/idea" in err and "Nothing was changed" in err
+    assert skills(ws) == state and stamp(ws) == recorded and len(about_the_part(ws)) == 1
+
+
+def test_done_keeps_only_the_new_version_when_one_was_built(make_ws):
+    ws, _, _ = taken_out(make_ws)
+    write_tree(ws, {f"{NEW}/SKILL.md": R120["kit/skills/verdict/SKILL.md"]})   # built from the kit in the meantime
+    assert renames(ws)[0]["fresh"] and "done kit/skills/idea" in renames(ws)[0]["how"]
+    assert run("done", "kit/skills/idea") == 0
+    assert not about_the_part(ws) and not (ws / f"{OLD}/SKILL.md").exists()
+    assert (ws / f"{NEW}/SKILL.md").read_text(encoding="utf-8") == R120["kit/skills/verdict/SKILL.md"]
+
+
+def test_taken_files_of_another_update_are_a_matter_for_undo(make_ws):
+    ws, _, _ = taken_out(make_ws)
+    folder = ws / nu.HISTORY_DIR / nu.read_json(ws / nu.CACHE_FILE)["run"]
+    data = json.loads((folder / "nest.json").read_text(encoding="utf-8"))
+    data["nest"]["version"] = "1.0.0"                      # that part began from another release: another update
+    (folder / "nest.json").write_text(json.dumps(data), encoding="utf-8")
+    assert run("finish") == 0
+    state = skills(ws)
+    assert not renames(ws)
+    assert run("rename", "kit/skills/idea") == 1 and skills(ws) == state
+
+
+def test_taken_files_under_a_folder_name_of_the_users_own_come_back_where_they_were(make_ws, tmp_path, capsys):
+    def build() -> Path:
+        ws = make_ws(None)
+        write_tree(ws, {".claude/skills/idee/SKILL.md": MY_SKILL.replace("name: idea", "name: idee"),
+                        ".claude/skills/idee/formats.md": R110["kit/skills/idea/formats.md"],
+                        ".claude/skills/idee/reference.md": R110["kit/skills/idea/reference.md"]})
+        assert run("stamp", *(arg for name in ("SKILL.md", "formats.md", "reference.md")
+                              for arg in ("--map", f".claude/skills/idee/{name}=kit/skills/idea/{name}"))) == 0
+        return ws
+    clean = build()
+    clean_plan = {i["path"]: i["status"] for i in plan(clean)["items"] if "idee" in str(i["path"])}
+    clean_skills, clean_stamp = skills(clean), stamp(clean)
+    clean.rename(tmp_path / "clean")
+    ws = build()
+    start = skills(ws), json.loads((ws / "nest.json").read_text(encoding="utf-8"))
+    assert run("plan", "--json") == 0
+    retire_like_1_1_0(ws, ("SKILL.md", "formats.md", "reference.md"), folder=".claude/skills/idee")
+    found = {i["path"]: i for i in plan(ws)["items"] if "idee" in str(i["path"]) or "skills/verdict" in i["kit"]}
+    taken = {path for path, i in found.items() if i["status"] == "taken"}
+    assert taken == {f".claude/skills/idee/{name}" for name in ("SKILL.md", "formats.md", "reference.md")}
+    assert all("bring-back" in found[path]["how"] for path in taken) and not renames(ws)
+    assert not [i for i in found.values() if i["status"] in ("missing", "unchanged")]
+    capsys.readouterr()
+    assert run("plan") == 0
+    assert "taken out earlier in this update" in capsys.readouterr().out
+    assert run("apply", ".claude/skills/idee/SKILL.md") == 1          # the same stamp as the plan: it knows the file
+    assert "bring-back" in capsys.readouterr().err
+    assert run("bring-back", ".claude/skills/idee") == 0
+    assert skills(ws) == clean_skills and stamp(ws) == clean_stamp    # byte for byte, as if they never left
+    assert {i["path"]: i["status"] for i in plan(ws)["items"] if "idee" in str(i["path"])} == clean_plan
+    assert run("restore") == 0
+    assert (skills(ws), json.loads((ws / "nest.json").read_text(encoding="utf-8"))) == start
+
+
+def test_a_taken_place_never_gets_a_new_file(make_ws, capsys):
+    ws, _, _ = taken_out(make_ws)
+    state, state_stamp = skills(ws), stamp(ws)
+    for argv in (("apply", "--new", f"kit/skills/verdict/SKILL.md={OLD}/SKILL.md"),
+                 ("apply", f"kit/skills/verdict/SKILL.md={OLD}/SKILL.md"),          # the same pair without the flag
+                 ("apply", "--new", f"kit/skills/verdict/formats.md={NEW}/formats.md")):
+        capsys.readouterr()
+        assert run(*argv) == 1
+        err = capsys.readouterr().err
+        assert "rename kit/skills/idea" in err and "decline kit/skills/idea" in err
+        assert skills(ws) == state and stamp(ws) == state_stamp
+    write_tree(ws, {f"{OLD}/SKILL.md": "written again by hand\n"})
+    capsys.readouterr()
+    assert run("mark", f"{OLD}/SKILL.md=kit/skills/verdict/SKILL.md") == 1
+    assert "rename kit/skills/idea" in capsys.readouterr().err and stamp(ws) == state_stamp
+
+
+def test_a_file_of_the_users_own_at_the_new_place_does_not_stop_keeping_the_old_name(make_ws, tmp_path, capsys):
+    clean_skills, clean_stamp = clean_run(make_ws, "decline", tmp_path)
+    ws, _, _ = taken_out(make_ws)
+    write_tree(ws, {f"{NEW}/mine.md": "a note of my own, in a folder of my own\n"})
+    item, = renames(ws)
+    assert item["blocked"] == [f"{NEW}/mine.md"]          # in the way of a move, not of keeping the old name
+    capsys.readouterr()
+    assert run("decline", "kit/skills/idea") == 0
+    assert "not the copies that were kept" not in capsys.readouterr().err
+    assert {rel: data for rel, data in skills(ws).items() if not rel.startswith(NEW)} == clean_skills
+    assert stamp(ws) == clean_stamp and (ws / NEW / "mine.md").is_file()
+
+
+def test_bringing_back_never_leaves_half_a_file(make_ws, tmp_path, monkeypatch, capsys):
+    clean_skills, clean_stamp = clean_run(make_ws, "rename", tmp_path)
+    ws, _, _ = taken_out(make_ws)
+    real = shutil.copy2
+
+    def half(src, dst, *args, **kwargs):
+        if "files" in Path(src).parts and nu.HISTORY_DIR.parts[-1] in Path(src).parts and Path(src).name == "reference.md":
+            Path(dst).write_bytes(Path(src).read_bytes()[:3])   # the disk fills up half way through the copy
+            raise OSError(28, "No space left on device", str(dst))
+        return real(src, dst, *args, **kwargs)
+
+    monkeypatch.setattr(nu.shutil, "copy2", half)
+    assert run("rename", "kit/skills/idea") == 1
+    assert not (ws / OLD / "reference.md").exists() and not (ws / NEW / "reference.md").exists()
+    monkeypatch.setattr(nu.shutil, "copy2", real)
+    assert run("rename", "kit/skills/idea") == 0            # the next run carries on
+    assert skills(ws) == clean_skills and stamp(ws) == clean_stamp
+
+
+def test_undo_right_after_the_files_were_taken_out(make_ws):
+    ws, before, stamp_before = taken_out(make_ws)
+    assert renames(ws)                                     # looking changes nothing
+    assert run("restore") == 0
+    assert back_at_the_start(ws, before, stamp_before)
+
+
+def test_taken_files_copied_back_by_hand_are_recognised(make_ws, tmp_path, capsys):
+    clean_skills, clean_stamp = clean_run(make_ws, "rename", tmp_path)
+    ws, before, stamp_before = taken_out(make_ws)
+    kept = ws / nu.HISTORY_DIR / nu.read_json(ws / nu.CACHE_FILE)["run"] / "files"
+    for name in ("SKILL.md", "reference.md"):               # what a session did that found no rename on offer
+        shutil.copyfile(kept / OLD / name, ws / OLD / name)
+    item, = renames(ws)
+    assert item["blocked"] == [] and len(item["taken"]) == 4
+    assert run("rename", "kit/skills/idea") == 0
+    assert skills(ws) == clean_skills and stamp(ws) == clean_stamp
+    assert run("restore") == 0
+    assert back_at_the_start(ws, before, stamp_before)
+
+
+def test_a_taken_file_that_came_back_changed_blocks_the_rename(make_ws, capsys):
+    ws, before, _ = taken_out(make_ws)
+    write_tree(ws, {f"{OLD}/SKILL.md": "written again by hand, not the copy that was kept\n"})
+    state = skills(ws)
+    item, = renames(ws)
+    assert item["blocked"] == [f"{OLD}/SKILL.md"]
+    capsys.readouterr()
+    assert run("rename", "kit/skills/idea") == 1
+    assert f"{OLD}/SKILL.md" in capsys.readouterr().err and skills(ws) == state
+
+
+def test_a_file_that_names_the_part_waits_while_its_files_are_taken_out(make_ws, rename_repo):
+    ws = make_ws("full")
+    untouched(ws, rename_repo)
+    assert run("plan", "--json") == 0
+    retire_like_1_1_0(ws)
+    item = next(i for i in plan(ws)["items"] if i["path"] == ".claude/skills/blueprint/reference.md")
+    assert item["status"] == "merge" and item["name_kept"] == "kit/skills/idea"   # the old name may still be kept
+
+
+def test_a_dropped_file_taken_out_after_the_rename_is_not_offered_again(make_ws):
+    ws = make_ws("full")
+    assert run("plan", "--json") == 0
+    assert run("rename", "kit/skills/idea") == 0
+    assert run("retire", f"{NEW}/old-notes.md") == 0
+    assert not renames(ws) and f"{OLD}/old-notes.md" not in status(ws)
+    ws.rename(ws.parent / "renamed")
+    ws = make_ws("full")                                   # ... and the same after the old name was kept
+    assert run("plan", "--json") == 0
+    assert run("decline", "kit/skills/idea") == 0
+    assert run("retire", f"{OLD}/old-notes.md") == 0
+    assert not renames(ws) and f"{OLD}/old-notes.md" not in status(ws)
+
+
+# --- two command forms that cost a failed attempt each ----------------------------------------------
+
+def test_diff_takes_a_workspace_path_too(ws, capsys):
+    assert run("diff", ".claude/skills/inbox/SKILL.md") == 0
+    by_path = capsys.readouterr().out
+    assert run("diff", "kit/skills/inbox/SKILL.md") == 0
+    assert by_path == capsys.readouterr().out and "+File the inbox, oldest first." in by_path
+    assert run("diff", "scripts/guard.py") == 0             # a new file has no record yet: its place in the plan names it
+    assert "+print('guard')" in capsys.readouterr().out
+    assert run("diff", "scripts/nothing.py") == 1
+    err = capsys.readouterr().err
+    assert "scripts/nothing.py" in err and "kit/" in err
+
+
+def test_apply_new_takes_several_pairs_after_one_flag(ws):
+    assert run("apply", "--new", "kit/scripts/guard.py=scripts/guard.py", "kit/skills/mail/rules.md=.claude/skills/mail/rules.md",
+               "scripts/wiki.py") == 0
+    assert (ws / "scripts/guard.py").is_file() and (ws / ".claude/skills/mail/rules.md").is_file()
+    assert (ws / "scripts/wiki.py").read_text(encoding="utf-8") == V110["kit/scripts/wiki.py"]
+    files = stamp(ws)["files"]
+    assert files["scripts/guard.py"]["kit"] == "kit/scripts/guard.py" and files["scripts/wiki.py"]["version"] == "1.1.0"
+
+
+def test_apply_new_still_takes_one_flag_per_pair(ws):
+    assert run("apply", "scripts/wiki.py", "--new", "kit/scripts/guard.py=scripts/guard.py",
+               "--new", "kit/skills/mail/rules.md=.claude/skills/mail/rules.md") == 0
+    assert (ws / "scripts/guard.py").is_file() and (ws / ".claude/skills/mail/rules.md").is_file()
