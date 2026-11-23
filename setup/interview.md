@@ -156,6 +156,20 @@ deleted.
   open any of those folders: record the paths in `CLAUDE.local.md` and plan the move as the
   first task after the build (section 10).
 
+- **C8** **Other devices.** *Choice, several answers:* where else do you want to read and write
+  your notes (an iPhone, an Android phone, a tablet, a second computer such as a work laptop,
+  nowhere else). "Nowhere else" ends the question. Otherwise read `kit/wiki/obsidian/DEVICES.md`
+  and propose the route it gives for their combination of devices, in three or four lines:
+  what it is, what it costs (say a price as "about", with the month you read it, and that they
+  should check it), how much work it is for someone at their level, and the free alternative
+  with what it asks of them. Be honest when the only route a beginner can manage costs money.
+  Then a *choice:* this route, the alternative, or decide later. Say once what a sync route does
+  and does not do: their notes are on every device and stay in step; the assistant and its
+  routines stay on this computer. A note made on the phone lands in the inbox, and the
+  assistant files it the next time they sit down. Nothing is installed or paid for during the
+  interview: the route is set up after the build, with the user, and only when they want to.
+  Never propose to put the workspace folder itself in a cloud folder (see F1).
+
 Show the final tree and the dashboard sketch as text. Yes, then on.
 
 ### Block D: skills and agents
@@ -283,8 +297,18 @@ machine, undo). Then:
   (recommended), a checks workflow that runs the skills catalogue check and the secret scan on
   every push (recommended), Dependabot for workflow updates. Rulesets and branch protection: explain that on
   a private repo they need a paid plan, so they are optional.
-- **E8** Who commits: the assistant commits only when the user asks, with a short imperative
-  message and a prefix (`Add:`, `Fix:`, `Update:`, `Docs:`). Confirm.
+- **E8** **Who saves the snapshots.** First three plain sentences, whatever the level: a
+  snapshot (git calls it a commit) is a save point of the workspace on this computer that you
+  can go back to; sending (a push) puts a copy of the snapshots on GitHub; nothing is ever sent
+  without a yes. Then one *choice,* without a recommended option, because both are sound and it
+  is about how the user likes to work:
+  - **The assistant saves snapshots itself:** when a piece of work is done and at the end of a
+    session, with one line that says so. It still never sends anything by itself.
+  - **The assistant asks every time** before it saves a snapshot.
+  Messages are short and imperative with a prefix (`Add:`, `Fix:`, `Update:`, `Docs:`) either
+  way. The answer holds from this moment, so also for the rest of the setup: with the first
+  choice you save a snapshot at each stop point and say so in one line; with the second you ask
+  once per session, as section 8 says.
 
 ### Block F: names and personality (last on purpose)
 

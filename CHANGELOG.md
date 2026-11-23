@@ -44,6 +44,15 @@ section in plain words: what it means if you already built a workspace with an e
 - `obsidian_setup.py vaults --count` counts the notes per vault. Without the flag the command
   only lists the vaults, and no longer walks through every folder Obsidian knows.
 
+- The interview asks where else the user wants their notes (a phone, a tablet, a second
+  computer) and proposes a sync route from the new `kit/wiki/obsidian/DEVICES.md`: Obsidian
+  Sync, or Syncthing as the free route for someone technical, with the steps per route. The
+  guide `docs/guide/devices.md` says the same for people. NEST installs nothing for it, and the
+  routes have not been tried on a real phone yet.
+- The interview asks who saves the snapshots: the assistant by itself, when a piece of work is
+  done and at the end of a session, or after a yes every time. The commits rule and the
+  session-end skill come in both variants. A push stays a question in both.
+
 ### 🔧 Changed
 
 - Build step B2.5 installs the plugins and the theme after one yes, where the user used to

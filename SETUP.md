@@ -90,7 +90,9 @@ A folder the user opens with Claude Code every day. When it is done it holds:
 
 **Not part of NEST:** voice, speech, a HUD or side screen, an always-on server, chat bots. Everything
 runs inside the user's own Claude Code sessions. If the user asks for it, note it in
-`_setup/backlog.md` and move on.
+`_setup/backlog.md` and move on. Reading and writing the wiki on a phone or a second computer
+is not on that list: it goes through a sync route the user picks in block C (C8). What stays on
+the first computer is the assistant itself.
 
 The principles that make the original work, and that you keep in every build:
 
@@ -120,13 +122,16 @@ The principles that make the original work, and that you keep in every build:
 - **The fetched docs win.** If `_setup/docs/` says a field is named differently than this file
   does, follow the docs and log the difference.
 - **Ask before you write** outside `_setup/`, before you install anything, before any network
-  action other than reading docs and searching, before any git commit, and before anything on
-  GitHub. One yes covers exactly what you showed, nothing more. Two look-ups need no question
+  action other than reading docs and searching, before any git commit (unless the user chose
+  in E8 that you save snapshots yourself), and before anything on GitHub. One yes covers exactly what you showed, nothing more. Two look-ups need no question
   of their own, because the user answers for them elsewhere: uv fetching Python the first time
   a script runs (tell them in one line), and the check for a newer NEST release (D8). With a no to
   D8.4, skip that check in B1 step 11 and B4 step 6 and note it.
-- **Commits** only after a yes, with an explicit list of files. No `Co-Authored-By` lines and no
-  "Generated with" footers: the commits are the user's. Never `--no-verify`, never force-push.
+- **Commits** follow the user's answer to E8: after a yes each time, or by yourself at the end
+  of a phase with one line that says so. Until E8 is answered, only after a yes. Always the
+  files by name, never everything at once. A push is always its own question. No
+  `Co-Authored-By` lines and no "Generated with" footers: the commits are the user's. Never
+  `--no-verify`, never force-push.
 - **Secrets never pass through the chat.** If the user is about to paste a password, token or key,
   stop them. Keys belong in the service's own login flow, an OS keychain, a password manager, or a
   file outside the workspace that the user creates in an editor. If one is pasted anyway: do not

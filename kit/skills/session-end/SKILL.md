@@ -14,8 +14,8 @@ metadata:
 
 No hook or pipeline does this: this skill is the only way a session gets into the wiki.
 
-**Not for:** trivial sessions (one question, a small fix): say so and stop. Not for committing or
-pushing: that is `/release`, on the user's request.
+**Not for:** trivial sessions (one question, a small fix): say so and stop. Not for pushing:
+that is `/release`, on the user's request.
 
 <!-- customise: output language for wiki pages (the user's language); repo docs language (default English) -->
 Write every wiki page in the user's language and voice; follow `.claude/rules/writing.md`. Files
@@ -97,7 +97,12 @@ Session closed:
 
 ## Behaviour
 
-- No committing and no pushing; the user decides (`/release` for the workspace,
+<!-- customise: the variant from `.claude/rules/commits.md` ("Who saves a snapshot"); keep one line -->
+- Snapshots follow `.claude/rules/commits.md`. When the assistant saves them itself: after the
+  lint, commit the workspace files this skill and this session changed, by name, and add the
+  commit to the report as one line. When the user is asked every time: no commit here; offer one
+  in the last line of the report.
+- Never a push: the user decides (`/release` for the workspace,
   `uv run scripts/wiki_backup.py push` for the wiki).
 - No memory work: Claude Code's own memory handles that.
 - Called again in the same session: update the existing log and decisions and skip the
