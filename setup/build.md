@@ -17,7 +17,8 @@ B1, B2 and B3 run in one session: the hooks you write in B1 are active from that
 the skills from B3 exist as soon as their files do. After each phase offer the user a stop, and
 go on when they want to. A commit follows the answer to E8. When the user chose that you save
 snapshots yourself: commit at the end of each phase without asking, the files of that phase by
-name, and say so in one line ("Snapshot saved: the wiki."). When they chose to be asked: ask
+name (never a whole folder), and say so in one line every time, using one word for it: the
+word the user heard in E8, in their language ("Snapshot saved: the wiki."). When they chose to be asked: ask
 once per session, at its end or when the user stops, as one dialog that says in a plain
 sentence what a commit is ("a snapshot of the workspace you can go back to"); never once per
 phase. A push is always its own question.
@@ -25,10 +26,16 @@ phase. A push is always its own question.
 The user watches most of the build. Keep them posted in their language, one short line per
 step, and in B3 one line per skill or agent as it is finished ("The routine that files your
 notes is ready."): twenty minutes of silence reads as a program that hangs. Save questions for
-what only they can answer. Helper agents are fine for speed, but you stay in the turn while
-they work: never end your message with "I will let you know when it is done" and stop. Nothing
-wakes you up; the user would have to ask. Wait for the helpers, report per finished piece, and
-only then hand the turn back.
+what only they can answer. Helper agents are fine for speed. When you hand the turn back while
+they work, say in one line that you carry on by yourself when they are done, so the user knows
+nothing is asked of them; report per finished piece as it comes in.
+
+**A helper gets the rules of this section in its brief, word for word:** one command per call,
+files changed with the edit tools, nothing written into `.claude/` except under the staging
+folder, and no chain such as `; echo "exit=$?"` or `| head`. A helper does not read this file,
+so a rule you do not hand it does not exist for it. In a trial fourteen of the permission
+questions of one build came from helpers, ten of them from the security reviewer in the final
+check.
 
 **How often Claude Code asks, and the short list for the build.** In its default mode Claude
 Code asks the user before every file it writes and every command it runs. A trial counted 143
@@ -59,7 +66,8 @@ assistant's own settings, and saving a snapshot. Then one dialog: yes, use the s
 Either way: never change the permission mode yourself, and never suggest skipping permissions
 altogether. The copy into `.claude/` and a commit stay questions on purpose.
 
-**Work in plain single commands, or the list does not help.** Claude Code can only wave
+**Work in plain single commands, or the list does not help.** (This holds for the whole setup,
+the interview and the handover included, and for every helper.) Claude Code can only wave
 through a command it can read. A trial with the list in place still had 57 questions, nearly
 all of them made by the way the commands were written. So during the build:
 
@@ -82,9 +90,12 @@ tests in B4 that write a fake key or remove a test file.
 
 1. You are now in the workspace folder (check: the current folder is the path in STATE.md and
    `_setup/nest/SETUP.md` exists; if not, see the end of "The handover" in
-   `setup/interview.md` and build nothing here). The files of steps 5, 7 and 8 go through the
-   staging folder (see the top of this section): one copy into `.claude/` at the end of B1,
-   before the stamp of step 11.
+   `setup/interview.md` and build nothing here). Every file for `.claude/` goes through the
+   staging folder (see the top of this section), in B1 and in every later phase: the rules, the
+   settings, the terms list, and a later change to one of them (a status word added to the wiki
+   rule in B2 is a change in the staging copy, then one copy). One copy into `.claude/` at the
+   end of B1, before the stamp of step 11; the only other write into `.claude/` is the short
+   permission list itself.
 2. `git init -b main` (some systems still start on `master`; the rules and the workflows expect
    `main`), the commit identity from E5 set for this repo (`git config user.name` and
    `user.email` without `--global`), and a `.gitignore` from `kit/github/gitignore.template`:

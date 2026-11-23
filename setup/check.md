@@ -15,6 +15,20 @@ tools is work done twice.
 apply to a setup, ignore it. Create `_setup/` with `STATE.md`, `log.md`, `interview/`,
 `open-questions.md`, `backlog.md`.
 
+**0.1b The setup's own notes, without a question each time.** During the interview you write
+often, and only in one place: the folder `_setup/` (the user's answers, the state, the log).
+In Claude Code's default mode every one of those writes is a permission question; a trial
+counted thirty in one interview. So right after the language is chosen, say in two plain
+sentences that Claude Code asks before it changes a file, and that you would like to write your
+own notes of this setup without asking each time: only in the folder `_setup/`, nothing else.
+Then one dialog: yes, or no, ask me every time. After a yes, write `.claude/settings.local.json`
+in this folder with exactly one rule under `permissions.allow`, `Edit(/_setup/**)`, adding to
+what the file holds and changing nothing else (Claude Code asks once for this write; say so),
+and note in STATE.md under "Open during the setup" the line
+`- [ ] take the interview permission out again (handover)`. Nothing else goes on this list
+during the interview: commands, installs and the network stay questions. With a no, tell them
+that each of those questions offers to allow all edits for the session.
+
 **0.2 What machine, and where the user works.** Detect the OS and version (macOS `sw_vers`,
 Windows `ver`, Linux `/etc/os-release` for the distribution, not only the kernel).
 
