@@ -9,8 +9,8 @@ when to read this one. Read `SETUP.md` first.
 
 Question IDs (A1, B2 ...) are used in the routing table (section 7, `setup/routing.md`), in
 STATE.md and in the interview files. They are your labels: the user never sees one. Ask in this
-order, but skip what is already answered. Appendix A and B are in `setup/catalogue.md`: read it
-before block B ends.
+order, but skip what is already answered. Appendix A, B and C are in `setup/catalogue.md`: read
+it before block B ends.
 
 Each question below says how it is asked: **open** (the user's own words, one per message),
 **choice** (the dialog), or **proposal** (you show what you would do and ask whether it is
@@ -276,6 +276,20 @@ name, or an open question, never a fifth question in one message.
   4. **News about NEST** (recommended yes): one line at the start of a session, at most once a
      week checked online, when NEST has a newer release. Nothing is ever installed on its own;
      the nest-update skill shows what is new and they pick.
+
+- **D9** **Plugins.** *Proposal.* Say in two sentences what a plugin is (a ready-made package
+  from Anthropic or another maker, installed as it is and kept up to date by its maker) and that
+  NEST only offers the ones it read through. Then take the "Fits when" column of Appendix C
+  against the answers so far and propose at most three, in one message: per plugin one line on
+  what it does for them, then what runs on their computer, what leaves it and what it needs,
+  from its card. Then one choice dialog, one question per proposed plugin, recommended yes or
+  no; "show me the others" is the last option of the last question and lists the rest of
+  Appendix C the same way. No fit at all: say that in one line and ask nothing. For a beginner,
+  name the plugin only after the choice. A plugin that needs something new on the computer
+  (Node for claude-hud or session-report, Python with packages for ppt-master) says so in its
+  line; installing that is its own yes in B3 step 6. A plugin the user asks for that is not in
+  Appendix C goes to `_setup/backlog.md` (Appendix C, "Only these"). With the obsidian plugin
+  chosen, say that it replaces the two Obsidian skills NEST would otherwise copy.
 
 ### Block E: GitHub and tooling
 

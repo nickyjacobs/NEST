@@ -1,4 +1,4 @@
-# NEST setup: pain points and the skill catalogue
+# NEST setup: pain points, the skill catalogue and the plugin catalogue
 
 Part of the NEST setup prompt. `SETUP.md`, one folder up, holds the rules for every part and says
 when to read this one. Read `SETUP.md` first.
@@ -61,3 +61,103 @@ runs it after a yes; **A** = the assistant may just do it.
 
 The `nest-update` skill and the `security-reviewer` agent are always included; the `researcher`
 agent comes with research.
+
+---
+
+## Appendix C: the plugin catalogue
+
+A plugin is a package for Claude Code made by someone else: skills, commands, sometimes hooks,
+scripts or a server that come along with it. Unlike the skills in Appendix B, NEST does not
+write or adapt a plugin: it is installed as its maker ships it and updated from its maker's
+repository. A plugin can run programs on the user's computer, so NEST proposes only the ones
+below. Each was read through by NEST (the manifest, the hooks, the servers, the scripts) on the
+date in its card.
+
+Rules for every plugin:
+
+- **Only these.** A plugin the user names that is not in this appendix goes to
+  `_setup/backlog.md`, with one line: NEST has not read it through, so it is not part of the
+  setup. Being popular is not a review.
+- **Propose by fit, never the whole list.** Each card says when it fits. Propose at most three,
+  the ones that answer a pain point from block B or an app from A7, with your recommendation.
+- **The card is the yes.** Before the yes, say in the user's words what the plugin does, what
+  runs on their computer, what leaves it, and what it needs. A yes covers that card, nothing more.
+- **Check before install.** B3 step 6 compares the card with the source at install time. A plugin
+  that now brings a hook, a server or a script its card does not name is not installed: say so,
+  and it becomes an open item.
+- **Project scope.** Plugins are enabled in the workspace's `.claude/settings.json`, so they
+  belong to the workspace and its backup. The marketplace itself is recorded in the user's own
+  Claude Code settings; say so once.
+- **Updates.** Plugins from `claude-plugins-official` update themselves (Claude Code's default
+  for Anthropic's marketplace). The others stay at the version that was installed until the user
+  updates them; never turn on auto-update for a marketplace that is not Anthropic's.
+
+| Plugin | What it does for the user | Fits when |
+|---|---|---|
+| obsidian | Takes the place of the two Obsidian skills NEST would copy: the same skills, kept up to date by Obsidian itself, plus reading web pages as clean notes and working with the open Obsidian app | the wiki skills were chosen (D1); recommend yes, it is not a second copy |
+| skill-creator | Tests a skill and sharpens when it starts, next to the skill builder | skill-builder was chosen |
+| session-report | A page that shows where their usage went: which sessions and requests cost the most | they run into usage limits, or want to know what a session costs |
+| claude-hud | A line under the chat that always shows how full the conversation is and how much of their usage is left | they run into limits, lose track in long conversations, or are new to Claude Code |
+| diagram-design | Diagrams (a process, a timeline, a map of ideas) as a page or an image | they explain plans, processes or projects to others, or think in pictures |
+| playground | A small interactive page: buttons and a live preview to try choices, then a prompt to copy back | they decide by seeing options (a design, a concept map, a document to review) |
+| ppt-master | Real PowerPoint files that stay editable, from a document or a topic | presentations are part of their work or study |
+| frontend-design | A clear visual direction for any page Claude makes, instead of a template look | they asked for diagram-design or playground, or Claude makes pages for them |
+
+### The cards
+
+Each card: how it is installed (`<plugin>@<marketplace>`, and the marketplace source), what runs,
+what leaves the machine, what it needs. Read through on 2026-11-24.
+
+**obsidian** · `obsidian@obsidian-skills`, marketplace `obsidianmd/obsidian-skills#1.2.1`
+(Obsidian's own repository, MIT). Runs: skills only; no hooks, no server, no scripts. Chosen, it
+replaces the copies of `obsidian-markdown` and `obsidian-bases` (B3 step 1 skips them), so the
+user gets one set that Obsidian keeps up to date instead of a copy that stays as it was. Plus
+`obsidian-cli` (uses the command line built into the Obsidian app, which the user turns on in
+Obsidian), `defuddle` (reads a web page as clean Markdown; needs the `defuddle` program, installed
+with npm only after its own yes) and `json-canvas`. Leaves the machine: nothing, except the web
+pages `defuddle` is asked to read. Needs: nothing for the core; Node for `defuddle`.
+
+**skill-creator** · `skill-creator@claude-plugins-official` (Anthropic). Runs: a skill with
+Python scripts that run test prompts through Claude Code (`claude -p`); no hooks, no server. Leaves the
+machine: only the test prompts, as any Claude Code request; a test run uses part of the
+user's usage, so say so. Needs: Python (uv provides it).
+
+**session-report** · `session-report@claude-plugins-official` (Anthropic). Runs: one local Node
+script that reads the user's own Claude Code transcripts on this computer and writes an HTML
+report; no hooks, no server. Leaves the machine: nothing. Needs: Node.
+
+**claude-hud** · `claude-hud@claude-hud`, marketplace `jarrodwatts/claude-hud#v0.15.0` (MIT).
+Runs: a status line program in a locked-down Node process with no network access; no hooks, no
+server. Its `/hud` command sets Claude Code's status line in the user's own settings, after
+asking: the line then shows in every Claude Code project on this computer, not only this
+workspace. Say that before the yes; an existing status line is only replaced after a second
+yes. Leaves the machine: nothing. Needs: Node 22.18 or newer.
+
+**diagram-design** · `diagram-design@diagram-design`, marketplace `cathrynlavery/diagram-design`
+(MIT). Has no release tags, so it is installed at the version of that day and stays there.
+Runs: a skill with small local scripts; no hooks, no server, no telemetry (its `PRIVACY.md`).
+Leaves the machine: a diagram loads its fonts from Google Fonts when it is opened. Needs:
+nothing for a diagram as a page (an HTML file) or an SVG; a PNG image needs Playwright for
+Python and a Chromium browser, installed only after their own yes.
+
+**playground** · `playground@claude-plugins-official` (Anthropic). Runs: a skill only. Leaves the
+machine: nothing. Needs: a browser to open the page.
+
+**ppt-master** · `ppt-master@ppt-master`, marketplace `hugohe3/ppt-master#v6.10.0` (MIT). The
+marketplace points at the plugin's own repository without a fixed version, so the install takes
+the version of that day. Runs: a skill with Python scripts; no hooks, no server. At every start
+it runs a local integrity check (`attribution_guard.py`) that stops when a file of the skill was
+changed, so its files are never edited. Needs: the `python3` command itself (`python` on
+Windows) at version 3.10 to 3.14, because the skill calls that command. A second Python next to
+it (from uv or elsewhere) does not help: when `python3` is another version, ppt-master is an open
+item, and the user's default Python is never changed for it. With a fitting `python3`, four
+packages for the core (`python-pptx`, `XlsxWriter`, `skia-pathops`, `uharfbuzz`), installed with
+pip after their own yes; the other packages in its `requirements.txt` belong to one feature each
+and are installed only when the user asks for that feature. Leaves the machine: images it
+fetches from openly licensed sources when a slide needs one; slide notes read aloud go to
+Microsoft's online speech service (`edge-tts`), so say that before narration is used; generated
+images only with an image service key the user sets up themselves. Propose it only when
+presentations are a real part of their work or study.
+
+**frontend-design** · `frontend-design@claude-plugins-official` (Anthropic). Runs: nothing; it is
+one skill file with design guidance. Leaves the machine: nothing. Needs: nothing.

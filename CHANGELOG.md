@@ -18,6 +18,34 @@ section in plain words: what it means if you already built a workspace with an e
 
 ## [Unreleased]
 
+### 🏠 For your workspace
+
+- New setups can now add a few plugins: ready-made packages for Claude Code from Anthropic and
+  other makers, such as a line under the chat that shows how much of your usage is left, or
+  diagrams and real PowerPoint files. NEST read each of them through first. A workspace that
+  exists does not get them by itself, and the update does not install them. The list, with
+  what each plugin runs on your computer and what it sends out, is in Appendix C of
+  `setup/catalogue.md` in NEST.
+
+### ✨ Added
+
+- Appendix C in `setup/catalogue.md`: the plugin catalogue. Eight plugins, each with a card that
+  says how it is installed, what runs, what leaves the computer and what it needs: obsidian,
+  skill-creator, session-report, claude-hud, diagram-design, playground, ppt-master and
+  frontend-design.
+- Interview question D9 proposes at most three plugins that fit the answers so far. The build
+  (B3 step 6) checks each card against the source before it installs, installs in the project
+  scope, and the tests in B4 try each plugin once.
+- With the obsidian plugin chosen, the setup no longer copies `obsidian-markdown` and
+  `obsidian-bases`: the plugin brings both and Obsidian keeps them up to date.
+- The release steps read every plugin card again before a release.
+
+### 🔒 Security
+
+- The setup never reads your own Claude Code settings file (`~/.claude/settings.json`), which
+  can hold keys. A trial run of the plugin step tried to, to see whether an install had worked;
+  it now checks only the workspace's own settings.
+
 ---
 
 ## [1.2.0] - 2026-11-23

@@ -258,7 +258,8 @@ tests in B4 that write a fake key or remove a test file.
    don't copy: paths and section names from `wiki.config.json`, labels in the user's language,
    their apps from A7, every `<!-- customise: ... -->` resolved and removed. The exception:
    `obsidian-markdown` and `obsidian-bases` come from Obsidian's own repository; copy those two
-   folders as they are, with their `NOTICE.md` (the licence asks for it), and change nothing. For verdict and blueprint
+   folders as they are, with their `NOTICE.md` (the licence asks for it), and change nothing.
+   With the obsidian plugin chosen in D9, do not copy them at all: the plugin brings both. For verdict and blueprint
    take `SKILL.md` with `formats.md` (full) or `SKILL.light.md` renamed to `SKILL.md` with
    `formats.light.md` kept under its own name (light; the skill refers to it), plus the other
    supporting files in the folder (`reference.md`, `run-files.md`). Leave out the files of the
@@ -288,7 +289,40 @@ tests in B4 that write a fake key or remove a test file.
    also fails on a `customise:` or `<fill in` marker left in a skill or agent).
 5. `uv run --script scripts/nest_update.py stamp` again, so the skills and agents are in the
    stamp (check: `nest.json` lists a file under `.claude/skills/nest-update/`).
-6. Stop point: STATE.md `next: B3b` (or `next: B4` without integrations to connect now), the
+6. **Plugins chosen in D9**, one at a time, with its card from Appendix C open. Say first, in
+   one line, that this downloads the plugins the user chose.
+   1. **What it needs.** `node --version` (22.18 or newer for claude-hud, any for
+      session-report), `python3 --version` (3.10 to 3.14 for ppt-master; `python --version` on
+      Windows). Node missing or too old: offer the install the way Phase 0.2 installs a tool,
+      after a yes. `python3` at another version: ppt-master becomes an open item; do not offer a
+      second Python, which the plugin would not use, and never change the user's default one.
+      Without what it needs, the plugin is not installed and becomes an open item.
+   2. **Check the card.** Read the plugin's manifest and, where they exist, its hooks file and
+      `.mcp.json` from the source at the version you will install (the maker's repository on
+      GitHub; for `claude-plugins-official` the folder `plugins/<name>/` there). When it brings
+      a hook, a server or a script the card does not name, do not install it: tell the user
+      what changed, and it becomes an open item.
+   3. **Install** in the project scope, one command per call:
+      `claude plugin install <name> --marketplace <source> --scope project`, with `<source>` from
+      the card (`anthropics/claude-plugins-official` for Anthropic's plugins, the
+      `owner/repo#tag` given otherwise). An older Claude Code that does not know `--marketplace`:
+      `claude plugin marketplace add <source>` first, then
+      `claude plugin install <name>@<marketplace> --scope project`. Check: the exit status is 0
+      and `enabledPlugins` in the workspace's `.claude/settings.json` lists `<name>@<marketplace>`
+      as `true`. Check only that file: never read the user's own Claude Code settings
+      (`~/.claude/settings.json`), which can hold keys. When Claude Code refuses the command,
+      the same lines are for the user to run in a terminal in the workspace folder (in VS Code:
+      Terminal, New Terminal); then check that file again, and believe the file, not the report.
+   4. **What a card adds.** ppt-master: its four core packages with
+      `python3 -m pip install --user python-pptx XlsxWriter skia-pathops uharfbuzz`, after
+      their own yes. When pip refuses because the system manages that Python, never force it
+      (no `--break-system-packages`): it becomes an open item with the link to the maker's
+      install notes. claude-hud: its setup (`/hud`) runs in the test session, after the yes
+      from its card, because the plugin loads when a session starts. The obsidian plugin's
+      `defuddle` program is installed only when the user first asks to read a web page.
+   5. In `CLAUDE.md`, under the skills list, one line per plugin: what it is for, and that its
+      maker keeps it up to date.
+7. Stop point: STATE.md `next: B3b` (or `next: B4` without integrations to connect now), the
    commit question for this session, and a new session for what comes next: the tests run in a
    session that starts the way every later one will, with the workspace's own `CLAUDE.md`,
    rules, skills and hooks loaded from the start.
@@ -371,7 +405,10 @@ the wiki log.
    its test is that `uv run --script scripts/skills_catalog.py --check --installed` passes and
    that every file and section its `SKILL.md` names exists. Never ask the user to type a list
    of commands for you. An integration skill that is not connected yet: its test is that it says
-   so in one line and invents nothing.
+   so in one line and invents nothing. **Each installed plugin:** `claude plugin list` shows it
+   enabled in the project scope, and one natural request uses it (a diagram of the user's week, a
+   playground for a choice they named, a usage report). claude-hud: run its setup after the yes
+   from its card; the test is that the line shows under the chat.
 6. **Updates:** `uv run --script scripts/nest_update.py plan` says the workspace is up to date (or
    that it could not reach the source, which is an open item, not a failure).
 7. **Leftovers:** search the workspace for `customise:`, `<fill in` and `TODO` outside `_setup/`

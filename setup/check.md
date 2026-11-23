@@ -74,6 +74,7 @@ summarising tool, so the exact field names survive:
 - `https://code.claude.com/docs/en/hooks`
 - `https://code.claude.com/docs/en/settings` (permissions, `claudeMdExcludes`)
 - `https://code.claude.com/docs/en/mcp`
+- `https://code.claude.com/docs/en/discover-plugins` (install scopes, `--marketplace`, updates)
 - with `surface: vscode`: `https://code.claude.com/docs/en/vs-code` (how a conversation is
   started and resumed in the panel, and what the panel does not have)
 

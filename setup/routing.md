@@ -33,6 +33,7 @@ open question.
 | D6 | `.claude/settings.json` (`permissions`). The short list for the build is something else: it lives in `.claude/settings.local.json` from before B1 until the wrap-up, after its own yes |
 | D7 | `_setup/interview/C.md`, then `wiki.config.json` and the tree in B2 |
 | D8 | the `lesson` and `plan` hooks in `.claude/settings.json`; `morning_nudge` and `nest.update_check` in `nest.json`; a line in `CLAUDE.md` that lessons go into `.claude/lessons.json` |
+| D9 | `_setup/interview/D.md` (the cards the user said yes to); `enabledPlugins` in `.claude/settings.json` through the install in B3 step 6; the plugins line in `CLAUDE.md`; with the obsidian plugin, no copy of `obsidian-markdown` and `obsidian-bases` in B3; a plugin that failed its check or install, or whose needs are missing, under "Open" in STATE.md and in `docs/next-session.md`; a plugin outside Appendix C in `_setup/backlog.md` |
 | team names and sizes (D2) | `teams:` in STATE.md; every skill, agent and wiki page that names the teams |
 | E1 to E7 | `nest.json` (backup git dir, next to the stamp from B1), `.github/`, `.githooks/`, README, `.gitignore`, repo settings, `.claude/rules/commits.md` |
 | E8 | the "Who saves a snapshot" part of `.claude/rules/commits.md` and the closing step of the session-end skill, each in the variant the user chose; a line in the "When you act on your own" section of `CLAUDE.md` |
