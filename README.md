@@ -195,12 +195,12 @@ More questions: [docs/guide/faq.md](docs/guide/faq.md).
 ## Roadmap
 
 <p align="center">
-  <a href="ROADMAP.md"><img src="assets/roadmap.png" alt="NEST roadmap. Now: your assistant from your phone, a board on your Home page, what your assistant remembers is yours. Next: capture on the go, tried on Windows by a person. Later: upkeep that runs by itself, no plugin homework." width="100%"></a>
+  <a href="ROADMAP.md"><img src="assets/roadmap.png" alt="NEST roadmap. Now: plugins that fit you, bring your old notes with you, your assistant from your phone. Next: a command board on Home, ready in one sitting, what your assistant remembers is yours. Later: upkeep that runs by itself, your workspace on two computers." width="100%"></a>
 </p>
 
-The next releases work on three things: your assistant from your phone, a board for your
-projects and ideas on your Home page, and a place in your own workspace for what your
-assistant remembers. What comes after that: [ROADMAP.md](ROADMAP.md).
+The next releases work on three things: plugins for Claude Code that fit you, bringing the
+notes you already have into your wiki, and your assistant from your phone. What comes after
+that: [ROADMAP.md](ROADMAP.md).
 
 ## Documentation
 

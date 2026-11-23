@@ -130,6 +130,12 @@ section in plain words: what it means if you already built a workspace with an e
   longer shown to the user, a proposal is always in a visible message before the dialog that
   asks about it, and a later session reads the user's language before its first word.
 
+- The roadmap, after the first run by a real user. Shipped and off the list: the plugins the
+  setup installs itself, a run on Windows by a person, and notes from your phone into your
+  inbox. New under Now: plugins for Claude Code that fit you, and bringing your old notes in.
+  The board on Home became a command board and moved to Next, with a shorter route through the
+  setup. New under Later: your workspace on two computers.
+
 ### 🐛 Fixed
 
 - Plugin settings the setup wrote were lost for every user: installing a plugin from inside
