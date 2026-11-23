@@ -71,6 +71,16 @@ for users is in the [roadmap](../../ROADMAP.md).
     a session state file edited by hand is shown without the secret and term rules applied
     again.
 
+## Devices
+
+- The sync routes in `kit/wiki/obsidian/DEVICES.md` come from Obsidian's documentation and from
+  research in November 2026. Nobody has set one up on a real phone with a NEST wiki yet: how Home
+  looks on a narrow screen, whether the Meta Bind buttons work on mobile, and what Obsidian Sync
+  does with the plugin settings are untried.
+- Routes that need the vault inside a cloud folder (iCloud Drive, OneDrive, Dropbox, Google
+  Drive) are not offered: the wiki would have to live outside the workspace, and the scanner and
+  the plugin installer now refuse a wiki folder that is a link or lies outside the workspace.
+
 ## Idea pages
 
 - With only one of the two teams installed, an idea page still shows the empty section and

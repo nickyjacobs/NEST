@@ -26,6 +26,7 @@ open question.
 | C5 | the palette, with its colour codes, in `_setup/interview/C.md` (the user chose it from `_setup/preview/palette.html`); then `wiki/.obsidian/snippets/base.css` tokens, `appearance.json`, Notebook Navigator colours |
 | C6 | `wiki/.obsidian/` settings (`community-plugins.json`, the enabled snippets in `appearance.json`); what `obsidian_setup.py install` downloads in B2 |
 | C7 | `CLAUDE.local.md` (where the old notes are, as paths); the first of the first tasks in the wrap-up. The old vault itself is never opened or touched during the setup |
+| C8 | the devices and the chosen sync route on the "apps and tools" context page; an open item in `docs/next-session.md` with the steps from `kit/wiki/obsidian/DEVICES.md` when the route is not set up during the build; never a file inside `.obsidian/` |
 | D1 to D3 | `.claude/skills/`, `.claude/agents/`, the skills list in `CLAUDE.md`, `docs/skills.md`; the course list in the study-inbox skill |
 | D4 | the integration skill files, `tool-map.md`, `.claude/settings.json` permissions, `mail-folders.md` in the workspace root (gitignored), the blocks in the morning-briefing skill; failed or postponed routes in STATE.md "Open" |
 | D5 | `disable-model-invocation` per skill; the "When you act on your own" section of `CLAUDE.md` |
@@ -33,7 +34,8 @@ open question.
 | D7 | `_setup/interview/C.md`, then `wiki.config.json` and the tree in B2 |
 | D8 | the `lesson` and `plan` hooks in `.claude/settings.json`; `morning_nudge` and `nest.update_check` in `nest.json`; a line in `CLAUDE.md` that lessons go into `.claude/lessons.json` |
 | team names and sizes (D2) | `teams:` in STATE.md; every skill, agent and wiki page that names the teams |
-| E1 to E8 | `nest.json` (backup git dir, next to the stamp from B1), `.github/`, `.githooks/`, README, `.gitignore`, repo settings, `.claude/rules/commits.md` |
+| E1 to E7 | `nest.json` (backup git dir, next to the stamp from B1), `.github/`, `.githooks/`, README, `.gitignore`, repo settings, `.claude/rules/commits.md` |
+| E8 | the "Who saves a snapshot" part of `.claude/rules/commits.md` and the closing step of the session-end skill, each in the variant the user chose; a line in the "When you act on your own" section of `CLAUDE.md` |
 | F1 | the workspace path in STATE.md |
 | F2, F3 | `CLAUDE.md` title and first lines, README title and tagline, `assistant:` in STATE.md |
 | skipped questions | `_setup/open-questions.md`, later `wiki/<context>/open-questions.md` |

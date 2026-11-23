@@ -15,9 +15,12 @@ If a check fails, fix the cause; never tick around it.
 
 B1, B2 and B3 run in one session: the hooks you write in B1 are active from that moment, and
 the skills from B3 exist as soon as their files do. After each phase offer the user a stop, and
-go on when they want to. Ask about a commit once per session, at its end or when the user
-stops, as one dialog that says in a plain sentence what a commit is ("a snapshot of the
-workspace you can go back to"); never once per phase.
+go on when they want to. A commit follows the answer to E8. When the user chose that you save
+snapshots yourself: commit at the end of each phase without asking, the files of that phase by
+name, and say so in one line ("Snapshot saved: the wiki."). When they chose to be asked: ask
+once per session, at its end or when the user stops, as one dialog that says in a plain
+sentence what a commit is ("a snapshot of the workspace you can go back to"); never once per
+phase. A push is always its own question.
 
 The user watches most of the build. Keep them posted in their language, one short line per
 step, and in B3 one line per skill or agent as it is finished ("The routine that files your
@@ -222,12 +225,17 @@ tests in B4 that write a fake key or remove a test file.
    5. **Check which folder Obsidian opened:** `uv run --script scripts/obsidian_setup.py vaults`
       must list the wiki folder itself, not the workspace folder above it. When it lists the
       folder above, follow "The wiki folder is not in the list?" in `PLUGINS.md`.
-   The user may postpone opening Obsidian and step 7: record both as open items, carry on with
-   B3, and mention them at most once per session. They never block B3 or B4.
+   The user may postpone opening Obsidian and steps 7 and 8: record them as open items, carry
+   on with B3, and mention them at most once per session. They never block B3 or B4.
 6. `uv run scripts/wiki.py log migrate "Wiki created by NEST"`, then `reindex`, then `lint`
    (check: lint reports zero errors; a search of `wiki/` for `customise:` and `<fill in` finds
    nothing).
-7. Ask the user to look at Home in Obsidian and say what looks wrong; this is the one thing in
+7. With a sync route from C8: offer, with the dialog, to set it up now or leave it as an open
+   item. Now means you give the steps from `kit/wiki/obsidian/DEVICES.md` for their route one
+   at a time, in their language, and they do them: signing in, paying and installing an app on
+   a phone are theirs. You change no file for it. Later means one open item with those steps in
+   `docs/next-session.md`. Either way it never blocks B3.
+8. Ask the user to look at Home in Obsidian and say what looks wrong; this is the one thing in
    the build only their eyes can check. Give them what to look for: buttons in the tiles, a
    colour per section in the sidebar, their own section names. Fix, lint again.
 
