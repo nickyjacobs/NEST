@@ -12,7 +12,7 @@ they reach you, and why they cannot break what you made.
 When a newer release is out, the first line of a session says so:
 
 ```
-Workspace: wiki inbox 3 notes, NEST 1.2.0 is available (this workspace is on 1.1.0)
+Workspace: wiki inbox 3 notes, NEST 1.3.0 is available (this workspace is on 1.2.0)
 ```
 
 Your workspace looks online at most once a week. Nothing is ever installed on its own.

@@ -10,12 +10,46 @@ section in plain words: what it means if you already built a workspace with an e
 
 | Release | Date | In short |
 |---|---|---|
+| [1.2.0](#120---2026-11-23) | 2026-11-23 | Made for the person who never opened a terminal: a guide with a picture of every click, questions you answer by clicking, a setup that builds and tests by itself, installs your Obsidian plugins, and asks far less. |
 | [1.1.0](#110---2026-11-22) | 2026-11-22 | Everything an audit of 1.0.0 found, fixed and tested: safer updates and undo, a secret scan that sees more, guards that hold, a setup that resumes where you stopped, and a roadmap. |
 | [1.0.0](#100---2026-11-22) | 2026-11-22 | The first release: an interview that builds your own Claude Code workspace, and a way to keep it up to date afterwards. |
 
 <sub>Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versions: [Semantic Versioning](https://semver.org/) · How a release is made: [docs/project/releasing.md](docs/project/releasing.md)</sub>
 
 ## [Unreleased]
+
+---
+
+## [1.2.0] - 2026-11-23
+
+> **In short:** Made for the person who never opened a terminal: a guide with a picture of every click, questions you answer by clicking, a setup that builds and tests by itself, installs your Obsidian plugins, and asks far less.
+
+### 🏠 For your workspace
+
+Nothing breaks: everything you have keeps working. What you will notice after `/nest-update`:
+
+- The Council's skill has a new name: `verdict`. Its command becomes `/verdict`. Nothing of yours
+  is removed. If the first list says "idea was dropped" and "verdict is new", do not take idea out
+  and do not add verdict: taking idea out now would remove your Council skill as you made it. Say
+  yes to "the update tool updates itself first". After that you get one question: the new name,
+  or keep `/idea`. Either way your own version stays.
+- Obsidian plugins: your workspace can now install the plugins and the theme itself. If the
+  buttons on your Home page show as text or your sidebar lost its colours, the settings were set
+  aside when you installed the plugins by hand; the update offers to put them back. You do not
+  have to do anything if your wiki looks as it should.
+- Headings in a different colour per level: switch off "Colorful headings" in Obsidian under
+  Settings, Minimal Theme Settings. A workspace that exists does not get this by itself.
+- The secret scan no longer reports your own name when it is only part of the path of your home
+  folder.
+- The line about a second open session no longer appears for the session you just closed.
+- Only if your workspace is on GitHub with the automatic checks: take the new check file
+  together with the new secret scan. Your assistant does this for you; if you have no GitHub
+  checks, skip this line.
+- Saving a snapshot (a saved state of your files you can go back to): your assistant can now do
+  that itself when a piece of work is done. Nothing changes until you choose that; it keeps
+  asking as it does today.
+- Using your notes on a phone or a second computer: there is a guide for that; ask your
+  assistant for "the devices guide".
 
 ### ✨ Added
 
@@ -573,6 +607,7 @@ Nothing breaks: everything you have keeps working. What you will notice after `/
   scoring, the idea page builder, the writing-style check and the wiki backup, tested on macOS,
   Linux and Windows.
 
-[Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/nickyjacobs/NEST/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/nickyjacobs/NEST/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/nickyjacobs/NEST/releases/tag/v1.0.0
