@@ -10,12 +10,316 @@ section in plain words: what it means if you already built a workspace with an e
 
 | Release | Date | In short |
 |---|---|---|
+| [1.2.0](#120---2026-11-23) | 2026-11-23 | Made for the person who never opened a terminal: a guide with a picture of every click, questions you answer by clicking, a setup that builds and tests by itself, installs your Obsidian plugins, and asks far less. |
 | [1.1.0](#110---2026-11-22) | 2026-11-22 | Everything an audit of 1.0.0 found, fixed and tested: safer updates and undo, a secret scan that sees more, guards that hold, a setup that resumes where you stopped, and a roadmap. |
 | [1.0.0](#100---2026-11-22) | 2026-11-22 | The first release: an interview that builds your own Claude Code workspace, and a way to keep it up to date afterwards. |
 
 <sub>Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versions: [Semantic Versioning](https://semver.org/) · How a release is made: [docs/project/releasing.md](docs/project/releasing.md)</sub>
 
 ## [Unreleased]
+
+---
+
+## [1.2.0] - 2026-11-23
+
+> **In short:** Made for the person who never opened a terminal: a guide with a picture of every click, questions you answer by clicking, a setup that builds and tests by itself, installs your Obsidian plugins, and asks far less.
+
+### 🏠 For your workspace
+
+Nothing breaks: everything you have keeps working. What you will notice after `/nest-update`:
+
+- The Council's skill has a new name: `verdict`. Its command becomes `/verdict`. Nothing of yours
+  is removed. If the first list says "idea was dropped" and "verdict is new", do not take idea out
+  and do not add verdict: taking idea out now would remove your Council skill as you made it. Say
+  yes to "the update tool updates itself first". After that you get one question: the new name,
+  or keep `/idea`. Either way your own version stays.
+- Obsidian plugins: your workspace can now install the plugins and the theme itself. If the
+  buttons on your Home page show as text or your sidebar lost its colours, the settings were set
+  aside when you installed the plugins by hand; the update offers to put them back. You do not
+  have to do anything if your wiki looks as it should.
+- Headings in a different colour per level: switch off "Colorful headings" in Obsidian under
+  Settings, Minimal Theme Settings. A workspace that exists does not get this by itself.
+- The secret scan no longer reports your own name when it is only part of the path of your home
+  folder.
+- The line about a second open session no longer appears for the session you just closed.
+- Only if your workspace is on GitHub with the automatic checks: take the new check file
+  together with the new secret scan. Your assistant does this for you; if you have no GitHub
+  checks, skip this line.
+- Saving a snapshot (a saved state of your files you can go back to): your assistant can now do
+  that itself when a piece of work is done. Nothing changes until you choose that; it keeps
+  asking as it does today.
+- Using your notes on a phone or a second computer: there is a guide for that; ask your
+  assistant for "the devices guide".
+
+### ✨ Added
+
+- `kit/scripts/obsidian_setup.py` installs the Obsidian plugins and the theme a vault asks for,
+  from each project's own GitHub release at the versions in `kit/scripts/obsidian.lock.json`,
+  with a checksum on every file. It refuses to write under a vault that is open in Obsidian or
+  may be, leaves installed plugins and every settings file alone, refuses a folder that holds
+  another plugin or that is reached through a link, never reads or writes through a link or
+  anything that is not a plain file, names a settings file it cannot use, and reports each
+  plugin on its own: one that fails does not stop the others. It has `status`, `restore` (moves
+  a `data.json.bak` back into place once, for the plugins in the lock file, and keeps the file
+  it replaces) and `vaults` (the vaults Obsidian knows on this computer).
+- `tools/obsidian_lock.py` writes that lock file from upstream, and `--check` says when a
+  plugin has a newer version, when a file changed under the same version, when a name or a
+  repository in the lock file differs, or when the list of plugins changed. The release steps
+  ask for that check.
+- `validate.py --changed` scans the files git reports as changed or untracked under the
+  workspace folder, and those of the wiki's own backup repository when `nest.json` names one.
+  The names come from git, so none has to be typed, and a last line says how many files were
+  scanned. It calls nothing clean after a `git status` that failed or did not answer, or when
+  the backup `nest.json` names cannot be used (missing, not a repository, a wiki folder outside
+  the workspace): each is named and the exit status is 3.
+
+- `kit/wiki/palette-preview.html`: the setup fills it with two or three palettes and opens it in
+  the browser, so the user picks colours by eye and never from colour codes.
+- `obsidian_setup.py vaults --count` counts the notes per vault. Without the flag the command
+  only lists the vaults, and no longer walks through every folder Obsidian knows.
+- The updater knows what a rename is. `RENAMES` in `kit/scripts/nest_update.py` maps an old kit
+  path to its new one, a folder or a file, one line per rename. `plan` reports a renamed part
+  this workspace has as one `rename` item (the recorded files and where they go, the user's own
+  files in the folder, what the part gained, and any place that is already taken) where it used
+  to report "removed" plus "new". The new command `rename` backs up every file of the part and
+  moves it as it is, and re-records it against the kit file under its new name with the hash
+  it was made from, so the next plan lists what NEST changed as an ordinary replace or merge.
+  In a skill it changes one line, the `name:` in `SKILL.md`, to the new folder name, so the
+  skills catalogue is valid at every moment. A file is moved by renaming it, never by copying
+  and deleting, and the stamp is saved after every file (`renaming` in `nest.json` marks a
+  rename that was begun): a run that stops at a file another program holds, or is killed
+  between two moves, leaves every file in one place, the plan keeps showing the rename until
+  the old folder holds nothing of the part, and the same command carries on. A file at the new
+  place that this rename did not put there blocks it before anything moves; the same file at
+  both places does not. Folders the rename emptied are removed, and symbolic links in the old
+  folder are named as left in place.
+  `diff` compares a renamed kit file across its two names. `decline` on a rename moves nothing
+  and re-records the files against the new kit paths, so the offer does not return and later
+  changes still arrive under the old name; it is refused for a rename that is half done. Both
+  clear what was declined under either name, so a "no" given to an updater from before the
+  table does not hide what NEST changed in the part. `restore` puts the old folder back and
+  takes the new one away, empty folders included; files the user changed in the new folder
+  after the update stay there and are named. A workspace that never had the part hears
+  nothing about it, and neither does one that has it under a folder name of its own (a
+  translated name, a rename it declined before): there the files just follow the kit file's
+  new name. `stamp` takes a folder under a part's old name for the kit's only when at least
+  one file in it is still the kit file, so a skill of the user's own that happens to be called
+  `idea` is left alone.
+- The updater never writes a renamed part's new name into a workspace that has the part under
+  another name (the old name was kept, the rename is still to be done, or the folder has a
+  name of the user's own). A kit file whose new version says the new name where the old one
+  said the old name (the last parts of the two paths in `RENAMES`, as whole words, per changed
+  block of lines: a `name: idea` that became `name: verdict`, a path `../idea/reference.md`
+  that became `../verdict/reference.md`) is a `merge` with `name_kept` in the plan, also when
+  the file is an untouched copy, and `apply` refuses it and says why. After `rename` the same
+  file is an ordinary `replace`. Scripts are exempt: they read both names.
+- `rename` changes the `name:` line of a moved `SKILL.md` only when it holds exactly the old
+  folder name, and keeps quotes, spacing and a trailing comment. A name of the user's own, an
+  empty or a missing `name:` is left alone, and the command says so.
+- A `rename` that stops before one file was moved is not begun: the marker is cleared, the
+  plan shows the ordinary offer again and `decline` works. The text form of `plan` says when
+  a rename is begun and not finished.
+
+- The interview asks where else the user wants their notes (a phone, a tablet, a second
+  computer) and proposes a sync route from the new `kit/wiki/obsidian/DEVICES.md`: Obsidian
+  Sync, or Syncthing as the free route for someone technical, with the steps per route. The
+  guide `docs/guide/devices.md` says the same for people. NEST installs nothing for it, and the
+  routes have not been tried on a real phone yet.
+- The interview asks who saves the snapshots: the assistant by itself, when a piece of work is
+  done and at the end of a session, or after a yes every time. The commits rule and the
+  session-end skill come in both variants. A push stays a question in both.
+- `docs/guide/getting-started.md`: from nothing to the first sentence, for people who have
+  never opened a terminal, with a picture of every click: VS Code, the Claude Code extension,
+  Obsidian, the release as a zip, opening and trusting the folder, and starting the setup. The
+  README names it as the first route. The pictures are real screenshots with numbered marks
+  (`assets/start/`, drawn by `assets/start/src/compose.py`).
+
+- The updater recognises files of a renamed part that were taken out earlier in the same
+  update. The 1.1.0 updater has no rename table and lists such a part as "no longer in NEST",
+  and its `retire` moves the files into the update's history and drops their records. `plan`
+  now reads those records from the update's own copies of the stamp, in every part of the
+  update in progress (also a part that `finish` with open points or a pause of more than
+  twelve hours closed, the parts `restore` takes together), and shows one `rename` item with
+  `taken`; `rename` and `decline` bring the files back from the update's `files/` with their
+  records before they do their own work, so the result equals a run in which nothing was taken
+  out, and `restore` still returns the starting state. `restore --run` on a part that brought
+  such files back takes its whole update along: alone it would take them away again while the
+  earlier part still keeps them out, with nothing left to offer them. When the user wants the
+  part gone, `done` on its `rename` item leaves its files out (their copies stay in the
+  history), provided all of them were taken out. Files in a folder of the user's own (a
+  translated name) are a `taken` item each, never `missing` or `unchanged`, and the new command
+  `bring-back` puts them back where they were. A copy someone put back by hand is recognised
+  when it equals the kept one and blocks when it does not. A new version built at the new
+  place in the meantime (`fresh`) stops both commands: nothing is merged, and the message points
+  to undo. `apply`, `apply --new` and `mark` refuse the old and the new place of a taken file.
+  `decline` is only stopped by something at a taken file's old place, not by a file of the
+  user's own at the new one. A file comes back through a temporary copy in the history folder
+  and a rename, so a run that stops never leaves half a file. A file that names the part stays
+  a `merge` while its files are out.
+- `plan` decides whether the update is still open before it builds the plan, so it never shows
+  an offer that the next command no longer sees.
+- `diff` takes the workspace path of a recorded or offered file as well as the kit path, and
+  `apply --new` takes several `KIT=PATH` pairs after one flag as well as one flag per pair.
+
+### 🔧 Changed
+
+- The Council's skill is called `verdict` (the command `/verdict`), after what it gives, the
+  way The Architects' skill is called `blueprint`. It was `idea`, which named what the user
+  brings. `kit/skills/idea/` is `kit/skills/verdict/`, and the setup prompt, Appendix B, the
+  blueprint skill, the Council's agents and the wiki kit name the skill by its new name. The
+  team, its seats, the idea page (`idea.md`), `idea_page.py`, the ideas section and the
+  `idea-note` snippet keep their names: an idea is still an idea.
+- `idea_page.py` counts The Council as installed when the skill folder is `verdict` or `idea`,
+  and `nest_update.py` reads the light size and the team of an agent under either name
+  (`stamp --light` takes both), so a workspace that keeps `/idea` behaves as before.
+- A new file of a skill is offered next to that skill's own files, also when its folder in the
+  workspace has another name than in the kit.
+- `retire` works on a file a rename moved in the same update: the copy it keeps goes to the
+  update's `created/` folder, and the version from before the move stays under its old name.
+- Build step B2.5 installs the plugins and the theme after one yes, where the user used to
+  install five plugins and a theme by hand. What is left for the user is opening the vault and
+  "Trust author and enable plugins", and restarting Obsidian once. The instruction gives the
+  full path to paste, and the setup checks afterwards that Obsidian opened the wiki folder and
+  not the folder above it: in a trial that went wrong three times in a row.
+- The workspace `.gitignore` and the wiki backup leave out what `obsidian_setup.py install`
+  can put back, and nothing more: the code of the plugins and the theme in the lock file, named
+  one by one. The plugin settings stay in, and so does a plugin or theme you added yourself,
+  code and all. An existing wiki backup gets the new exclude lines on its next push. They keep
+  new files out: plugin code that a backup or a repository already holds stays in it and keeps
+  being backed up, nothing is taken out of an existing backup.
+
+- The setup prompt comes in parts. `SETUP.md` keeps what every session needs (sections 0 to 4)
+  and a table of the parts; the phases moved to `setup/`: `check.md`, `interview.md`,
+  `routing.md`, `build.md`, `finish.md` and `catalogue.md`. The text itself is unchanged. A
+  session reads the part its phase needs, where it used to read 1011 lines in two pieces at
+  every start. `STATE.md` names parts after `read:`, and the handover copies `setup/` along.
+- `tools/release_check.py` checks that every part `SETUP.md` names exists, that every file in
+  `setup/` is named, and that none is larger than one read.
+- `validate.py --file` names every path it did not scan, with the reason: does not exist, is a
+  folder, outside the workspace, left out by a skip rule, over 2 MB, cannot be read. The exit
+  status is then 3 when no finding makes it 2, so no output means scanned and clean. It used to
+  say nothing and exit with 0 for a path that does not exist, which a name with a space or an
+  accent easily becomes. Files that are not text, symbolic links and folders that are a
+  repository of their own (a submodule, a cloned project) are named in one line each and change
+  nothing. The `checks.yml` workflow accepts the 3, so only a finding fails the check.
+- `validate.py --file` and `--changed` follow no symbolic link and read nothing outside the
+  workspace. No file name is printed as it is: a line end or a control character in a name is
+  shown as its escape, so a name cannot pose as a line of the scanner's report.
+
+- The interview asks by click where it can. Every question with a known set of answers goes
+  through the choice dialog, also in the build; long lists are multi-select questions grouped by
+  theme; an open question stands alone in its message. Question IDs (A1, F3) are no longer shown
+  to the user. For a beginner a block opens with a proposal, and choices that need knowledge
+  they do not have take a default. In the first run by a real user 40 answers were typed
+  against 14 clicked.
+- The setup follows where the user works. Phase 0 records it as `surface` in `STATE.md`
+  (the Claude Code panel in VS Code, a terminal, the desktop app), and every instruction to
+  open a folder or start a session takes that form. The `!` prefix is no longer suggested in
+  the VS Code panel, where it does not exist.
+- The setup creates the workspace folder itself at the handover. It used to tell the user it
+  could not, and gave a command for a terminal.
+- The build runs B1, B2 and B3 in one session: hooks and skills are active in the session that
+  writes them. Two of the three restarts are gone, and the commit question comes once per
+  session.
+- A tool installed during the machine check is used by its full path for the rest of that
+  session, and the app is restarted once at the next moment the user reopens something.
+- B4: the setup runs the tests itself, with a sample note and a test idea of its own, and takes
+  them out again. The user is asked once, at the start, whether a team run is included.
+- Existing notes: with a yes the setup lists the vaults Obsidian knows on the computer, and
+  bringing the chosen ones in becomes the first task after the build.
+- The session plan is four sessions, and the docs say what a run really takes.
+- Files for `.claude/` are built in a staging folder under `_setup/` and copied in once per
+  phase. In a trial every write into `.claude/` raised a permission question: about
+  thirty-seven during one build.
+- Before the build the setup tells the user that Claude Code itself asks before every write
+  and command in its default mode (a trial counted 143 questions in one build), and offers a
+  short list of things it may do without asking for the length of the build: writing in the
+  workspace's own folders, running the workspace's own scripts, copying out of NEST's own kit
+  copy, looking at and staging changes. A trial with the list: 64 questions where there were
+  143, none of them for writing a file; the build is now told to work in plain single commands,
+  which is what the remaining ones came from. After a yes the rules of `kit/claude/setup-permissions.example.json` go into the
+  workspace's local settings, and the wrap-up takes them out again. Deleting, the network,
+  installs, `.claude/` and commits stay questions. The setup never changes the permission mode.
+- Helper agents: the setup stays in the turn while they work and reports per finished piece.
+  A postponed step (opening Obsidian) no longer keeps the wrap-up from finishing.
+- Labels stay out of sight: phase names (B2, block C) and working files (`STATE.md`) are no
+  longer shown to the user, a proposal is always in a visible message before the dialog that
+  asks about it, and a later session reads the user's language before its first word.
+
+- The roadmap, after the first run by a real user. Shipped and off the list: the plugins the
+  setup installs itself, a run on Windows by a person, and notes from your phone into your
+  inbox. New under Now: plugins for Claude Code that fit you, and bringing your old notes in.
+  The board on Home became a command board and moved to Next, with a shorter route through the
+  setup. New under Later: your workspace on two computers.
+
+- The quick start GIF in the README shows the route through VS Code in five real screens (add
+  the extension, open the folder, trust it twice, type the sentence), built by
+  `assets/quickstart-src/slides.py`. It used to be a drawn terminal.
+
+- From the trial before the release: the interview offers to write the setup's own notes
+  (`_setup/`) without a permission question each time, as one rule that is taken out again at
+  the handover (a trial in Claude Code's default mode counted 60 questions in one interview);
+  answers are written with the edit tools, never with a shell append; the first message is the
+  language question and nothing else; a question about a fact has no recommended option; the
+  question about other devices names the price and says that the assistant stays on this
+  computer, in a message before the dialog.
+- From the last trial of the build (54 permission questions where earlier trials had 143 and
+  64): helper agents, the security reviewer among them, get the single-command rule in their
+  brief; every later change to `.claude/` goes through the staging folder; each snapshot is
+  said in one line with one word; the overview comes before the dialog with the first tasks;
+  the build permissions are the very last thing removed; the words the user gave for an old
+  notes folder are kept, so nobody asks again.
+
+### 🐛 Fixed
+
+- Plugin settings the setup wrote were lost for every user: installing a plugin from inside
+  Obsidian renames an existing `data.json` to `data.json.bak` when the folder has no
+  `manifest.json` yet. The Home buttons, the excluded folders of Meta Bind and the sidebar
+  colours were gone after the installs. Found in the first run by a real user, on Windows.
+- Headings showed in a different colour per level: "Colorful headings" was on in the Minimal
+  settings while the kit's CSS does not colour headings.
+- `validate.py` reported a private term in every absolute path when the user's own user name
+  holds that term (a surname on the terms list, a home folder named after it). A term that occurs
+  only inside the path of the user's own home folder is no longer a finding. Exempt is that one
+  folder as this computer spells it (either slash, backslashes escaped, URL-encoded, any case,
+  the Git Bash and WSL form of a Windows folder, after `file://`, and `~name`), standing on its
+  own: after white space, a quote, a bracket or `=` (after a colon only in a list of paths such
+  as `PATH`), and followed by a separator, a quote, a closing bracket, the end of the line, or
+  what ends it in ordinary text: one of `. , ; : ! ?` before white space or the end of the line,
+  or a `|` of a table cell. The same names on another computer or share, at the end
+  of a longer path, in a web address, in a markdown link, and a folder that only starts with the
+  name are still found, as is the term anywhere else on the line; the secret rules are
+  untouched. The check looks at a short piece of the line around each match, so a long line costs
+  no more per character than a short one. Found in the first run by a real user, on Windows.
+- `session_guard.py` announced a second session at the start of every session that followed
+  another within half an hour: it counted every session file with recent activity, and a
+  session that has just ended, is writing its last message or never ran its SessionEnd hook has
+  one. Another session now counts only when it was active more than a minute after this one was
+  opened, so the line comes on the first prompt after a second session really showed itself and
+  no longer at the start. The line gives the time of that session's last activity and the first
+  words of its last message (secrets and private terms taken out, plain characters only, and no
+  words at all when `validate.py` is not there to take them out), says where the user would see it in a terminal
+  and in the VS Code extension or the desktop app, what to do once it is found, and what it
+  means when they find none. A damaged list of sessions already named no longer silences the
+  line.
+- The `security-reviewer` agent searched with the raw terms file (`rg -f`), where every comment
+  line and empty line is a pattern and an empty line matches everything. It now asks
+  `validate.py`, and `agent_git_readonly.py` lets it: `uv run --quiet --script
+  scripts/validate.py` (or `-q`) with `--changed`, `--file` or `--staged`, from the workspace
+  folder, is the one program the guard lets a read-only agent start, with each option as a word
+  of its own (no `--file=<path>`) and every name after `--file` checked as a path, and a pattern
+  file for
+  `grep` or `rg` (`-f`, `--file`) is refused. The agent scans with `--changed`, which takes the
+  file names from git itself, so a space or an accent in a name cannot lose a file; its
+  instructions say what an unscanned path looks like, what each exit code means, and how
+  PowerShell differs (no pipe, no variables, no double quote inside a word). A test runs every
+  command the agent file shows through the guard.
+- `agent_git_readonly.py` read a backslash inside double quotes as an escape before any
+  character, where a shell does so only before `$`, a backtick, `"` and a backslash; it took a
+  vertical tab off the end of a command, which the shell hands to the program; and in
+  PowerShell it let a word with a double quote in it pass, which Windows PowerShell 5.1 hands to
+  the program in a way that can turn `'"--output=x"'` into an option. All three are closed; the
+  last was found by reading and has not been tried on Windows.
 
 ---
 
@@ -303,6 +607,7 @@ Nothing breaks: everything you have keeps working. What you will notice after `/
   scoring, the idea page builder, the writing-style check and the wiki backup, tested on macOS,
   Linux and Windows.
 
-[Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/nickyjacobs/NEST/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/nickyjacobs/NEST/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/nickyjacobs/NEST/releases/tag/v1.0.0

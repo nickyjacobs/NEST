@@ -40,7 +40,7 @@ The setup resolves every marker and removes it; a leftover marker fails the fina
 | `section-index.md` | One `index.md` per section folder: intro, a Bases embed, the `AUTO-INDEX` marker | `wiki/<section>/index.md` |
 | `obsidian/*.json` | Vault settings: files, appearance, core and community plugins | `wiki/.obsidian/` |
 | `obsidian/plugins/*/data.json` | Settings for Templater, Meta Bind, Notebook Navigator, Minimal Theme Settings | `wiki/.obsidian/plugins/<id>/data.json` |
-| `obsidian/PLUGINS.md` | Install guide and safety settings; the setup walks the user through it | not copied; used during the build |
+| `obsidian/PLUGINS.md` | What `scripts/obsidian_setup.py` installs and how, why these plugins, and the safety settings | not copied; used during the build |
 
 ## What the setup must customise
 
@@ -79,14 +79,17 @@ installed; whether there is an audits section.
 ## Notes for the build
 
 - The plugin settings files are full settings objects, not fragments: a plugin that finds a key
-  missing can fail on load. Write them while Obsidian is closed, then let the user install the
-  plugins (`PLUGINS.md`); the plugin keeps the settings it finds.
+  missing can fail on load. Write them while Obsidian is closed, then run
+  `scripts/obsidian_setup.py install` (`PLUGINS.md`), which puts each plugin's code next to its
+  settings. Never let the user install a configured plugin from inside Obsidian instead: when a
+  plugin folder holds a `data.json` but no `manifest.json`, Obsidian's installer renames the
+  settings to `data.json.bak` and the plugin starts with its defaults.
 - The KPI views read one note's frontmatter: `goal-done`, `goal-total` (numbers), `goal-date`
   (ISO date) and `next-step` (text), default path `00-context/goal.md`. Create that note with
   those fields when the user names a goal.
 - `log.md` keeps the line `<!-- Begin of the log -->` exactly; it must match `log.marker` in
   `wiki.config.json`. Every section index keeps `<!-- AUTO-INDEX -->` (`index_marker`).
-- `idea-note.css` styles the styled mode of the `idea` and `blueprint` skills: the callout types and
+- `idea-note.css` styles the styled mode of the `verdict` and `blueprint` skills: the callout types and
   `lbl-*` classes listed at its top are exactly the ones in their `reference.md` files. Ship the
   snippet and the styled mode together (the skills' "callout styling" / "callout types" markers), or
   neither: in plain mode the skills write quote and info callouts and need no CSS. The ideas section in `wiki.config.json` takes the

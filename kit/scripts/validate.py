@@ -23,7 +23,22 @@ Usage:
                                 backup repository when nest.json names one (wiki_backup.git_dir).
                                 Bounded per call (50 files, 8 MB, 15 seconds); what was left
                                 out is said.
-  validate.py --file <path>...  Scan files on disk. Exit 2 on a hard finding.
+  validate.py --file <path>...  Scan files on disk. Exit 2 on a hard finding. No output means:
+                                every file was scanned and nothing was found. A path that was
+                                not scanned is named with the reason (does not exist, is a
+                                folder, outside the workspace, left out by a skip rule, too
+                                large, cannot be read) and the exit status is then 3, unless a
+                                finding makes it 2. Three kinds are named in one line each and
+                                are no failure: files that are not text, symbolic links (never
+                                followed) and folders that are a repository of their own.
+  validate.py --changed         The same for the files git reports as changed or untracked (not
+                                ignored) under the workspace folder, and those of the wiki's
+                                own backup repository when nest.json names one. The names come
+                                from git, so none has to be typed. Ends with a line that says
+                                how many were scanned. When git status fails or does not
+                                answer, or the backup nest.json names cannot be used (missing,
+                                not a repository, a wiki folder outside the workspace), that is
+                                said and the exit status is 3: nothing is called clean then.
   validate.py --staged          Scan the staged version of every staged file (git pre-commit).
                                 Exit 2 on a hard finding or a private term.
   validate.py --stdin --path P  Scan stdin, label findings with P.
@@ -34,7 +49,9 @@ Three kinds of findings:
   private  terms from .claude/sensitive-terms.txt (gitignored): customer names, internal
            hostnames, anything that must not leave the workspace. One term per line, matched as
            a whole word, case-insensitive; a line written as /regex/ is used as a regex.
-           Lines starting with # are comments.
+           Lines starting with # are comments. A term that is found only inside the path
+           of your own home folder (your user name in /Users/<you>/... or in the Windows
+           form of it) is not reported: every absolute path on this computer holds it.
   soft     home-directory paths, email addresses, private IPv4 addresses. Warn only.
 
 Configuration (optional), in nest.json at the workspace root:
@@ -50,10 +67,16 @@ terms file itself, and a .env file that git ignores (any .env* file where git ca
 private terms and the scans after a write skip them; a new secret written with an edit tool is
 still blocked, and a commit that stages one of them is still scanned.
 
-A file over 2 MB is not scanned and is named as skipped. A binary file is skipped silently.
+A file over 2 MB is not scanned and is named as skipped. A binary file is skipped silently by
+the hooks and at a commit; --file and --changed name it.
 
 The workspace root is $CLAUDE_PROJECT_DIR, else the hook's cwd, else the git top level, else
-the current directory. Exit codes: 0 = fine (warnings possible), 2 = block / feedback.
+the current directory. Exit codes: 0 = fine (warnings possible), 2 = block / feedback (also
+what a mistake in the options gives, with a `usage:` line), 3 = --file or --changed could not
+scan a path it was asked for, or --changed could not get the list of changed files.
+
+A file name is never printed as it is: a line end or a control character in a name is shown as
+its escape, so a name cannot pose as a line of this report.
 
 Self-test: `validate.py --self-test` checks that the built-in test term is caught. The term is
 assembled from two halves so that this file itself never contains it.
@@ -418,6 +441,119 @@ def load_private_rules(root: Path) -> tuple[list[Rule], list[str]]:
     return rules, warnings
 
 
+def user_home() -> str:
+    """The home folder of the user who runs the scan, or "" when it cannot be told."""
+    try:
+        return str(Path.home())
+    except (RuntimeError, OSError, KeyError):
+        return ""
+
+
+# One separator between two parts of a path, as a text writes it down: a slash either way, a
+# backslash escaped once or twice (JSON, JSON inside JSON), or URL-encoded. Bounded on purpose:
+# nothing here may repeat without a limit, so a long run of slashes costs nothing.
+_SEP = r"(?:/|\\{1,4}|%5C|%2F)"
+# What may stand directly in front of the home folder path: nothing, white space, a quote, an
+# opening bracket, or one of = , ; | >. Anything else (a letter, a dot, a slash) makes it the
+# tail of a longer path, of a host name or of a web address, which is another place. A colon
+# counts only in a list of paths (PATH=/usr/bin:/Users/name/bin): see HomePath.in_path_list.
+_BEFORE = " \t\"'`([{<=,;|>"
+# What may follow it: a separator (the path goes on), a quote, a closing bracket, or the end of
+# the line. Also what ends it in ordinary text: one of . , ; : ! ? with white space or the end
+# of the line after it, white space with a | or the end of the line after it, and a | itself
+# (a table cell, written with or without spaces).
+# A space with anything else after it, a full stop inside a name or a dash may be the rest of
+# another folder's name.
+_AFTER = "/\\\"'`)]}>"
+_AFTER_TEXT = re.compile(r"[.,;:!?](?=[ \t]|$)|[ \t]{1,8}(?=\||$)|\|")
+# The entry before a colon in a list of paths: it starts like a path or like a variable. A host
+# name (files.example.org:/Users/name) does not, and neither does the rest of a web address.
+_LIST_ENTRY = re.compile(r"(?:/(?!/)|~|\.{1,2}/|\$|%)[^\s:\"'`=]{0,200}\Z")
+_HOME_MAX = 400  # a home folder path longer than this is not looked for
+
+
+class HomePath:
+    """The user's own home folder, in the forms that folder has on this computer:
+
+      the path itself, with either slash, backslashes escaped, separators URL-encoded, any case
+      for a Windows folder: the Git Bash, WSL and Cygwin spelling of that same path
+          (/c/Users/name, /mnt/c/Users/name, /cygdrive/c/Users/name)
+      any of these after file://
+      ~name, with the name of the home folder
+
+    and only where it stands on its own: see _BEFORE and _AFTER.
+
+    A private term that is part of the user name would otherwise be found in every absolute path
+    on this computer. Only the private terms use this; the secret rules never do.
+
+    The check is made per match of a term, on a piece of the line no longer than the home folder
+    path on either side of that match, so its cost does not grow with the length of the line."""
+
+    def __init__(self, pattern: re.Pattern[str], reach: int):
+        self.pattern = pattern  # one form, anchored where it is tried
+        self.reach = reach      # no form is longer than this
+
+    @classmethod
+    def of(cls, home: str) -> HomePath | None:
+        """None when the home folder has no name to go by: empty, relative, a drive or the root
+        itself, a network share, or a path too long to be a home folder."""
+        home = home.strip()
+        if not home or len(home) > _HOME_MAX or home.startswith(("\\\\", "//")):
+            return None
+        parts = re.split(r"[\\/]+", home)
+        drive = parts[0][0] if re.fullmatch(r"[A-Za-z]:", parts[0]) else ""
+        if not drive and parts[0]:
+            return None  # relative
+        names = [part for part in parts[1:] if part]
+        if not names:
+            return None
+
+        def written(name: str) -> str:
+            return "".join("(?: |%20)" if ch == " " else re.escape(ch) for ch in name)
+
+        folder = _SEP + _SEP.join(written(name) for name in names)
+        if drive:
+            plain = "/" + "/".join(written(name) for name in names)
+            forms = [f"(?:file://(?:localhost)?/)?{drive}(?::|%3A){folder}",
+                     f"(?:file://(?:localhost)?)?/(?:mnt/|cygdrive/)?{drive}{plain}"]
+        else:
+            forms = [f"(?:file://(?:localhost)?)?{folder}"]
+        forms.append("~" + written(names[-1]))
+        reach = 3 * len(home) + 4 * len(names) + 40
+        return cls(re.compile("(?=(" + "|".join(forms) + "))", re.IGNORECASE), reach)
+
+    def holds(self, line: str, start: int, end: int) -> bool:
+        """Whether line[start:end] lies inside a spelling of the home folder that stands on its own."""
+        low, high = max(0, start - self.reach), min(len(line), end + self.reach)
+        for found in self.pattern.finditer(line, low, high):
+            a, b = found.span(1)
+            if a > start:
+                break
+            if end > b:
+                continue
+            if a and line[a - 1] not in _BEFORE and not self.in_path_list(line, a):
+                continue  # the tail of something longer
+            if line[max(a - 2, 0):a] == "](" and not found.group(1)[:5].lower() == "file:":
+                continue  # the target of a markdown link is a page on a site, unless it says file://
+            if (b < len(line) and line[b] not in _AFTER and line[b:b + 3].upper() not in ("%5C", "%2F")
+                    and not _AFTER_TEXT.match(line, b)):
+                continue  # a folder that only starts with the name
+            return True
+        return False
+
+    @staticmethod
+    def in_path_list(line: str, at: int) -> bool:
+        """Whether the path that starts at `at` is a later entry of a list of paths: a colon in
+        front of it, and before that colon an entry that is a path or a variable itself. Only
+        for a path that starts with a slash: before C:\\ a key (workspace:C:\\...) and another
+        computer (nas:C:\\...) look the same, so that stays a finding."""
+        if line[at - 1] != ":" or line[at] != "/":
+            return False
+        low = max(0, at - 202)
+        entry = _LIST_ENTRY.search(line, low, at - 1)
+        return bool(entry) and (entry.start() == 0 or line[entry.start() - 1] in " \t\"'`=:")
+
+
 def glob_to_regex(glob: str) -> re.Pattern[str]:
     out, i = "", 0
     while i < len(glob):
@@ -450,10 +586,15 @@ def relative(path: Path | str, root: Path) -> str:
 
 
 class Scanner:
-    def __init__(self, root: Path):
+    def __init__(self, root: Path, home: str | None = None):
+        """`home` is the user's home folder; None asks the system, "" means there is none."""
         self.root = root
         self.config = load_config(root)
         self.private_rules, self.warnings = load_private_rules(root)
+        try:
+            self.home = HomePath.of(user_home() if home is None else home)
+        except re.error:
+            self.home = None  # then nothing is exempt
 
     def globs(self, key: str) -> list[str]:
         """A list option from nest.json. One glob written as a plain string counts as a list of
@@ -503,6 +644,19 @@ class Scanner:
         out = git(["check-ignore", "-q", "--", str(target)], folder, timeout=5)
         return out.returncode == 0 if out and out.returncode in (0, 1) else True
 
+    def only_in_home_path(self, regex: re.Pattern[str], line: str, m: re.Match[str] | None) -> bool:
+        """Whether every match of a private term in this line lies inside the user's own home
+        folder path. Each match is judged, also one that starts inside an earlier one, so a
+        term that occurs once more after the path, or reaches past its end, is still found."""
+        if not self.home or not m:
+            return False
+        while m:
+            start, end = m.span()
+            if end <= start or not self.home.holds(line, start, end):
+                return False
+            m = regex.search(line, start + 1)
+        return True
+
     def scan(self, content: str, kinds: tuple[str, ...] = ("hard", "private", "soft")) -> list[Finding]:
         found: list[Finding] = []
         key_lines = ({content.count("\n", 0, start) + 1 for start, _ in key_blocks(content)}
@@ -521,7 +675,8 @@ class Scanner:
                             break
             if "private" in kinds:
                 for rule in self.private_rules:
-                    if rule.regex.search(line):
+                    m = rule.regex.search(line)
+                    if m and not self.only_in_home_path(rule.regex, line, m):
                         found.append(Finding("private", n, rule.name, "(term not repeated)"))
             if "soft" in kinds and not hard_here:
                 for rule in SOFT_RULES:
@@ -550,8 +705,15 @@ def load_text(path: Path) -> tuple[str | None, str]:
     return decode(data), ""
 
 
+def shown_name(name: str) -> str:
+    """A file name as a report shows it: a line end, a control character, an invisible or a
+    direction-changing character is written as its escape (\\n, \\x1b, \\u202e), so a name cannot
+    start a line of its own in the report or change how the line looks."""
+    return "".join(ch if ch.isprintable() else ch.encode("unicode_escape").decode("ascii") for ch in name)
+
+
 def skipped_line(rel: str, reason: str) -> str:
-    return f"[secret-scan] {rel} was not scanned: {reason}"
+    return f"[secret-scan] {shown_name(rel)} was not scanned: {reason}"
 
 
 def format_findings(findings: list[Finding], label: str) -> str:
@@ -561,7 +723,7 @@ def format_findings(findings: list[Finding], label: str) -> str:
         group = [f for f in findings if f.kind == kind]
         if not group:
             continue
-        lines.append(f"[secret-scan] {title} in {label}:")
+        lines.append(f"[secret-scan] {title} in {shown_name(label)}:")
         for f in group[:MAX_REPORT]:
             lines.append(f"  line {f.line}: {f.rule} {f.shown}")
         if len(group) > MAX_REPORT:
@@ -671,14 +833,23 @@ def touched(path: Path) -> tuple[float, int, int] | None:
     return max(st.st_mtime, st.st_ctime), st.st_size, max(st.st_mtime_ns, st.st_ctime_ns)
 
 
-def status_files(top: Path, repo: list[str] | None = None) -> list[Path]:
-    """The files git reports as changed or untracked; ignored files are not listed. `repo` points
-    git at a separate git dir and work tree (the wiki backup)."""
+def git_status(top: Path, repo: list[str] | None = None) -> tuple[list[Path], str]:
+    """The files git reports as changed or untracked (ignored files are not listed), and why
+    there is no list when git could not give one: "" when it could. `repo` points git at a
+    separate git dir and work tree (the wiki backup)."""
     out = git([*(repo or []), "--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all",
                "--no-renames"], top)
-    if not out or out.returncode != 0:
-        return []
-    return [top / os.fsdecode(entry[3:]) for entry in out.stdout.split(b"\0") if len(entry) >= 4]
+    if out is None:
+        return [], "git status did not answer (git is missing, or it took too long)"
+    if out.returncode != 0:
+        said = out.stderr.decode("utf-8", errors="replace").strip().splitlines()
+        return [], "git status failed" + (f" ({shown_name(said[0][:200])})" if said else "")
+    return [top / os.fsdecode(entry[3:]) for entry in out.stdout.split(b"\0") if len(entry) >= 4], ""
+
+
+def status_files(top: Path, repo: list[str] | None = None) -> list[Path]:
+    """The same list for the hook after a shell command, which stays silent when git gives none."""
+    return git_status(top, repo)[0]
 
 
 SHELL_MAX_COMMITS = 20
@@ -723,13 +894,26 @@ def new_commits(top: Path, state: dict, now: float) -> tuple[list[tuple[str, str
 def backup_repo(root: Path) -> tuple[Path, list[str]] | None:
     """The wiki folder and the git options for its own backup repository, when nest.json names
     one: the workspace ignores that folder, so the workspace's own status never lists it."""
+    return backup_setting(root)[0]
+
+
+def backup_setting(root: Path) -> tuple[tuple[Path, list[str]] | None, str]:
+    """backup_repo, and why a backup that nest.json names cannot be used ("" when it can, and
+    when nest.json names none)."""
     try:
         conf = json.loads((root / CONFIG_FILE).read_text(encoding="utf-8-sig"))
-        raw = (conf.get("wiki_backup") or {}).get("git_dir") if isinstance(conf, dict) else None
-    except (OSError, ValueError, AttributeError):
-        return None
+    except (OSError, ValueError):
+        return None, ""
+    group = conf.get("wiki_backup") if isinstance(conf, dict) else None
+    if group is None:
+        return None, ""
+    if not isinstance(group, dict):
+        return None, "wiki_backup in nest.json is not a group of settings"
+    raw = group.get("git_dir")
+    if raw is None:
+        return None, ""
     if not isinstance(raw, str) or not raw:
-        return None
+        return None, "wiki_backup.git_dir in nest.json is not a path"
     git_dir = Path(os.path.expanduser(raw))
     if not git_dir.is_absolute():
         git_dir = root / git_dir
@@ -742,9 +926,11 @@ def backup_repo(root: Path) -> tuple[Path, list[str]] | None:
             wiki = config_path.parent / wiki_conf["wiki_dir"]
     except (OSError, ValueError):
         pass
-    if not git_dir.is_dir() or not wiki.is_dir():
-        return None
-    return wiki, ["--git-dir", str(git_dir), "--work-tree", str(wiki)]
+    if not git_dir.is_dir():
+        return None, f"the wiki backup {shown_name(str(git_dir))} that nest.json names does not exist"
+    if not wiki.is_dir():
+        return None, f"the wiki folder {shown_name(str(wiki))} does not exist"
+    return (wiki, ["--git-dir", str(git_dir), "--work-tree", str(wiki)]), ""
 
 
 def load_shell_state(root: Path) -> dict:
@@ -896,26 +1082,171 @@ def hook_shell(data: dict | None) -> int:
 # ---------------------------------------------------------------- command-line modes
 
 
-def scan_paths(paths: list[str], private_blocks: bool) -> int:
-    scanner = Scanner(workspace_root())
-    worst = 0
+NOT_SCANNED = 3  # exit status: no finding that blocks, but a path that was asked for was not scanned
+NOT_TEXT = "not a text file"
+
+
+def read_for_scan(path: Path) -> tuple[str | None, str]:
+    """The file as text, or None with the reason it was not scanned. The command-line modes say
+    that reason for every path, so that no output means: scanned, nothing found."""
+    try:
+        if not path.exists():
+            return None, "does not exist"
+        if path.is_dir():
+            return None, "is a folder"
+        if not path.is_file():
+            return None, "is not a plain file"
+        if path.stat().st_size > MAX_BYTES:
+            return None, TOO_LARGE
+        data = path.read_bytes()
+    except OSError as exc:
+        return None, f"cannot be read ({exc.strerror or type(exc).__name__})"
+    text = decode(data)
+    return (text, "") if text is not None else (None, NOT_TEXT)
+
+
+OUTSIDE, LINK = "outside the workspace", "a link"
+
+
+def placed(path: Path, root: Path) -> tuple[Path | None, str]:
+    """Where a path lies under the workspace root, without following a link: the path relative
+    to the root and "", or that path and LINK, or None and OUTSIDE. A path counts as inside when the root is one of
+    its parent folders as written, and none of the names below the root is a symbolic link; so
+    what is read then is a file in the workspace itself."""
+    absolute = Path(os.path.abspath(path))
+    bases = [Path(os.path.abspath(root))]
+    try:
+        bases.append(root.resolve())
+    except OSError:
+        pass
+    base = next((b for b in bases if absolute == b or b in absolute.parents), None)
+    if base is None:
+        # The same folder under another spelling (a short name, a link above the workspace).
+        for folder in (absolute, *absolute.parents):
+            try:
+                if folder.is_dir() and os.path.samefile(folder, root):
+                    base = folder
+                    break
+            except OSError:
+                continue
+    if base is None:
+        return None, OUTSIDE
+    rel = absolute.relative_to(base)
+    step = base
+    for part in rel.parts:
+        step = step / part
+        if step.is_symlink():
+            return rel, LINK
+    return rel, ""
+
+
+def named(names: list[str]) -> str:
+    return ", ".join(shown_name(n) for n in names[:MAX_REPORT]) + (f" and {len(names) - MAX_REPORT} more" if len(names) > MAX_REPORT else "")
+
+
+def scan_paths(paths: list[Path | str], private_blocks: bool, scanner: Scanner | None = None,
+               from_git: bool = False) -> tuple[int, int]:
+    """Scan the named files. Returns the exit status and how many files were scanned.
+
+    Exit status: 2 for a hard finding (or a private term with `private_blocks`), else NOT_SCANNED
+    when a path was not scanned, else 0. Every path that was not scanned is named with its
+    reason. Three kinds are named in one line each and are no failure, because the user cannot
+    do anything about them: a file that is not text (a scan of every tracked file meets images),
+    a symbolic link (never followed: what it points to may lie anywhere), and a folder that is a
+    repository of its own (a submodule, a cloned project). Nothing outside the workspace is read.
+    `from_git`: the paths come from git status, where a folder is always such a repository."""
+    scanner = scanner or Scanner(workspace_root())
+    worst = scanned = 0
+    not_text: list[str] = []
+    links: list[str] = []
+    repos: list[str] = []
+    missed = False
     for p in paths:
         path = Path(p)
-        rel = relative(path, scanner.root)
+        where, why = placed(path, scanner.root)
+        rel = where.as_posix() if where is not None else Path(str(p).replace("\\", "/")).as_posix()
+        if why == LINK:
+            links.append(rel)
+            continue
+        if why:
+            print(skipped_line(rel, why), file=sys.stderr)
+            missed = True
+            continue
         if scanner.skipped(rel):
+            print(skipped_line(rel, "left out by secret_scan.skip in nest.json"), file=sys.stderr)
+            missed = True
             continue
-        text, reason = load_text(path)
-        if reason:
-            print(skipped_line(rel, reason), file=sys.stderr)
+        if path.is_dir() and (from_git or (path / ".git").exists()):
+            repos.append(rel)
+            continue
+        text, reason = read_for_scan(path)
         if text is None:
+            if reason == NOT_TEXT:
+                not_text.append(rel)
+            else:
+                print(skipped_line(rel, reason), file=sys.stderr)
+                missed = True
             continue
+        scanned += 1
         kinds = ("hard", "private") + (() if scanner.soft_silent(rel) else ("soft",))
         findings = scanner.scan(text, kinds)
         if findings:
             print(format_findings(findings, rel), file=sys.stderr)
         if any(f.kind == "hard" or (private_blocks and f.kind == "private") for f in findings):
             worst = 2
-    return worst
+    if not_text:
+        print(f"[secret-scan] {len(not_text)} file{'s were' if len(not_text) != 1 else ' was'} not scanned: "
+              f"not text ({named(not_text)})", file=sys.stderr)
+    if links:
+        print(f"[secret-scan] {len(links)} link{'s were' if len(links) != 1 else ' was'} not followed, so what "
+              f"{'they point' if len(links) != 1 else 'it points'} to was not scanned ({named(links)})", file=sys.stderr)
+    if repos:
+        print(f"[secret-scan] {len(repos)} folder{'s are repositories of their' if len(repos) != 1 else ' is a repository of its'} "
+              f"own and {'were' if len(repos) != 1 else 'was'} not scanned ({named(repos)})", file=sys.stderr)
+    return worst or (NOT_SCANNED if missed else 0), scanned
+
+
+def scan_changed(private_blocks: bool) -> int:
+    """Scan what git reports as changed or untracked in the workspace (ignored files are not
+    listed), and the same in the wiki's own backup repository when nest.json names one. The
+    names come from git itself, so a space or an accent in a name cannot lose a file. Only
+    files under the workspace folder are scanned, also when it lies inside a larger repository.
+    A last line says how many files were scanned.
+
+    "Nothing found" is said only after a git status that worked: a status that failed or did
+    not answer, and a backup that nest.json names but that cannot be used, are named and give
+    NOT_SCANNED."""
+    root = workspace_root()
+    top = git_top(root)
+    backup, trouble = backup_setting(root)
+    problems = [f"{trouble}, so the wiki was not scanned"] if trouble else []
+    if backup and placed(backup[0], root)[1]:
+        problems.append(f"the wiki folder {shown_name(str(backup[0]))} lies outside the workspace or behind a link, "
+                        "so it was not scanned")
+        backup = None
+    if top is None and backup is None and not problems:
+        print("[secret-scan] not a git repository, nothing scanned", file=sys.stderr)
+        return NOT_SCANNED
+    listed: list[Path] = []
+    for label, folder, repo in ([("the workspace", top, None)] if top else []) + ([("the wiki backup", *backup)] if backup else []):
+        files, failed = git_status(folder, repo)
+        if failed:
+            problems.append(f"{failed} for {label}, so its changed files are not known")
+        listed += files
+    # A file git reports as deleted is not there to scan, and that is no failure. A file of the
+    # larger repository around the workspace is not this scan's to read.
+    paths = [path for path in dict.fromkeys(listed)
+             if (path.exists() or path.is_symlink()) and placed(path, root)[1] != OUTSIDE]
+    scanner = Scanner(root)
+    for w in scanner.warnings:
+        print(f"[secret-scan] {w}", file=sys.stderr)
+    for problem in problems:
+        print(f"[secret-scan] {problem}", file=sys.stderr)
+    status, scanned = scan_paths(paths, private_blocks, scanner, from_git=True)
+    print(f"[secret-scan] {scanned} changed file{'s' if scanned != 1 else ''} scanned"
+          + (f", {len(paths) - scanned} not scanned" if len(paths) != scanned else "")
+          + ("; this scan is incomplete, see above" if problems else ""), file=sys.stderr)
+    return status or (NOT_SCANNED if problems else 0)
 
 
 def staged_gitlinks(root: Path) -> set[str]:
@@ -949,7 +1280,7 @@ def scan_staged() -> int:
             continue
         shown = git(["show", f":{rel}"], root, timeout=30)
         if not shown or shown.returncode != 0:
-            print(f"[secret-scan] could not read the staged version of {rel}", file=sys.stderr)
+            print(f"[secret-scan] could not read the staged version of {shown_name(rel)}", file=sys.stderr)
             worst = 2
             continue
         blob = shown.stdout
@@ -989,17 +1320,21 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--hook", choices=("pre", "post", "shell"),
                       help="Run as a Claude Code hook: before a write, after a write, after a shell command")
     mode.add_argument("--file", nargs="+", metavar="PATH", help="Scan files on disk")
+    mode.add_argument("--changed", action="store_true",
+                      help="Scan the files git reports as changed or untracked, with the names git gives")
     mode.add_argument("--staged", action="store_true", help="Scan staged files (git pre-commit)")
     mode.add_argument("--stdin", action="store_true", help="Scan content from stdin")
     mode.add_argument("--self-test", action="store_true", help="Check that the built-in test term is caught")
     ap.add_argument("--path", default="<stdin>", help="Label for --stdin findings")
-    ap.add_argument("--private-blocks", action="store_true", help="With --file/--stdin: exit 2 on a private term too")
+    ap.add_argument("--private-blocks", action="store_true", help="With --file/--changed/--stdin: exit 2 on a private term too")
     args = ap.parse_args(argv)
 
     if args.hook:
         return {"pre": hook_pre, "post": hook_post, "shell": hook_shell}[args.hook](read_hook_input())
     if args.file:
-        return scan_paths(args.file, args.private_blocks)
+        return scan_paths(args.file, args.private_blocks)[0]
+    if args.changed:
+        return scan_changed(args.private_blocks)
     if args.staged:
         return scan_staged()
     if args.self_test:

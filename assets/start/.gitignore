@@ -1,0 +1,5 @@
+# The untouched screenshots can show private folders; only the composed pictures are kept.
+raw/
+*.built.html
+# Frames for the quick start GIF, made again by assets/quickstart-src/slides.py.
+gif-*.png

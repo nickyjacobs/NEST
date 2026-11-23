@@ -4,8 +4,10 @@ Everything beyond the [README](../README.md), sorted by who it is for.
 
 | If you want to... | Read |
 |---|---|
+| Start from nothing: install what you need and type the first sentence | [guide/getting-started.md](guide/getting-started.md) |
 | Know what the setup will ask and how long it takes | [guide/what-to-expect.md](guide/what-to-expect.md) |
 | Bring a newer NEST release into your workspace | [guide/updating.md](guide/updating.md) |
+| Read and write your notes on a phone or a second computer | [guide/devices.md](guide/devices.md) |
 | Get a quick answer (cost, privacy, removing it, Windows) | [guide/faq.md](guide/faq.md) |
 | Change how your workspace behaves | [reference/nest-json.md](reference/nest-json.md) |
 | Understand the hooks the scripts rely on | [reference/hooks-notes.md](reference/hooks-notes.md) |
@@ -17,7 +19,7 @@ Everything beyond the [README](../README.md), sorted by who it is for.
 
 | Folder | For | What is in it |
 |---|---|---|
-| [`guide/`](guide/) | People who use NEST | What happens during the setup, how updates work, common questions |
+| [`guide/`](guide/) | People who use NEST | What happens during the setup, how updates work, your notes on other devices, common questions |
 | [`reference/`](reference/) | People who tune or extend a workspace | The settings in `nest.json`, the Claude Code hook facts behind the scripts |
 | [`project/`](project/) | People who work on NEST itself | The release steps and templates, the backlog |
 

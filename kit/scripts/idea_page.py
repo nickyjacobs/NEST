@@ -5,7 +5,7 @@
 # ///
 """Save Council reviews and Architects blueprints into an idea's folder, and rebuild its idea.md.
 
-The layouts are the ones in .claude/skills/idea/reference.md ("Review layout", "Idea page layout")
+The layouts are the ones in .claude/skills/verdict/reference.md ("Review layout", "Idea page layout")
 and .claude/skills/blueprint/reference.md ("Blueprint layout", "What the blueprint puts on idea.md").
 This script writes them deterministically, so the skills never hand-write these files.
 
@@ -107,6 +107,8 @@ RISK_MAX = 160
 FULL_DESKS = ("surveyor", "dreamer", "client", "engineer", "inspector")
 LIGHT_DESKS = ("surveyor", "engineer")
 SEATS = ("believer", "skeptic", "investor", "outsider")
+# The Council's skill folder: `verdict`, or `idea` in a workspace from before the rename that kept the name.
+COUNCIL_SKILL = ("verdict", "idea")
 STATUS_BY_VERDICT = {"GO": "go", "GO WITH CONDITIONS": "go", "RESHAPE": "reviewed", "PARK": "parked",
                      "DROP": "dropped"}
 CONFIDENCE_ORDER = {"low": 0, "medium": 1, "normal": 2, "high": 2}
@@ -275,7 +277,7 @@ def check_status_words(s: Settings) -> None:
     if missing:
         raise UsageError(f"status word(s) {', '.join(missing)} are not allowed in section '{s.ideas}' "
                          f"({', '.join(s.allowed_status)}), so lint would refuse the pages. Give the section "
-                         "its own \"status_words\" in wiki.config.json (see the idea skill's reference.md), "
+                         "its own \"status_words\" in wiki.config.json (see the verdict skill's reference.md), "
                          "or change the status labels")
 
 
@@ -415,10 +417,10 @@ def first_sentences(text: str, n: int = 1) -> str:
 
 
 def council_installed() -> bool:
-    """Is the idea skill (The Council) part of this workspace? Unknown counts as yes: the script
+    """Is the verdict skill (The Council) part of this workspace? Unknown counts as yes: the script
     runs from the workspace root, and a folder without `.claude/skills` is a test or a kit copy."""
     skills = Path.cwd() / ".claude" / "skills"
-    return not skills.is_dir() or (skills / "idea").is_dir()
+    return not skills.is_dir() or any((skills / name).is_dir() for name in COUNCIL_SKILL)
 
 
 def architects_installed() -> bool:

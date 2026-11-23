@@ -6,42 +6,48 @@ it ships. Every new part stays a choice, and reaches a workspace you already hav
 `/nest-update`.
 
 <p align="center">
-  <img src="assets/roadmap.png" alt="NEST roadmap. Now: your assistant from your phone, a board on your Home page, what your assistant remembers is yours. Next: capture on the go, tried on Windows by a person. Later: upkeep that runs by itself, no plugin homework." width="100%">
+  <img src="assets/roadmap.png" alt="NEST roadmap. Now: plugins that fit you, bring your old notes with you, your assistant from your phone. Next: a command board on Home, ready in one sitting, what your assistant remembers is yours. Later: upkeep that runs by itself, your workspace on two computers." width="100%">
 </p>
 
 ## 🟠 Now
 
 What the next releases work on.
 
+- 🔌 **Plugins that fit you.** Claude Code has plugins, made by Anthropic and by other people,
+  that add routines and tools. Some make a real difference and many do not. The setup proposes
+  the few that fit what you told it, and only ones NEST has looked through first: a plugin can
+  run programs on your computer, so "popular" is not enough.
+- 📦 **Bring your old notes with you.** The setup already finds the notes you have. This is the
+  step after it: your assistant moves them in a batch at a time, files them where they belong,
+  and leaves the originals where they are until you say otherwise.
 - 📱 **Your assistant from your phone.** Ask a question on the way home, or send a photo of a
   whiteboard and find it filed in your wiki. It uses Claude Code's own remote control, so there
   is still no server and no bot: your computer does the work, your phone is the window.
-- 🗂️ **A board on your Home page.** Your projects and ideas as cards you can see at a glance,
-  from "new" to "done", built on Obsidian's own board view. No extra plugin.
-- 🔖 **What your assistant remembers is yours.** Claude Code keeps notes of its own about how you
-  work, outside your workspace. NEST gives them a place you can see: inside your workspace, in
-  your backup, and under the same secret scan as everything else.
 
 ## 🟣 Next
 
-- 🎙️ **Capture on the go.** A thought or a voice note on your phone lands in your inbox, and your
-  assistant files it the next time you sit down.
-- 🖥️ **Tried on Windows by a person.** The scripts are tested on Windows on every change, and a
-  complete setup has been run on macOS and Linux. A full run by a person on Windows comes
-  next, with a fix for everything it turns up.
+- 🎛️ **A command board on Home.** Your day, your tasks and your routines in one place on your
+  start page: what is on today, what is open, and the things you ask your assistant most, a
+  click away instead of a command to remember.
+- ⏱️ **Ready in one sitting.** A short route to a workspace that works: the questions that
+  cannot wait, a build, and the rest of the interview whenever you feel like it.
+- 🔖 **What your assistant remembers is yours.** Claude Code keeps notes of its own about how you
+  work, outside your workspace. NEST gives them a place you can see: inside your workspace, in
+  your backup, and under the same secret scan as everything else.
 
 ## ⚪ Later
 
 - ⏰ **Upkeep that runs by itself.** The weekly check of your wiki and your morning briefing at a
   set time, without you asking.
-- 🧩 **No plugin homework.** The setup installs the Obsidian plugins you chose, where today you
-  click through a list.
+- 💻 **Your workspace on two computers.** Today your notes can be on every device and your
+  assistant lives on one computer. This puts the assistant on your other computer too, in step
+  with the first.
 
 ## Have a say
 
-This list comes from our own trial runs and from what people ask for in projects like this
-one. Your experience counts for more. Tell us what would help you in
-[Discussions](https://github.com/nickyjacobs/NEST/discussions), or open an
+This list comes from the first people who ran the setup, from our own trial runs, and from what
+people ask for in projects like this one. Your experience counts for more. Tell us what would
+help you in [Discussions](https://github.com/nickyjacobs/NEST/discussions), or open an
 [issue](https://github.com/nickyjacobs/NEST/issues) when something broke.
 
 The technical list of what is not built or not tested yet, with the reasons, is the

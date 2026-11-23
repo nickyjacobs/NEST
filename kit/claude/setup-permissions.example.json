@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Edit(/wiki/**)",
+      "Edit(/_setup/**)",
+      "Edit(/docs/**)",
+      "Edit(/scripts/**)",
+      "Edit(/CLAUDE.md)",
+      "Edit(/CLAUDE.local.md)",
+      "Edit(/README.md)",
+      "Edit(/nest.json)",
+      "Edit(/wiki.config.json)",
+      "Edit(/tool-map.md)",
+      "Edit(/.gitignore)",
+      "Edit(/.gitattributes)",
+      "Bash(uv run scripts/*)",
+      "Bash(uv run --script scripts/*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git add *)",
+      "Bash(git check-ignore *)",
+      "Bash(cp _setup/nest/kit/*)",
+      "Bash(ls *)",
+      "Bash(mkdir -p *)"
+    ]
+  }
+}

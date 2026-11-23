@@ -13,10 +13,10 @@ gitGraph
     branch develop
     commit id: "Add: a skill"
     commit id: "Fix: a script"
-    branch release/1.2.0
+    branch release/1.3.0
     commit id: "Docs: changelog and version"
     checkout main
-    merge release/1.2.0 id: "Release: v1.2.0" tag: "v1.2.0"
+    merge release/1.3.0 id: "Release: v1.2.0" tag: "v1.2.0"
     checkout develop
     merge main id: "merge back"
 ```
@@ -41,8 +41,8 @@ the STATE template in `SETUP.md`, and the newest heading in `CHANGELOG.md`.
 ```markdown
 | Release | Date | In short |
 |---|---|---|
-| [1.2.0](#120---2027-03-01) | 2027-03-01 | One sentence a newcomer understands. |
-| [1.1.0](#110---2026-11-22) | 2026-11-22 | ... |
+| [1.3.0](#130---2027-03-01) | 2027-03-01 | One sentence a newcomer understands. |
+| [1.2.0](#120---2026-11-22) | 2026-11-22 | ... |
 
 ## [Unreleased]
 
@@ -56,7 +56,7 @@ the STATE template in `SETUP.md`, and the newest heading in `CHANGELOG.md`.
 
 ---
 
-## [1.2.0] - 2027-03-01
+## [1.3.0] - 2027-03-01
 
 > **In short:** One sentence a newcomer understands.
 
@@ -87,13 +87,13 @@ the STATE template in `SETUP.md`, and the newest heading in `CHANGELOG.md`.
 
 ---
 
-## [1.1.0] - 2026-11-22
+## [1.2.0] - 2026-11-22
 
 ...
 
 [Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.2.0...HEAD
-[1.2.0]: https://github.com/nickyjacobs/NEST/compare/v1.1.0...v1.2.0
-[1.1.0]: https://github.com/nickyjacobs/NEST/compare/v1.0.0...v1.1.0
+[1.3.0]: https://github.com/nickyjacobs/NEST/compare/v1.1.0...v1.2.0
+[1.2.0]: https://github.com/nickyjacobs/NEST/compare/v1.0.0...v1.1.0
 ```
 
 Rules:
@@ -135,14 +135,22 @@ Preview it before tagging: `uv run --script tools/release_check.py --notes <x.y.
    still to come: the example in `docs/reference/nest-json.md`, the session line in
    `docs/guide/updating.md`, the diagram and the template on this page, the overview in
    `kit/skills/nest-update/SKILL.md`, and `assets/quickstart-src/scene-update.html`. Render the
-   GIFs again (`assets/quickstart-src/README.md`): the quick start shows the head of `SETUP.md`.
+   GIFs again when what they show changed (`assets/quickstart-src/README.md`): the quick start
+   shows the first steps in VS Code, the update GIF the wording of `/nest-update`.
 4. Check:
    ```bash
    uv run --script tools/release_check.py
    uv run --project kit/scripts pytest -q kit/scripts/tests
    ```
-   and do a trial run of the setup when `SETUP.md` or a build step changed (`CLAUDE.md`
+   and do a trial run of the setup when `SETUP.md`, a file in `setup/` or a build step changed (`CLAUDE.md`
    describes how).
+   Then the one check that needs the network: `uv run --script tools/obsidian_lock.py --check`
+   must say that the lock file is up to date. It downloads every plugin and theme again and
+   compares names, repositories, versions and checksums with `kit/scripts/obsidian.lock.json`,
+   which no offline test can do. When it names a difference, find out why before anything else.
+   A lock file that changed since the last release (a new version, a new plugin) is tried in a
+   real vault before the release: `obsidian_setup.py install`, open the vault, trust it, and see
+   that Home and the plugins work.
 5. Commit as `Docs: changelog and version for <x.y.z>`, push, and open a pull request into
    `main` titled `Release: v<x.y.z>`.
 6. Merge it with a merge commit. Then tag the merge commit and push the tag:

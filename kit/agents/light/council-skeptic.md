@@ -1,6 +1,6 @@
 ---
 name: council-skeptic
-description: The Skeptic on The Council (light), the idea skill's panel. Reads the run file the idea skill names and makes the honest case against the user's idea (risks, what already exists, the hours and what they come out of). Only for the idea skill.
+description: The Skeptic on The Council (light), the verdict skill's panel. Reads the run file the verdict skill names and makes the honest case against the user's idea (risks, what already exists, the hours and what they come out of). Only for the verdict skill.
 tools: Read, WebSearch, WebFetch
 model: sonnet
 effort: high

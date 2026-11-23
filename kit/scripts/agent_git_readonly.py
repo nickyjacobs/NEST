@@ -23,6 +23,9 @@ Allowed:
   git status | diff | show | log | ls-files | blame | grep | check-ignore | rev-parse, and
       `git branch` and `git remote` without a name (so they only list), optionally after --no-pager
   ls, pwd, cat, head, tail, wc, grep, rg, find, stat, du, diff
+  the workspace's own secret scanner, in exactly this form and only from the workspace folder:
+      uv run [--quiet | -q] --script scripts/validate.py with --changed, --file <files>, --staged,
+      --private-blocks
   in PowerShell: git, and Get-ChildItem (gci, dir, ls), Get-Content (gc, cat, type),
       Select-String (sls), Get-Location (gl, pwd)
   each with the options in the tables below and no others
@@ -44,6 +47,11 @@ Refused:
   a word that starts with a wildcard (* ? [), or starts with - and holds one: the shell fills a
       wildcard in after this check, and a file named like an option would become one. Write ./*
   a path that starts with // or \\\\ (a network share)
+  in PowerShell: a word with a double quote in it (Windows PowerShell 5.1 hands the quote to the
+      program, which then reads '"--output=x"' as the option --output=x)
+  a pattern file for grep or rg (-f, --file): every line of it is a pattern, a comment and an
+      empty line included, and an empty line matches every line of every file. The private
+      terms are validate.py's to read
 
 Inside quotes a pattern may hold | < > ( ) * and the like, so `grep -E "a|b" notes` passes; a `$`
 only inside single quotes, because double quotes still expand it.
@@ -61,6 +69,7 @@ Claude sees); exit 0 leaves the call to the normal permission flow.
 from __future__ import annotations
 
 import json
+import os
 import posixpath
 import re
 import sys
@@ -200,27 +209,28 @@ COMMANDS: dict[str, Spec] = {
         "--report-identical-files --suppress-common-lines --width --minimal --ignore-matching-lines"),
         takes=_l("--exclude --width --ignore-matching-lines")),
     # grep is ugrep inside Claude Code: no --filter, --pager, --save-config, --view, --config, -Q.
-    "grep": Spec(flags="inrRlLcvwxHhoEFGPsqIaTbyukX0", values="eABCmfgtO", numeric=True, longs=_l(
+    # No pattern file (-f, --file) for grep and rg: see pattern_file().
+    "grep": Spec(flags="inrRlLcvwxHhoEFGPsqIaTbyukX0", values="eABCmgtO", numeric=True, longs=_l(
         "--include --exclude --exclude-dir --include-dir --ignore-case --no-ignore-case --smart-case --recursive "
         "--dereference-recursive --line-number --files-with-matches --files-without-match --count --invert-match "
         "--word-regexp --line-regexp --extended-regexp --fixed-strings --perl-regexp --basic-regexp "
         "--only-matching --no-filename --with-filename --context --after-context --before-context --max-count "
-        "--color --colour --null --binary-files --text --no-messages --quiet --silent --regexp --file --hidden "
+        "--color --colour --null --binary-files --text --no-messages --quiet --silent --regexp --hidden "
         "--ignore-binary --max-depth --glob --byte-offset --initial-tab --column-number --line-buffered"),
         takes=_l("--include --exclude --exclude-dir --include-dir --context --after-context --before-context "
-                 "--max-count --binary-files --regexp --file --max-depth --glob")),
+                 "--max-count --binary-files --regexp --max-depth --glob")),
     # rg: no --pre, --pre-glob, --hostname-bin, --search-zip (-z), all of which run a program.
-    "rg": Spec(flags="inlLcvwxHhoFPsSuUNIaqp0", values="eABCmgtTjfMdEr", longs=_l(
+    "rg": Spec(flags="inlLcvwxHhoFPsSuUNIaqp0", values="eABCmgtTjMdEr", longs=_l(
         "--line-number --no-line-number --files-with-matches --files-without-match --count --count-matches "
         "--invert-match --word-regexp --line-regexp --ignore-case --smart-case --case-sensitive --fixed-strings "
         "--hidden --no-ignore --no-ignore-vcs --glob --iglob --type --type-not --type-list --max-count --context "
         "--after-context --before-context --max-depth --files --no-heading --heading --with-filename "
         "--no-filename --only-matching --pretty --color --column --follow --multiline --multiline-dotall --pcre2 "
-        "--text --null --sort --sortr --max-columns --regexp --file --no-messages --quiet --stats --json --trim "
+        "--text --null --sort --sortr --max-columns --regexp --no-messages --quiet --stats --json --trim "
         "--vimgrep --unrestricted --max-filesize --crlf --no-config --one-file-system --passthru --replace "
         "--encoding --threads --byte-offset --binary"),
         takes=_l("--glob --iglob --type --type-not --max-count --context --after-context --before-context "
-                 "--max-depth --color --sort --sortr --max-columns --regexp --file --max-filesize --replace "
+                 "--max-depth --color --sort --sortr --max-columns --regexp --max-filesize --replace "
                  "--encoding --threads")),
     "find": Spec(words=FIND_WORDS, negative=True, takes=FIND_TAKES),
 }
@@ -237,6 +247,22 @@ RECEIVERS: dict[str, Spec] = {
         "--count --repeated --unique --ignore-case --skip-fields --skip-chars --check-chars"), positional=False,
         takes=_l("--skip-fields --skip-chars --check-chars")),
 }
+
+# The one program a read-only agent may start: the workspace's own secret scanner, which reads the
+# private terms file the right way and prints where a term occurs, never the term. Not --hook
+# (it writes a state file), not --stdin (it would wait for input).
+SCANNER = "scripts/validate.py"
+SCANNER_CALL = f"uv run --quiet --script {SCANNER} --changed (or --file <files>)"
+# Its options, each a word of its own: a value glued on with = would slip past the checks that
+# look at the start of a word. Only --file takes names, and every name is checked as a path.
+SCANNER_OPTIONS = _l("--file --changed --staged --private-blocks")
+# Windows PowerShell 5.1 hands a double quote inside a word to the program as it stands, and the
+# program reads it as a quote: '"--output=x"' arrives as --output=x. Found by reading, not tried.
+QUOTE_IN_WORD = ("a double quote inside a word (Windows PowerShell hands it to the program, which can then read "
+                 "the word as an option); write the word without one")
+PATTERN_FILE = ("{name} with a pattern file (-f, --file) is not allowed for a read-only agent: every line of the file "
+                "becomes a pattern, a comment and an empty line included, and an empty line matches everything. "
+                "Give the pattern itself in single quotes; for the private terms run " + SCANNER_CALL)
 
 # PowerShell: parameter names are matched whole. PowerShell itself accepts any unambiguous
 # prefix, so a short form such as -w is refused here rather than guessed at.
@@ -307,8 +333,15 @@ def scan(command: str, powershell: bool) -> tuple[list[list[Word]], str | None]:
                 else:
                     quote = ""
             elif ch == "\\" and not powershell and i + 1 < n:
-                word.append(command[i + 1])
-                i += 1
+                # Inside double quotes a POSIX shell takes a backslash as an escape only before
+                # these; before anything else it stays in the word ("a\b" is a\b, not ab).
+                if command[i + 1] in "\n\r":
+                    return parts, NO + "a line break"
+                if command[i + 1] in '$`"\\':
+                    word.append(command[i + 1])
+                    i += 1
+                else:
+                    word.append(ch)
             else:
                 word.append(ch)
         elif ch in " \t":
@@ -388,6 +421,17 @@ def is_number(spec: Spec, text: str) -> bool:
     return spec.negative and bool(re.fullmatch(r"-\d[\d.]*[A-Za-z]?", text))
 
 
+NETWORK = f"a path that starts with // or \\\\ reaches a network share, which is {NO.rstrip(': ')}"
+
+
+def network_path(text: str, powershell: bool) -> bool:
+    """Whether a word can reach a network share. In PowerShell also after a : or an = and behind
+    a provider name (FileSystem::), and with a doubled backslash anywhere."""
+    if powershell:
+        return bool(re.search(r"(?:^|[:=])[\\/]{2}", text)) or "::" in text or "\\\\" in text
+    return text.startswith(("//", "\\\\"))
+
+
 def check_words(label: str, spec: Spec, words: list[Word], powershell: bool = False, globs: bool = True) -> str | None:
     """Why one of the command's words is refused: an option that is not on its list, a wildcard
     that could turn into one, a network path.
@@ -400,11 +444,8 @@ def check_words(label: str, spec: Spec, words: list[Word], powershell: bool = Fa
     after_dashes = False
     for index, w in enumerate(words):
         text = w.text
-        if powershell:
-            if re.search(r"(?:^|[:=])[\\/]{2}", text) or "::" in text or "\\\\" in text:
-                return f"a path that starts with // or \\\\ reaches a network share, which is {NO.rstrip(': ')}"
-        elif text.startswith(("//", "\\\\")):
-            return f"a path that starts with // or \\\\ reaches a network share, which is {NO.rstrip(': ')}"
+        if network_path(text, powershell):
+            return NETWORK
         if globs and not powershell and (w.glob_start or ((w.glob or w.extended) and text.startswith("-"))):
             return (f"the wildcard in {text} is filled in by the shell after this check, and a file named like an "
                     "option would become one: write ./* instead, or put the pattern in quotes")
@@ -461,10 +502,84 @@ def option_allowed(spec: Spec, text: str, powershell: bool) -> bool | None:
     return False if len(text) > 1 else None
 
 
-def check(command: str, tool: str = "Bash") -> str | None:
-    """Why the command is refused, or None when it may run."""
+def pattern_file(spec: Spec, words: list[Word]) -> bool:
+    """Whether grep or rg is asked to read its patterns from a file: --file, or an f among the
+    short letters before one that takes the rest of the word as its value."""
+    for w in words:
+        text = w.text
+        if text == "--file" or text.startswith("--file="):
+            return True
+        if text.startswith("-") and not text.startswith("--"):
+            for letter in text[1:]:
+                if letter == "f":
+                    return True
+                if letter in spec.values or letter in spec.glued:
+                    break
+    return False
+
+
+def check_uv(args: list[Word], powershell: bool, at_root: bool) -> str | None:
+    """uv starts programs, so it passes in one form only: `uv run [--quiet | -q] --script
+    scripts/validate.py ...`, the workspace's own scanner, called from the workspace folder."""
+    texts = [w.text for w in args]
+    if texts[:1] == ["run"] and texts[1:2] in (["--quiet"], ["-q"]):
+        texts, args = [texts[0], *texts[2:]], [args[0], *args[2:]]
+    script = texts[2] if len(texts) > 2 else ""
+    if powershell:
+        script = script.replace("\\", "/")  # only there is a backslash a separator; in Bash it is part of a name
+    script = script.removeprefix("./")
+    if texts[:2] != ["run", "--script"] or script != SCANNER or args[2].glob:
+        return f"uv is allowed for one thing only, the secret scanner of this workspace: {SCANNER_CALL}"
+    if not at_root:
+        return (f"{SCANNER} is only run from the workspace folder (a folder further down can hold another script "
+                "with that name), and this call runs somewhere else or does not say where")
+    return check_scanner(args[3:], powershell)
+
+
+def check_scanner(args: list[Word], powershell: bool) -> str | None:
+    """The words after scripts/validate.py: the four options as whole words, and names after
+    --file only. A name goes through the path checks of every other command, and in PowerShell
+    through its network rules as well, although uv is not a PowerShell command."""
+    names: list[Word] = []
+    after = ""  # the option the last word was
+    for w in args:
+        text = w.text
+        if text in SCANNER_OPTIONS:
+            if after == "--file" and not names:
+                return "validate.py --file takes one or more file names, and none follows"
+            after = text
+        elif text.startswith("-") and len(text) > 1:
+            return (f"validate.py {text} is not on the list of options a read-only agent may use (--changed, --staged, "
+                    "--private-blocks, and --file followed by the file names as words of their own)")
+        elif after != "--file":
+            return f"validate.py takes file names only after --file, not {text}"
+        elif network_path(text, powershell) or network_path(text, False):
+            return NETWORK
+        else:
+            names.append(w)
+    if after == "--file" and not names:
+        return "validate.py --file takes one or more file names, and none follows"
+    return check_words("validate.py", Spec(), names, globs=not powershell)
+
+
+def in_workspace_folder(cwd: object) -> bool:
+    """Whether the call runs in the workspace folder itself, as far as the hook input says."""
+    root = os.environ.get("CLAUDE_PROJECT_DIR")
+    if not root or not isinstance(cwd, str) or not cwd:
+        return False
+    try:
+        return os.path.normcase(os.path.realpath(cwd)) == os.path.normcase(os.path.realpath(root))
+    except (OSError, ValueError):
+        return False
+
+
+def check(command: str, tool: str = "Bash", at_root: bool = False) -> str | None:
+    """Why the command is refused, or None when it may run. `at_root`: the call runs in the
+    workspace folder, which only the scanner call needs to know."""
     powershell = tool == "PowerShell"
-    cmd = command.strip()
+    # Only what the shell itself drops around a command: blanks and the line break that ends it.
+    # Python's strip() would also take a vertical tab, which the shell hands to the program.
+    cmd = command.strip(" \t\r\n" if powershell else " \t\n")
     if powershell:
         cmd = cmd.translate(POWERSHELL_LOOKALIKES)
     if not cmd:
@@ -472,16 +587,18 @@ def check(command: str, tool: str = "Bash") -> str | None:
     parts, reason = scan(cmd, powershell)
     if reason:
         return reason
+    if powershell and any('"' in w.text for words in parts for w in words):
+        return NO + QUOTE_IN_WORD
     if not parts[0]:
         return None
     for index, words in enumerate(parts):
-        reason = check_part(words, powershell, receiver=index > 0)
+        reason = check_part(words, powershell, receiver=index > 0, at_root=at_root)
         if reason:
             return reason
     return None
 
 
-def check_part(words: list[Word], powershell: bool, receiver: bool) -> str | None:
+def check_part(words: list[Word], powershell: bool, receiver: bool, at_root: bool = False) -> str | None:
     first = words[0]
     if first.glob:
         return NO + "a wildcard in the command name"
@@ -492,11 +609,15 @@ def check_part(words: list[Word], powershell: bool, receiver: bool) -> str | Non
         return check_words(name, RECEIVERS[name], words[1:])
     if name == "git":
         return check_git(words[1:], powershell)
+    if name == "uv":
+        return check_uv(words[1:], powershell, at_root)
     if powershell:
         name = POWERSHELL_ALIASES.get(name or "", name)
         if name in POWERSHELL:
             return check_words(name, POWERSHELL[name], words[1:], powershell=True)
     elif name in COMMANDS:
+        if name in ("grep", "rg") and pattern_file(COMMANDS[name], words[1:]):
+            return PATTERN_FILE.format(name=name)
         return check_words(name, COMMANDS[name], words[1:])
     return f"only git read commands and plain read commands are allowed, not {first.text}"
 
@@ -538,7 +659,7 @@ def main() -> int:
     if not isinstance(command, str):
         print("read-only guard: the hook input names no command text, so the call is refused", file=sys.stderr)
         return 2
-    reason = check(command, str(data["tool_name"]))
+    reason = check(command, str(data["tool_name"]), at_root=in_workspace_folder(data.get("cwd")))
     if reason:
         print(f"Read-only agent: {reason}. Refused: {command[:200]}", file=sys.stderr)
         return 2

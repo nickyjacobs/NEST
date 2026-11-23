@@ -9,7 +9,7 @@ without the key uses the default. Your assistant can change these for you: just 
 
 ```json
 {
-  "nest": {"version": "1.1.0", "update_check": true},
+  "nest": {"version": "1.2.0", "update_check": true},
   "session_guard": {"live_minutes": 30, "keep_days": 14},
   "size_ceiling": {"lines": 400},
   "morning_nudge": {"before": "11:00", "text": "say good morning for your briefing"},
@@ -29,8 +29,9 @@ change only `update_check`. Read by `scripts/nest_update.py`.
 | `source` | the NEST repository | Where releases come from: a git URL or a folder |
 | `update_check` | `true` | `false` silences the session-start line about new releases |
 | `skipped_version` | none | A release you chose to skip; the line stays quiet until the next one |
-| `files` | set by the setup | Per installed file: its kit file, whether it is a `copy` or `adapted`, the hash of the kit original, and the release that original came from |
+| `files` | set by the setup | Per installed file: its kit file, whether it is a `copy` or `adapted`, the hash of the kit original, and the release that original came from. The kit file can have another folder name than yours: after you kept the old name of a part NEST renamed, `.claude/skills/idea/SKILL.md` is recorded against `kit/skills/verdict/SKILL.md` |
 | `declined` | `{}` | Changes you said no to, so they are not offered again |
+| `renaming` | none | Only while a move to a new name is unfinished: the old kit path and the new one. `/nest-update` reads it to carry on or to undo, and removes it when the move is done |
 
 ## session_guard
 
@@ -38,7 +39,7 @@ Read by `scripts/session_guard.py`.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `live_minutes` | `30` | How long after its last activity another session still counts as open |
+| `live_minutes` | `30` | How long after its last activity another session can still be named as a second session; it is named only when it was active while yours was already open |
 | `keep_days` | `14` | How long the files with your own messages stay in `.claude/.session/` |
 | `words_chars` | `8000` | How much of your own words is handed to a conversation summary: your first message and the newest ones, at most 9500 characters |
 | `plan_author` | `"claude"` | The author value on a plan note in the inbox; `""` leaves the field out |

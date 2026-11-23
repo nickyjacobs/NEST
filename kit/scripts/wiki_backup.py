@@ -67,6 +67,29 @@ DEFAULT_EXCLUDES = """\
 .obsidian/workspaces.json
 .obsidian/cache/
 .obsidian/plugins/*/data.json.bak
+.obsidian/plugins/*/data.json.before-restore*
+# Temporary files of obsidian_setup.py that a killed run left behind.
+.obsidian/plugins/*/.nest-*.part
+.obsidian/themes/*/.nest-*.part
+# The code of the plugins and the theme that obsidian_setup.py install puts back: one line per
+# name in obsidian.lock.json, nothing wider. A plugin or theme you added yourself is not in that
+# list, so its code stays in the backup: nothing else could put it back.
+.obsidian/plugins/obsidian-minimal-settings/main.js
+.obsidian/plugins/obsidian-minimal-settings/manifest.json
+.obsidian/plugins/obsidian-minimal-settings/styles.css
+.obsidian/plugins/templater-obsidian/main.js
+.obsidian/plugins/templater-obsidian/manifest.json
+.obsidian/plugins/templater-obsidian/styles.css
+.obsidian/plugins/notebook-navigator/main.js
+.obsidian/plugins/notebook-navigator/manifest.json
+.obsidian/plugins/notebook-navigator/styles.css
+.obsidian/plugins/obsidian-style-settings/main.js
+.obsidian/plugins/obsidian-style-settings/manifest.json
+.obsidian/plugins/obsidian-style-settings/styles.css
+.obsidian/plugins/obsidian-meta-bind-plugin/main.js
+.obsidian/plugins/obsidian-meta-bind-plugin/manifest.json
+.obsidian/plugins/obsidian-meta-bind-plugin/styles.css
+.obsidian/themes/Minimal/
 .trash/
 .DS_Store
 Thumbs.db
@@ -74,6 +97,34 @@ desktop.ini
 *.tmp
 ~$*
 """
+
+
+def ensure_excludes(b) -> Path:
+    """Write the default excludes once, and add lines a newer version of this script brought.
+
+    Lines the user added or removed by hand stay as they are, except that a default line they
+    removed comes back: the file has no way to tell "removed" from "not there yet".
+
+    An exclude line only keeps files out that the backup does not hold yet. What an earlier push
+    already put in the backup (plugin code, before these lines existed) stays there and keeps
+    being backed up: this script never takes a file out of somebody's backup.
+    """
+    exclude = b.git_dir / "info" / "exclude"
+    exclude.parent.mkdir(parents=True, exist_ok=True)
+    current = exclude.read_text(encoding="utf-8") if exclude.exists() else ""
+    if "wiki_backup.py" not in current:
+        with exclude.open("a", encoding="utf-8", newline="\n") as fh:
+            fh.write("\n" + DEFAULT_EXCLUDES)
+        return exclude
+    have = {line.strip() for line in current.splitlines()}
+    missing = [
+        line for line in DEFAULT_EXCLUDES.splitlines()
+        if line.strip() and not line.startswith("#") and line.strip() not in have
+    ]
+    if missing:
+        with exclude.open("a", encoding="utf-8", newline="\n") as fh:
+            fh.write(("" if current.endswith("\n") else "\n") + "\n".join(missing) + "\n")
+    return exclude
 
 
 SCAN_BATCH = 200
@@ -333,11 +384,7 @@ def cmd_init(b: Backup, remote: str, yes: bool, set_remote: bool = False, rebind
         b.git("remote", "set-url", "origin", remote)
     else:
         b.git("remote", "add", "origin", remote)
-    exclude = b.git_dir / "info" / "exclude"
-    exclude.parent.mkdir(parents=True, exist_ok=True)
-    if "wiki_backup.py" not in (exclude.read_text(encoding="utf-8") if exclude.exists() else ""):
-        with exclude.open("a", encoding="utf-8", newline="\n") as fh:
-            fh.write("\n" + DEFAULT_EXCLUDES)
+    exclude = ensure_excludes(b)
     if b.has_commits():
         print("The backup already has commits; run `push` to back up new changes.")
         return 0
@@ -413,6 +460,7 @@ def cmd_push(b: Backup, message: str | None, allow_empty: bool = False, no_scan:
         return 1
     if b.recorded_tree() is None:
         b.record_tree()
+    ensure_excludes(b)
     add_all(b, warn_nested(b))
     if b.staged_changes():
         if (not allow_empty and b.has_commits() and not b.git("ls-files").stdout.strip()

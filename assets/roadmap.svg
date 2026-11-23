@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 772" width="1600" height="772" role="img" aria-labelledby="t d" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
 <title id="t">NEST roadmap</title>
-<desc id="d">Now: your assistant from your phone, a board on your Home page, what your assistant remembers is yours. Next: capture on the go, tried on Windows by a person. Later: upkeep that runs by itself, no plugin homework.</desc>
+<desc id="d">Now: plugins that fit you, bring your old notes with you, your assistant from your phone. Next: a command board on Home, ready in one sitting, what your assistant remembers is yours. Later: upkeep that runs by itself, your workspace on two computers.</desc>
 <defs>
 <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#121216"/><stop offset="1" stop-color="#0b0b0e"/></linearGradient>
 <linearGradient id="track" gradientUnits="userSpaceOnUse" x1="56" y1="0" x2="1544" y2="0"><stop offset="0" stop-color="#f5a55a"/><stop offset="0.5" stop-color="#a78bfa"/><stop offset="1" stop-color="#8b93a7" stop-opacity="0.5"/></linearGradient>
@@ -19,41 +19,48 @@
 <rect x="56" y="224" width="464" height="128" rx="18" fill="#17171d" stroke="#2a2a34"/>
 <rect x="56" y="246" width="4" height="84" rx="2" fill="#f5a55a"/>
 <rect x="80" y="256" width="64" height="64" rx="16" fill="#f5a55a" fill-opacity="0.13"/>
-<g transform="translate(94 270) scale(1.5)" fill="none" stroke="#f5a55a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></g>
-<text x="164" y="274" fill="#ffffff" font-size="21" font-weight="650">Your assistant from your phone</text>
-<text x="164" y="302" fill="#a9a9b6" font-size="16">Ask on the way home, or send a photo</text>
-<text x="164" y="324" fill="#a9a9b6" font-size="16">and find it filed in your wiki.</text>
+<g transform="translate(94 270) scale(1.5)" fill="none" stroke="#f5a55a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6"/><path d="M15 2v6"/><path d="M6 8h12v4a6 6 0 0 1-12 0z"/><path d="M12 18v4"/></g>
+<text x="164" y="274" fill="#ffffff" font-size="21" font-weight="650">Plugins that fit you</text>
+<text x="164" y="302" fill="#a9a9b6" font-size="16">The setup proposes Claude Code plugins</text>
+<text x="164" y="324" fill="#a9a9b6" font-size="16">worth having, checked before it does.</text>
 <rect x="56" y="372" width="464" height="128" rx="18" fill="#17171d" stroke="#2a2a34"/>
 <rect x="56" y="394" width="4" height="84" rx="2" fill="#f5a55a"/>
 <rect x="80" y="404" width="64" height="64" rx="16" fill="#f5a55a" fill-opacity="0.13"/>
-<g transform="translate(94 418) scale(1.5)" fill="none" stroke="#f5a55a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 7v9"/><path d="M12 7v5"/><path d="M16 7v7"/></g>
-<text x="164" y="422" fill="#ffffff" font-size="21" font-weight="650">A board on your Home page</text>
-<text x="164" y="450" fill="#a9a9b6" font-size="16">Your projects and ideas as cards,</text>
-<text x="164" y="472" fill="#a9a9b6" font-size="16">from new to done.</text>
+<g transform="translate(94 418) scale(1.5)" fill="none" stroke="#f5a55a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></g>
+<text x="164" y="422" fill="#ffffff" font-size="21" font-weight="650">Bring your old notes with you</text>
+<text x="164" y="450" fill="#a9a9b6" font-size="16">The notes you already have, moved in</text>
+<text x="164" y="472" fill="#a9a9b6" font-size="16">and filed, a batch at a time.</text>
 <rect x="56" y="520" width="464" height="128" rx="18" fill="#17171d" stroke="#2a2a34"/>
 <rect x="56" y="542" width="4" height="84" rx="2" fill="#f5a55a"/>
 <rect x="80" y="552" width="64" height="64" rx="16" fill="#f5a55a" fill-opacity="0.13"/>
-<g transform="translate(94 566) scale(1.5)" fill="none" stroke="#f5a55a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></g>
-<text x="164" y="570" fill="#ffffff" font-size="21" font-weight="650">What it remembers is yours</text>
-<text x="164" y="598" fill="#a9a9b6" font-size="16">Its notes in your workspace, in your</text>
-<text x="164" y="620" fill="#a9a9b6" font-size="16">backup and under the secret scan.</text>
+<g transform="translate(94 566) scale(1.5)" fill="none" stroke="#f5a55a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></g>
+<text x="164" y="570" fill="#ffffff" font-size="21" font-weight="650">Your assistant from your phone</text>
+<text x="164" y="598" fill="#a9a9b6" font-size="16">Ask on the way home, or send a photo</text>
+<text x="164" y="620" fill="#a9a9b6" font-size="16">and find it filed in your wiki.</text>
 <circle cx="578" cy="140" r="10" fill="#0e0e12" stroke="#a78bfa" stroke-width="3"/><circle cx="578" cy="140" r="4" fill="#a78bfa"/>
 <text x="568" y="196" fill="#a78bfa" font-size="22" font-weight="700" letter-spacing="3">NEXT</text>
 <text x="666" y="196" fill="#8d8d9a" font-size="17">after that</text>
 <rect x="568" y="224" width="464" height="128" rx="18" fill="#17171d" stroke="#2a2a34"/>
 <rect x="568" y="246" width="4" height="84" rx="2" fill="#a78bfa"/>
 <rect x="592" y="256" width="64" height="64" rx="16" fill="#a78bfa" fill-opacity="0.13"/>
-<g transform="translate(606 270) scale(1.5)" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></g>
-<text x="676" y="274" fill="#ffffff" font-size="21" font-weight="650">Capture on the go</text>
-<text x="676" y="302" fill="#a9a9b6" font-size="16">A thought or a voice note lands in your</text>
-<text x="676" y="324" fill="#a9a9b6" font-size="16">inbox and is filed when you sit down.</text>
+<g transform="translate(606 270) scale(1.5)" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></g>
+<text x="676" y="274" fill="#ffffff" font-size="21" font-weight="650">A command board on Home</text>
+<text x="676" y="302" fill="#a9a9b6" font-size="16">Today, your tasks and your routines</text>
+<text x="676" y="324" fill="#a9a9b6" font-size="16">in one place, a click away.</text>
 <rect x="568" y="372" width="464" height="128" rx="18" fill="#17171d" stroke="#2a2a34"/>
 <rect x="568" y="394" width="4" height="84" rx="2" fill="#a78bfa"/>
 <rect x="592" y="404" width="64" height="64" rx="16" fill="#a78bfa" fill-opacity="0.13"/>
-<g transform="translate(606 418) scale(1.5)" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></g>
-<text x="676" y="422" fill="#ffffff" font-size="21" font-weight="650">Tried on Windows by a person</text>
-<text x="676" y="450" fill="#a9a9b6" font-size="16">A complete setup run, with a fix for</text>
-<text x="676" y="472" fill="#a9a9b6" font-size="16">everything it turns up.</text>
+<g transform="translate(606 418) scale(1.5)" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M9 2h6"/></g>
+<text x="676" y="422" fill="#ffffff" font-size="21" font-weight="650">Ready in one sitting</text>
+<text x="676" y="450" fill="#a9a9b6" font-size="16">A short route to a workspace that</text>
+<text x="676" y="472" fill="#a9a9b6" font-size="16">works; the rest when you want it.</text>
+<rect x="568" y="520" width="464" height="128" rx="18" fill="#17171d" stroke="#2a2a34"/>
+<rect x="568" y="542" width="4" height="84" rx="2" fill="#a78bfa"/>
+<rect x="592" y="552" width="64" height="64" rx="16" fill="#a78bfa" fill-opacity="0.13"/>
+<g transform="translate(606 566) scale(1.5)" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></g>
+<text x="676" y="570" fill="#ffffff" font-size="21" font-weight="650">What it remembers is yours</text>
+<text x="676" y="598" fill="#a9a9b6" font-size="16">Its notes in your workspace, in your</text>
+<text x="676" y="620" fill="#a9a9b6" font-size="16">backup and under the secret scan.</text>
 <circle cx="1090" cy="140" r="10" fill="#0e0e12" stroke="#8b93a7" stroke-width="3"/><circle cx="1090" cy="140" r="4" fill="#8b93a7"/>
 <text x="1080" y="196" fill="#8b93a7" font-size="22" font-weight="700" letter-spacing="3">LATER</text>
 <text x="1195" y="196" fill="#8d8d9a" font-size="17">further out</text>
@@ -67,10 +74,10 @@
 <rect x="1080" y="372" width="464" height="128" rx="18" fill="#17171d" stroke="#2a2a34"/>
 <rect x="1080" y="394" width="4" height="84" rx="2" fill="#8b93a7"/>
 <rect x="1104" y="404" width="64" height="64" rx="16" fill="#8b93a7" fill-opacity="0.13"/>
-<g transform="translate(1118 418) scale(1.5)" fill="none" stroke="#8b93a7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></g>
-<text x="1188" y="422" fill="#ffffff" font-size="21" font-weight="650">No plugin homework</text>
-<text x="1188" y="450" fill="#a9a9b6" font-size="16">The setup installs the Obsidian plugins</text>
-<text x="1188" y="472" fill="#a9a9b6" font-size="16">you chose.</text>
+<g transform="translate(1118 418) scale(1.5)" fill="none" stroke="#8b93a7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="11" rx="2"/><path d="M2 19h20"/></g>
+<text x="1188" y="422" fill="#ffffff" font-size="21" font-weight="650">Your workspace on two computers</text>
+<text x="1188" y="450" fill="#a9a9b6" font-size="16">Your assistant on your other computer</text>
+<text x="1188" y="472" fill="#a9a9b6" font-size="16">too, in step with the first.</text>
 <path d="M56 692 H1544" stroke="#24242c"/>
 <text x="56" y="732" fill="#8d8d9a" font-size="17">Every part stays a choice and reaches your workspace through <tspan fill="#ffffff" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">/nest-update</tspan></text>
 </svg>

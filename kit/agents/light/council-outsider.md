@@ -1,6 +1,6 @@
 ---
 name: council-outsider
-description: The Outsider on The Council (light), the idea skill's panel. Reads only the idea from the run file the idea skill names, without anything about the user, and says what fresh eyes see. Only for the idea skill.
+description: The Outsider on The Council (light), the verdict skill's panel. Reads only the idea from the run file the verdict skill names, without anything about the user, and says what fresh eyes see. Only for the verdict skill.
 tools: Read
 model: sonnet
 effort: high

@@ -1,6 +1,6 @@
 ---
 name: council-judge
-description: The Judge of The Council (light), the idea skill's panel. Reads the run file with the idea, the user's lens and the reports of The Believer, The Skeptic, The Investor and The Outsider, and gives the verdict with a score per criterion. Only for the idea skill, after the four reports.
+description: The Judge of The Council (light), the verdict skill's panel. Reads the run file with the idea, the user's lens and the reports of The Believer, The Skeptic, The Investor and The Outsider, and gives the verdict with a score per criterion. Only for the verdict skill, after the four reports.
 tools: Read
 model: opus
 effort: high

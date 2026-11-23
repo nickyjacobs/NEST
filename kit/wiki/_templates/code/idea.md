@@ -14,10 +14,10 @@ author: claude
 cssclasses: [idea-note]
 ---
 
-%% Mirror of the idea page, `25-ideas/<slug>/idea.md`, as The Council (`idea` skill) and The Architects
-(`blueprint` skill) write it in their styled mode. The spec is "Idea page layout" in
-`.claude/skills/idea/reference.md` plus "What the blueprint puts on idea.md" in
-`.claude/skills/blueprint/reference.md`; the run files next to it, `blueprints/<YYYY-MM-DD-HHMM>-v<n>.md`
+%% Mirror of the idea page, `25-ideas/<slug>/idea.md`, as The Council and The Architects write it, each
+through its own skill, in their styled mode. The spec is "Idea page layout" in
+the Council skill's `reference.md` plus "What the blueprint puts on idea.md" in
+the Architects skill's `reference.md`; the run files next to it, `blueprints/<YYYY-MM-DD-HHMM>-v<n>.md`
 and `reviews/<YYYY-MM-DD-HHMM>-council-v<n>.md`, have their layouts in the same files. The page is rebuilt
 from the run files on every save; only the ticks and the `**Answer:**` / `**Still open:**` lines under an
 open point survive as hand edits.

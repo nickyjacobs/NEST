@@ -1,5 +1,5 @@
 ---
-name: idea
+name: verdict
 description: Puts the user's idea or plan to The Council, a panel of subagents that judges whether it is worth their hours and money. The Believer, The Skeptic, The Investor and The Outsider look at it on their own and a judge gives a verdict (GO, GO WITH CONDITIONS, RESHAPE, PARK or DROP) with a score. Use when the user says "I have an idea", "I've got an idea", "what do you think of this idea?", "rate my idea", "is this worth it?", "is this a good idea?", "ask the council", "put it to the council", and for the follow-ups "save it", "what did the skeptic say?", "why that verdict?", "what if ...". Not for working a rough idea out, fleshing it out or drawing up a plan (that is the blueprint skill, The Architects), not for looking up a price or a fact (research), and not for making a new skill.
 argument-hint: "[the idea, in your own words]"
 metadata:

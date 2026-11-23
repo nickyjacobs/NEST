@@ -1,6 +1,6 @@
 ---
 name: blueprint
-description: The user has a rough idea and wants it worked out, not judged ("I've got a rough idea", "help me flesh this out", "work this idea out", "think this through with me", "call the architects", "draw up a blueprint", "what would this look like?"). The Foreman first asks the few things only the user can decide, then The Architects (The Surveyor, The Dreamer, The Client, The Engineer, The Inspector, The Draftsman) draw it up into one blueprint that labels what is the user's, what the team proposed or assumed and what is still open. Also the follow-ups "save it", "what did the dreamer say?", "take variant 3", "what if ...", "go through the open points", "send it to the council", "rework it with the council's verdict", and answers to The Foreman's questions ("take your recommendations", "just start"). Not for judging an idea or asking whether it is any good (that is the idea skill, The Council), not for looking up a fact or a price (research), and not for planning code in this workspace.
+description: The user has a rough idea and wants it worked out, not judged ("I've got a rough idea", "help me flesh this out", "work this idea out", "think this through with me", "call the architects", "draw up a blueprint", "what would this look like?"). The Foreman first asks the few things only the user can decide, then The Architects (The Surveyor, The Dreamer, The Client, The Engineer, The Inspector, The Draftsman) draw it up into one blueprint that labels what is the user's, what the team proposed or assumed and what is still open. Also the follow-ups "save it", "what did the dreamer say?", "take variant 3", "what if ...", "go through the open points", "send it to the council", "rework it with the council's verdict", and answers to The Foreman's questions ("take your recommendations", "just start"). Not for judging an idea or asking whether it is any good (that is the verdict skill, The Council), not for looking up a fact or a price (research), and not for planning code in this workspace.
 argument-hint: "<the rough idea, in your own words>"
 metadata:
   does: "Hands your rough idea to The Architects: The Foreman asks you the few things only you can decide, then six desks measure the ground, widen it, sit in the first user's chair, shape it, inspect it and draw one blueprint, labelled with what is yours, what they proposed or assumed and what is still open. Then The Council can judge it, and its verdict can come back in for version two."
@@ -143,9 +143,9 @@ section 11. Short version:
   three; the whole flow when the idea itself changed.
 - "go through the open points" and the answers: on the saved `idea.md`; they become the
   user's answers for the next version and for The Council.
-- "send it to the council": save first, then the idea skill (Skill tool) with the Council
-  brief and `idea_slug: <slug>` (when the idea skill is set to run on the user's command only,
-  the Skill tool refuses: give the user the line to type, `/idea` with that slug); it reads the saved blueprint, and the user can save its
+- "send it to the council": save first, then the verdict skill (Skill tool) with the Council
+  brief and `idea_slug: <slug>` (when the verdict skill is set to run on the user's command only,
+  the Skill tool refuses: give the user the line to type, `/verdict` with that slug); it reads the saved blueprint, and the user can save its
   verdict there (The Council never saves by itself).
 - "rework it with the council's verdict": a new version with the verdict as feedback, The
   Foreman first.
@@ -158,7 +158,7 @@ the run stands; read it before you answer a follow-up.
 
 - "Stop" while desks work: stop the running agents (TaskStop), note it in `meta.md`, one
   line that it stopped. A later "go on" picks up at the stage `meta.md` names.
-- The user wants a verdict ("is this a good idea?", "rate it"): the idea skill. A fact or a
+- The user wants a verdict ("is this a good idea?", "rate it"): the verdict skill. A fact or a
   price looked up: research. A design for code in this workspace: plan it here, not with
   The Architects.
 - A desk that fails: run it once more with the same run file; failing again, carry on

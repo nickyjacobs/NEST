@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -189,10 +191,13 @@ def test_glob_matching():
     assert not validate.matches_any("wiki/notes/a.md", ["wiki/_inbox/**"])
 
 
-def test_file_mode_skips_binary(root):
-    b = root / "img.png"
-    b.write_bytes(b"\x89PNG\x00\x00" + AWS.encode())
-    assert validate.main(["--file", str(b)]) == 0
+def test_file_mode_names_a_binary_file_and_does_not_fail_on_it(root, capsys):
+    # A scan of every tracked file meets images; they are named in one line and are no failure.
+    for name in ("img.png", "photo.jpg"):
+        (root / name).write_bytes(b"\x89PNG\x00\x00" + AWS.encode())
+    assert validate.main(["--file", str(root / "img.png"), str(root / "photo.jpg")]) == 0
+    err = capsys.readouterr().err
+    assert err.count("\n") == 1 and "2 files were not scanned: not text" in err and "img.png" in err and "photo.jpg" in err
 
 
 def git(cwd: Path, *args: str) -> None:
@@ -387,7 +392,7 @@ def big_file(path: Path) -> None:
 def test_oversized_file_is_named_as_skipped(root, monkeypatch, capsys):
     big = root / "big.txt"
     big_file(big)
-    assert validate.main(["--file", str(big)]) == 0
+    assert validate.main(["--file", str(big)]) == validate.NOT_SCANNED
     assert "big.txt was not scanned: larger than 2 MB" in capsys.readouterr().err
     rc, out, _ = run_hook("post", post(big), monkeypatch, capsys)
     assert rc == 0 and "was not scanned" in json.loads(out)["hookSpecificOutput"]["additionalContext"]
@@ -790,3 +795,430 @@ def test_shell_hook_says_how_many_commits_it_did_not_read(repo, monkeypatch, cap
     note = json.loads(out)["hookSpecificOutput"]["additionalContext"]
     assert rc == 0 and "3 older commits were not read" in note and "if the pre-commit scan is installed" in note
     assert run_hook("shell", shell(repo), monkeypatch, capsys) == (0, "", "")
+
+
+# ---------------------------------------------------------------- a private term inside the user's own home folder path
+# A fictional person, Mira Okonkwo, whose user name holds her surname. The home folder is always
+# handed in: no test reads the home folder or the user name of the machine it runs on.
+
+WIN_HOME = "C:\\Users\\m.okonkwo"
+MAC_HOME = "/Users/m.okonkwo"
+
+
+def private_hits(text: str, root: Path, home: str, terms: str = "Okonkwo\n") -> list[int]:
+    (root / validate.TERMS_FILE).write_text(terms, encoding="utf-8")
+    return [f.line for f in validate.Scanner(root, home=home).scan(text, ("private",))]
+
+
+@pytest.mark.parametrize("home,line", [
+    (WIN_HOME, "Workspace: C:\\Users\\m.okonkwo\\Projects\\workspace"),
+    (WIN_HOME, "Workspace: c:\\users\\M.Okonkwo\\Projects\\workspace"),          # another case, drive letter included
+    (WIN_HOME, "Workspace: C:/Users/m.okonkwo/Projects/workspace"),               # forward slashes
+    (WIN_HOME, '{"cwd": "C:\\\\Users\\\\m.okonkwo\\\\Projects"}'),                # backslashes escaped as in JSON
+    (WIN_HOME, "Open file:///C:/Users/m.okonkwo/Projects/notes.md"),
+    (WIN_HOME, "Open file:///C%3A%5CUsers%5Cm.okonkwo%5CProjects"),               # URL-encoded
+    (WIN_HOME, "In Git Bash that is /c/Users/m.okonkwo/Projects"),
+    (WIN_HOME, "Under WSL that is /mnt/c/Users/m.okonkwo/Projects"),
+    (WIN_HOME, "The home folder is 'C:\\Users\\m.okonkwo'."),                     # in quotes, at the end of a sentence
+    (WIN_HOME, "cd c:/users/m.okonkwo"),                                          # the end of the line
+    (WIN_HOME, "HOME=C:\\Users\\m.okonkwo"),
+    (WIN_HOME, "Under Cygwin that is /cygdrive/c/Users/m.okonkwo/Projects"),
+    (WIN_HOME, "Open file:///c:/Users/m.okonkwo/Projects/notes.md"),
+    (WIN_HOME, '{"cwd":"C:\\\\Users\\\\m.okonkwo\\\\Projects"}'),              # escaped twice, no space after the colon
+    (WIN_HOME, "Open [the notes](file:///C:/Users/m.okonkwo/notes.md)"),
+    (MAC_HOME, "Open file:///Users/m.okonkwo/notes.md and (/Users/m.okonkwo)"),
+    (MAC_HOME, "Open file:///Users%2Fm.okonkwo%2Fnotes.md"),
+    (MAC_HOME, "cd ~m.okonkwo"),
+    ("/okonkwo", "Workspace: /okonkwo/projects"),                                 # a home folder of one level, as itself
+    (WIN_HOME, "Both C:\\Users\\m.okonkwo\\a and C:\\Users\\m.okonkwo\\b"),
+    (MAC_HOME, "Workspace: /Users/m.okonkwo/Projects/workspace"),
+    (MAC_HOME, "Workspace: `/Users/m.okonkwo`"),
+    (MAC_HOME, "Short form: ~m.okonkwo/Projects"),
+    ("/home/m.okonkwo", "Workspace: /home/m.okonkwo/projects/workspace"),
+    ("/srv/people/m.okonkwo", "Workspace: /srv/people/m.okonkwo/workspace"),      # a home folder in an unusual place
+    ("C:\\Users\\Mira Okonkwo", "Workspace: C:\\Users\\Mira Okonkwo\\Projects"),
+    ("C:\\Users\\Mira Okonkwo", "Open file:///C:/Users/Mira%20Okonkwo/Projects"),
+    # The home folder itself in ordinary text: the end of a sentence, a comma, a table cell, a list of paths.
+    (WIN_HOME, "Your home folder is C:\\Users\\m.okonkwo."),
+    (MAC_HOME, "Your home folder is /Users/m.okonkwo."),
+    (WIN_HOME, "Home is C:\\Users\\m.okonkwo, the workspace sits below it."),
+    (MAC_HOME, "In /Users/m.okonkwo, nothing changed."),
+    (MAC_HOME, "Is it /Users/m.okonkwo? Yes: /Users/m.okonkwo! In /Users/m.okonkwo: two files; /Users/m.okonkwo; done"),
+    (WIN_HOME, "| Home | C:\\Users\\m.okonkwo |"),
+    (WIN_HOME, "|Home|C:\\Users\\m.okonkwo|"),
+    (MAC_HOME, "| Home | /Users/m.okonkwo |"),
+    (MAC_HOME, "Home: /Users/m.okonkwo  "),                                           # white space before the end of the line
+    (MAC_HOME, "PATH=/usr/bin:/Users/m.okonkwo/bin"),
+    (MAC_HOME, 'export PATH="$PATH:/Users/m.okonkwo/.local/bin"'),
+    (MAC_HOME, "PATH=/usr/local/bin:/usr/bin:/Users/m.okonkwo/.local/bin:/bin"),
+])
+def test_term_inside_the_own_home_folder_path_is_not_a_finding(root, home, line):
+    assert private_hits(f"first line\n{line}\n", root, home) == []
+
+
+@pytest.mark.parametrize("home,line", [
+    (WIN_HOME, "Mail from Okonkwo about the contract"),
+    (WIN_HOME, "C:\\Users\\m.okonkwo\\Projects is where Okonkwo keeps the work"),   # the path is exempt, the name after it is not
+    (WIN_HOME, "C:\\Users\\m.okonkwo\\Projects\\okonkwo-contract.md"),              # further down the same path
+    (WIN_HOME, "C:\\Users\\m.okonkwo-old\\Projects"),                               # another folder
+    (WIN_HOME, "C:\\Users\\m.okonkwo.bak\\Projects"),
+    (WIN_HOME, "C:\\Users\\okonkwo\\Projects"),                                     # another user
+    (WIN_HOME, "D:\\clients\\okonkwo\\offer.md"),
+    (WIN_HOME, "ssh m.okonkwo@files.example.org"),                                  # the user name outside a path
+    (WIN_HOME, "user: m.okonkwo"),
+    (MAC_HOME, "/Users/m.okonkwo/notes and a call with Okonkwo"),
+    (MAC_HOME, "/srv/clients/okonkwo/Users"),
+    (MAC_HOME, "Profile: https://intranet.example.org/users/m.okonkwo/profile"),    # an account on a site, not a folder
+    (WIN_HOME, "Profile: [me](https://intranet.example.org/home/m.okonkwo)"),
+    ("", "Workspace: C:\\Users\\m.okonkwo\\Projects"),                              # no home folder known: nothing is exempt
+    ("/", "Workspace: /Users/m.okonkwo/Projects"),
+    ("C:\\", "Workspace: C:\\Users\\m.okonkwo\\Projects"),
+    ("m.okonkwo", "Workspace: /Users/m.okonkwo/Projects"),                          # a home folder that is not a full path
+    ("\\\\files\\homes\\m.okonkwo", "Workspace: \\\\files\\homes\\m.okonkwo\\Projects"),  # a home folder on a share
+    # The same folder names in another place: another computer, a share, a longer path, a web address.
+    (MAC_HOME, "scp files.example.org:/Users/m.okonkwo/notes.md ."),
+    (WIN_HOME, "\\\\fileserver\\Users\\m.okonkwo\\Projects"),
+    (WIN_HOME, "\\\\fileserver\\C:\\Users\\m.okonkwo\\Projects"),
+    (WIN_HOME, "D:\\backup\\C:\\Users\\m.okonkwo"),
+    (WIN_HOME, "D:\\Users\\m.okonkwo\\Projects"),                                    # another drive
+    (WIN_HOME, "Under WSL the Linux home is /home/m.okonkwo/projects"),             # not this folder
+    (MAC_HOME, "/srv/clients/Users/m.okonkwo/contract.md"),
+    (MAC_HOME, "/Volumes/Backup/Users/m.okonkwo/notes"),
+    (MAC_HOME, "see intranet.example.org/users/m.okonkwo/profile"),                 # a web address without https://
+    (MAC_HOME, "see //intranet.example.org/users/m.okonkwo"),
+    (MAC_HOME, "https://intranet.example.org/a b/users/m.okonkwo"),
+    (MAC_HOME, "see\thttps://intranet.example.org/users/m.okonkwo"),
+    (MAC_HOME, "vscode://file/Users/m.okonkwo/notes.md"),
+    (MAC_HOME, "users/m.okonkwo/profile"),                                          # relative
+    (MAC_HOME, "the folder Users/m.okonkwo"),
+    (MAC_HOME, "My page: [me](/users/m.okonkwo)"),                                  # a markdown link to a page on a site
+    (MAC_HOME, "~~m.okonkwo and x~m.okonkwo and ./~m.okonkwo"),
+    # A folder that only starts with the name.
+    ("C:\\Users\\Mira Okonkwo", "C:\\Users\\Mira Okonkwo Backup\\notes.md"),
+    (MAC_HOME, "/Users/m.okonkwo (old)/notes.md"),
+    (WIN_HOME, "C:\\Users\\m.okonkwo~1\\notes.md"),
+    (MAC_HOME, "/Users/m.okonkwo+archive/notes.md"),
+    (MAC_HOME, "/Users/m.okonkwo@corp/notes.md"),
+    (WIN_HOME, "C:\\Users\\m.okonkwo$\\notes.md"),
+    (MAC_HOME, "/Users/m.okonkwo_old/notes and Okonkwo"),
+    (MAC_HOME, "~m.okonkwo-old/notes"),
+    # A space after the path may be the rest of another folder's name: reported.
+    (WIN_HOME, "Home is C:\\Users\\m.okonkwo and the workspace sits below it."),
+    (WIN_HOME, "cd C:\\Users\\m.okonkwo && dir"),
+    (MAC_HOME, "cd /Users/m.okonkwo && ls"),
+    (MAC_HOME, "/Users/m.okonkwo.x"),                                               # a full stop inside a name
+    (MAC_HOME, "/Users/m.okonkwo,old/notes.md"),
+    (MAC_HOME, "/Users/m.okonkwo  old | x"),
+    # After a colon it may be another computer: only a list of paths (PATH) is told apart.
+    (MAC_HOME, "nas:/Users/m.okonkwo/notes.md"),
+    (MAC_HOME, "rsync -a mira@files.example.org:/Users/m.okonkwo/ ."),
+    (MAC_HOME, "https://intranet.example.org/a:/Users/m.okonkwo"),
+    (WIN_HOME, "workspace:C:\\Users\\m.okonkwo\\Projects"),                      # a key or a host: cannot be told apart
+    (WIN_HOME, "nas:C:\\Users\\m.okonkwo\\Projects"),
+    # A home folder of one level is not every folder with that name.
+    ("/okonkwo", "Offer: /data/okonkwo/contract.md"),
+    ("/okonkwo", "Offer: clients/okonkwo/contract.md"),
+    ("/okonkwo", "Offer: D:\\clients\\okonkwo"),
+])
+def test_term_anywhere_else_is_still_a_finding(root, home, line):
+    assert private_hits(f"first line\n{line}\n", root, home) == [2]
+
+
+def test_regex_term_that_reaches_past_the_home_folder_is_still_a_finding(root):
+    line = "C:\\Users\\m.okonkwo\\Projects\\workspace\n"
+    assert private_hits(line, root, WIN_HOME, "/okonkwo.Projects/\n") == [1]
+    # A second way to match that starts inside the home folder path and ends outside it.
+    assert private_hits(line, root, WIN_HOME, "/okonkwo|kwo.Projects/\n") == [1]
+    assert private_hits(line, root, WIN_HOME, "/okonkwo/\n") == []
+    # Every match on the line is judged, not the first: one inside the path, one after it.
+    assert private_hits("C:\\Users\\m.okonkwo\\Projects\\okonkwo.md\n", root, WIN_HOME, "/okonkwo/\n") == [1]
+    assert private_hits("C:\\Users\\m.okonkwo\\a and C:\\Users\\m.okonkwo\\b and D:\\x\\okonkwo\n", root, WIN_HOME) == [1]
+    assert private_hits("C:\\Users\\m.okonkwo\\Projects\n", root, WIN_HOME, "/.*okonkwo.*/\n") == [1]
+    assert private_hits("C:\\Users\\m.okonkwo\\Projects\n", root, WIN_HOME, "/(?=okonkwo)/\n") == [1]  # an empty match is inside nothing
+
+
+# The check runs on every write and every commit, so its cost may not grow faster than the line.
+# Each case is held to a generous number of seconds, and four times the input may cost nowhere
+# near sixteen times the time. The first version took 39 seconds for a line of 45,000 slashes.
+def scan_seconds(scanner, text: str, expect: int) -> float:
+    best = None
+    for _ in range(2):
+        started = time.perf_counter()
+        found = scanner.scan(text, ("private",))
+        spent = time.perf_counter() - started
+        best = spent if best is None else min(best, spent)
+        assert len(found) == expect
+    return best
+
+
+@pytest.mark.parametrize("name,build,expect", [
+    ("a megabyte of slashes after a term", lambda n: "Okonkwo " + "/" * (250_000 * n), 1),
+    ("a megabyte of backslashes after the home path", lambda n: "/Users/m.okonkwo/a " + "\\" * (250_000 * n), 0),
+    ("a megabyte of encoded separators", lambda n: "/Users/m.okonkwo/a " + "%2F%5C" * (40_000 * n), 0),
+    ("home paths on one line without a space",
+     lambda n: "[" + ",".join(f'"/Users/m.okonkwo/Projects/notes/file{i}.md"' for i in range(5_000 * n)) + "]", 0),
+    ("half-written home paths", lambda n: "/Users/m.okonkwo/a " + "/Users/m.okonkw/" * (15_000 * n), 0),
+    ("the term many times, each inside the path", lambda n: " ".join(["/Users/m.okonkwo/x"] * (12_000 * n)), 0),
+    ("the term many times, outside a path", lambda n: "okonkwo " * (30_000 * n), 1),
+    ("a regex term that matches at every character", lambda n: "/Users/m.okonkwo/" + "o" * (60_000 * n), 1),
+])
+def test_term_scan_time_grows_with_the_line_and_no_faster(root, name, build, expect):
+    terms = "/o/\n" if name.startswith("a regex term") else "Okonkwo\n"
+    (root / validate.TERMS_FILE).write_text(terms, encoding="utf-8")
+    scanner = validate.Scanner(root, home=MAC_HOME)
+    small, large = scan_seconds(scanner, build(1), expect), scan_seconds(scanner, build(4), expect)
+    assert large < 20, f"{name}: {large:.1f} s"
+    assert large < 8 * small + 1.0, f"{name}: {small:.3f} s for one part, {large:.3f} s for four"
+
+
+def test_home_folder_path_hides_no_secret_and_keeps_its_own_warning(root):
+    (root / validate.TERMS_FILE).write_text("Okonkwo\n", encoding="utf-8")
+    scanner = validate.Scanner(root, home=WIN_HOME)
+    found = [(f.kind, f.rule) for f in scanner.scan("C:\\Users\\m.okonkwo\\keys.txt holds " + GITHUB + "\n")]
+    assert found == [("hard", "github_token")]
+    found = [(f.kind, f.rule) for f in scanner.scan("See C:\\Users\\m.okonkwo\\Projects\\notes.md\n")]
+    assert found == [("soft", "home_path")]
+
+
+def test_post_hook_is_silent_about_the_own_home_folder_path(root, monkeypatch, capsys):
+    monkeypatch.setattr(validate, "user_home", lambda: WIN_HOME)
+    (root / validate.TERMS_FILE).write_text("# people\n\nOkonkwo\n", encoding="utf-8")
+    (root / "nest.json").write_text(json.dumps({"secret_scan": {"soft_skip": ["_setup/**"]}}), encoding="utf-8")
+    state = root / "_setup" / "STATE.md"
+    state.parent.mkdir()
+    state.write_text("Workspace: C:\\Users\\m.okonkwo\\Projects\\workspace\n", encoding="utf-8")
+    payload = {"tool_name": "Write", "tool_input": {"file_path": str(state), "content": state.read_text(encoding="utf-8")}}
+    assert run_hook("post", payload, monkeypatch, capsys) == (0, "", "")
+    state.write_text("Workspace: C:\\Users\\m.okonkwo\\Projects\\workspace\nOwner: Mira Okonkwo\n", encoding="utf-8")
+    rc, _, err = run_hook("post", payload, monkeypatch, capsys)
+    assert rc == 2 and "line 2: private_term_line_3" in err and "line 1" not in err
+
+
+# ---------------------------------------------------------------- silence means scanned and clean
+# The first reviewer run got no output and exit 0 for a note with a token in it: the name had a
+# space and was not quoted, so the scanner was handed two paths that do not exist.
+
+def file_mode(args: list[str], capsys) -> tuple[int, str]:
+    rc = validate.main(args)
+    return rc, capsys.readouterr().err
+
+
+def test_file_mode_names_every_path_it_did_not_scan(root, monkeypatch, capsys):
+    monkeypatch.chdir(root)
+    (root / "notes").mkdir()
+    (root / "notes" / "Meeting notes.md").write_text(f"token {GITHUB}\n", encoding="utf-8")
+    (root / "clean.md").write_text("nothing here\n", encoding="utf-8")
+    assert file_mode(["--file", "clean.md"], capsys) == (0, "")
+    rc, err = file_mode(["--file", "notes/Meeting", "notes.md"], capsys)  # the name, cut in two by its space
+    assert rc == validate.NOT_SCANNED == 3
+    assert "notes/Meeting was not scanned: does not exist" in err and "notes.md was not scanned: does not exist" in err
+    rc, err = file_mode(["--file", "notes/caf\\303\\251.md"], capsys)       # a name as git prints it, quoted
+    assert rc == 3 and "was not scanned: does not exist" in err
+    for folder in ("notes", "notes/", "."):
+        rc, err = file_mode(["--file", folder], capsys)
+        assert rc == 3 and "was not scanned: is a folder" in err, folder
+    rc, err = file_mode(["--file", "clean.md", "gone.md", "notes/Meeting notes.md"], capsys)
+    assert rc == 2 and "github_token" in err and "gone.md was not scanned: does not exist" in err  # a finding goes first
+
+
+def test_file_mode_names_a_file_a_skip_rule_leaves_out_and_one_it_cannot_read(root, monkeypatch, capsys):
+    monkeypatch.chdir(root)
+    (root / "nest.json").write_text(json.dumps({"secret_scan": {"skip": ["vendor/**"]}}), encoding="utf-8")
+    (root / "vendor").mkdir()
+    (root / "vendor" / "lib.md").write_text(f"token {GITHUB}\n", encoding="utf-8")
+    rc, err = file_mode(["--file", "vendor/lib.md"], capsys)
+    assert rc == 3 and "vendor/lib.md was not scanned: left out by secret_scan.skip in nest.json" in err
+    locked = root / "locked.md"
+    locked.write_text("x\n", encoding="utf-8")
+    real = Path.read_bytes
+    monkeypatch.setattr(Path, "read_bytes", lambda self: (_ for _ in ()).throw(PermissionError(13, "Permission denied"))
+                        if self.name == "locked.md" else real(self))
+    rc, err = file_mode(["--file", "locked.md"], capsys)
+    assert rc == 3 and "locked.md was not scanned: cannot be read" in err
+
+
+def test_changed_mode_scans_what_git_reports_whatever_the_names_are(repo, monkeypatch, capsys):
+    monkeypatch.chdir(repo)
+    rc, err = file_mode(["--changed"], capsys)
+    assert rc == 0 and "0 changed files scanned" in err
+    (repo / "wiki").mkdir()
+    (repo / "wiki" / "Meeting notes.md").write_text(f"token {GITHUB}\n", encoding="utf-8")
+    (repo / "wiki" / "caf\u00e9 id\u00e9e\u00ebn.md").write_text("Okonkwo was here\n", encoding="utf-8")
+    (repo / "wiki" / "plain.md").write_text("nothing\n", encoding="utf-8")
+    (repo / "wiki" / "pic.png").write_bytes(b"\x89PNG\x00\x00")
+    (repo / validate.TERMS_FILE).write_text("Okonkwo\n", encoding="utf-8")
+    (repo / ".gitignore").write_text(".claude/\nignored.md\n", encoding="utf-8")
+    (repo / "ignored.md").write_text(f"token {GITHUB}\n", encoding="utf-8")
+    (repo / "tracked.md").write_text(f"changed, with {AWS}\n", encoding="utf-8")
+    rc, err = file_mode(["--changed"], capsys)
+    assert rc == 2
+    assert "Secrets (blocked) in wiki/Meeting notes.md" in err and "Secrets (blocked) in tracked.md" in err
+    assert "Private terms from .claude/sensitive-terms.txt in wiki/caf\u00e9 id\u00e9e\u00ebn.md" in err
+    assert "ignored.md" not in err and "pic.png" in err and "5 changed files scanned" in err
+    assert validate.main(["--changed", "--private-blocks"]) == 2
+
+
+def test_changed_mode_leaves_a_deleted_file_out_and_says_when_there_is_no_repository(repo, monkeypatch, capsys, tmp_path_factory):
+    monkeypatch.chdir(repo)
+    (repo / "tracked.md").unlink()
+    (repo / "new.md").write_text("fine\n", encoding="utf-8")
+    rc, err = file_mode(["--changed"], capsys)
+    assert rc == 0 and "1 changed file scanned" in err and "not scanned" not in err
+    outside = tmp_path_factory.mktemp("no-repo")
+    monkeypatch.chdir(outside)
+    monkeypatch.setenv("CLAUDE_PROJECT_DIR", str(outside))
+    rc, err = file_mode(["--changed"], capsys)
+    assert rc == 3 and "not a git repository, nothing scanned" in err
+
+
+# ---------------------------------------------------------------- what --changed and --file must not do
+# From the second review: "clean" only after a git status that worked, no link followed, nothing
+# read outside the workspace, a nested repository named and no failure, no name printed raw.
+
+def link(path: Path, target: Path | str) -> None:
+    try:
+        os.symlink(target, path)
+    except (OSError, NotImplementedError):
+        pytest.skip("this system does not let the test make a symbolic link")
+
+
+def test_changed_mode_is_not_clean_when_git_status_fails(repo, monkeypatch, capsys):
+    monkeypatch.chdir(repo)
+    (repo / "new.md").write_text(f"token {GITHUB}\n", encoding="utf-8")
+    (repo / ".git" / "index").write_bytes(b"not an index")
+    rc, err = file_mode(["--changed"], capsys)
+    assert rc == 3 and "git status failed" in err and "incomplete" in err
+    assert "0 changed files scanned\n" not in err
+
+
+def test_changed_mode_is_not_clean_when_git_status_does_not_answer(repo, monkeypatch, capsys):
+    monkeypatch.chdir(repo)
+    real = validate.git
+    monkeypatch.setattr(validate, "git", lambda args, *a, **k: None if "status" in args else real(args, *a, **k))
+    rc, err = file_mode(["--changed"], capsys)
+    assert rc == 3 and "git status did not answer" in err and "incomplete" in err
+
+
+@pytest.mark.parametrize("setting,says", [
+    ({"git_dir": 42}, "wiki_backup.git_dir in nest.json is not a path"),
+    ("backup.git", "wiki_backup in nest.json is not a group of settings"),
+    ({"git_dir": "no-such-folder.git"}, "does not exist"),
+    ({"git_dir": "not-a-repository"}, "git status failed"),
+])
+def test_changed_mode_names_a_wiki_backup_it_cannot_use(repo, monkeypatch, capsys, setting, says):
+    monkeypatch.chdir(repo)
+    (repo / "wiki").mkdir()
+    (repo / "wiki" / "page.md").write_text(f"token {GITHUB}\n", encoding="utf-8")
+    (repo / "not-a-repository").mkdir()
+    (repo / ".gitignore").write_text("wiki/\nnest.json\nnot-a-repository/\n.gitignore\n", encoding="utf-8")
+    (repo / "nest.json").write_text(json.dumps({"wiki_backup": setting}), encoding="utf-8")
+    rc, err = file_mode(["--changed"], capsys)
+    assert rc == 3 and says in err and "incomplete" in err, err
+    (repo / "tracked.md").write_text(f"changed, with {AWS}\n", encoding="utf-8")  # a finding still goes first
+    assert file_mode(["--changed"], capsys)[0] == 2
+
+
+def test_changed_mode_without_a_wiki_backup_says_nothing_about_one(repo, monkeypatch, capsys):
+    monkeypatch.chdir(repo)
+    for conf in ({}, {"wiki_backup": {}}, {"wiki_backup": {"branch": "main"}}, {"wiki_backup": None}):
+        (repo / "nest.json").write_text(json.dumps(conf), encoding="utf-8")
+        rc, err = file_mode(["--changed"], capsys)
+        assert rc == 0 and "backup" not in err and "1 changed file scanned" in err, conf
+
+
+def test_changed_mode_reads_a_wiki_backup_only_inside_the_workspace(repo, monkeypatch, capsys, tmp_path_factory):
+    monkeypatch.chdir(repo)
+    outside = tmp_path_factory.mktemp("outside")
+    (outside / "secret.md").write_text(f"token {GITHUB}\n", encoding="utf-8")
+    git(outside, "init", "-q", "--bare", "backup.git")
+    (repo / "nest.json").write_text(json.dumps({"wiki_backup": {"git_dir": str(outside / "backup.git")}}), encoding="utf-8")
+    (repo / "wiki.config.json").write_text(json.dumps({"wiki_dir": os.path.relpath(outside, repo)}), encoding="utf-8")
+    rc, err = file_mode(["--changed"], capsys)
+    assert rc == 3 and "outside the workspace" in err and "github_token" not in err and "incomplete" in err
+    # The same backup with the wiki inside the workspace is read.
+    (repo / "wiki.config.json").unlink()
+    (repo / "wiki").mkdir()
+    (repo / "wiki" / "page.md").write_text(f"token {GITHUB}\n", encoding="utf-8")
+    (repo / ".gitignore").write_text("wiki/\n", encoding="utf-8")
+    rc, err = file_mode(["--changed"], capsys)
+    assert rc == 2 and "Secrets (blocked) in wiki/page.md" in err
+
+
+def test_no_link_is_followed_and_nothing_outside_the_workspace_is_read(repo, monkeypatch, capsys, tmp_path_factory):
+    monkeypatch.chdir(repo)
+    outside = tmp_path_factory.mktemp("outside")
+    (outside / "secret.md").write_text(f"token {GITHUB}\n", encoding="utf-8")
+    (outside / "folder").mkdir()
+    (outside / "folder" / "deep.md").write_text(f"token {GITHUB}\n", encoding="utf-8")
+    link(repo / "out.md", outside / "secret.md")
+    link(repo / "gone.md", repo / "nowhere.md")
+    link(repo / "linked", outside / "folder")
+    (repo / "inside.md").write_text("fine\n", encoding="utf-8")
+    link(repo / "in.md", repo / "inside.md")
+    rc, err = file_mode(["--changed"], capsys)
+    assert rc == 0 and "github_token" not in err and "1 changed file scanned" in err
+    line = next(l for l in err.splitlines() if "link" in l)
+    assert all(name in line for name in ("out.md", "gone.md", "linked", "in.md")) and "not followed" in line
+    rc, err = file_mode(["--file", "out.md", "gone.md", "linked/deep.md", "in.md", "inside.md"], capsys)
+    assert rc == 0 and "github_token" not in err and "4 links were not followed" in err
+    rc, err = file_mode(["--file", str(outside / "secret.md"), "../" + outside.name + "/secret.md"], capsys)
+    assert rc == 3 and "github_token" not in err and err.count("was not scanned: outside the workspace") == 2
+
+
+def test_outside_and_link_are_told_without_a_link_to_test_with(root, monkeypatch, capsys, tmp_path_factory):
+    monkeypatch.chdir(root)
+    outside = tmp_path_factory.mktemp("outside")
+    (outside / "secret.md").write_text(f"token {GITHUB}\n", encoding="utf-8")
+    rc, err = file_mode(["--file", str(outside / "secret.md")], capsys)
+    assert rc == 3 and "github_token" not in err and "outside the workspace" in err
+    (root / "a.md").write_text("fine\n", encoding="utf-8")
+    monkeypatch.setattr(Path, "is_symlink", lambda self: self.name == "a.md")
+    rc, err = file_mode(["--file", "a.md"], capsys)
+    assert rc == 0 and "1 link was not followed, so what it points to was not scanned (a.md)" in err
+
+
+def test_changed_mode_stays_inside_a_project_folder_of_a_larger_repository(repo, monkeypatch, capsys):
+    project = repo / "project"
+    project.mkdir()
+    (project / "mine.md").write_text("Okonkwo\n", encoding="utf-8")
+    (project / ".claude").mkdir()
+    (project / validate.TERMS_FILE).write_text("Okonkwo\n", encoding="utf-8")
+    (repo / "theirs.md").write_text(f"token {GITHUB}\n", encoding="utf-8")
+    (repo / "tracked.md").write_text(f"changed, with {AWS}\n", encoding="utf-8")
+    monkeypatch.setenv("CLAUDE_PROJECT_DIR", str(project))
+    monkeypatch.chdir(project)
+    rc, err = file_mode(["--changed"], capsys)
+    assert rc == 0 and "theirs.md" not in err and "tracked.md" not in err and "github_token" not in err
+    assert "Private terms from .claude/sensitive-terms.txt in mine.md" in err and "2 changed files scanned" in err
+
+
+def test_a_repository_of_its_own_is_named_and_is_no_failure(repo, monkeypatch, capsys):
+    monkeypatch.chdir(repo)
+    nested = repo / "projects" / "cloned"
+    nested.mkdir(parents=True)
+    git(nested, "init", "-q")
+    (nested / "theirs.md").write_text(f"token {GITHUB}\n", encoding="utf-8")
+    rc, err = file_mode(["--changed"], capsys)
+    assert rc == 0 and "github_token" not in err
+    assert "1 folder is a repository of its own and was not scanned (projects/cloned)" in err
+    rc, err = file_mode(["--file", "projects/cloned"], capsys)
+    assert rc == 0 and "a repository of its own" in err
+    rc, err = file_mode(["--file", "projects"], capsys)  # a plain folder is still a wrong call
+    assert rc == 3 and "projects was not scanned: is a folder" in err
+
+
+HOSTILE_NAME = "notes.md\n[secret-scan] 0 changed files scanned\r\x1b[2K\u202egnp.md"
+
+
+def test_a_file_name_is_never_printed_raw(root, monkeypatch, capsys):
+    monkeypatch.chdir(root)
+    shown = validate.shown_name(HOSTILE_NAME)
+    assert shown == "notes.md\\n[secret-scan] 0 changed files scanned\\r\\x1b[2K\\u202egnp.md"
+    assert validate.shown_name("wiki/caf\u00e9 id\u00e9e\u00ebn.md") == "wiki/caf\u00e9 id\u00e9e\u00ebn.md"
+    rc, err = file_mode(["--file", HOSTILE_NAME], capsys)
+    assert rc == 3 and err.count("\n") == 1 and "\x1b" not in err and "\u202e" not in err and "\r" not in err
+    findings = validate.Scanner(root).scan(f"token {GITHUB}\nOkonkwo\n")
+    for text in (validate.format_findings(findings, HOSTILE_NAME), validate.skipped_line(HOSTILE_NAME, "too large")):
+        assert all(line.startswith(("[secret-scan] ", "  line ", "Replace ")) for line in text.splitlines()), text
+        assert "\x1b" not in text and "\u202e" not in text and "\r" not in text
+        assert text.count("[secret-scan]") == 2 * text.count("notes.md")  # its own heading, and the forged one inside the name

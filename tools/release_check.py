@@ -23,7 +23,9 @@ The changelog template (docs/project/releasing.md has the full description):
   [1.2.0]: .../releases/tag/v1.2.0
 
 The version lives in the README badge, the SETUP.md header, the STATE template in SETUP.md and
-the newest changelog heading; all four must agree. Exit codes: 0 fine, 1 problems found.
+the newest changelog heading; all four must agree. The setup prompt comes in parts (SETUP.md and
+setup/*.md): every part SETUP.md names must exist, every part must be named, and none may be
+larger than one read. Exit codes: 0 fine, 1 problems found.
 """
 
 from __future__ import annotations
@@ -156,6 +158,35 @@ def check_versions(root: Path, version: str) -> list[str]:
     return problems
 
 
+# One read of a file by Claude Code stops at about 25,000 tokens; the setup prompt measured about
+# 2.8 bytes per token. A part above this size would be read in pieces again, each session.
+PART_LIMIT = 45_000
+
+
+def check_setup_parts(root: Path) -> list[str]:
+    """Every part SETUP.md names exists, every file in setup/ is named, and none outgrows one read."""
+    problems = []
+    try:
+        main_text = (root / "SETUP.md").read_text(encoding="utf-8")
+    except OSError:
+        return ["SETUP.md not found"]
+    named = set(re.findall(r"`(setup/[a-z0-9-]+\.md)`", main_text))
+    folder = root / "setup"
+    present = {f"setup/{p.name}" for p in folder.glob("*.md")} if folder.is_dir() else set()
+    for rel in sorted(named - present):
+        problems.append(f"SETUP.md names {rel}, which does not exist")
+    for rel in sorted(present - named):
+        problems.append(f"{rel} is not named in SETUP.md, so no session would read it")
+    for rel in ["SETUP.md", *sorted(present)]:
+        size = (root / rel).stat().st_size
+        if size > PART_LIMIT:
+            problems.append(f"{rel} is {size} bytes, over the {PART_LIMIT} that fit in one read: split or shorten it")
+    for rel in sorted(present):
+        for ref in set(re.findall(r"`(setup/[a-z0-9-]+\.md)`", (root / rel).read_text(encoding="utf-8"))) - present:
+            problems.append(f"{rel} names {ref}, which does not exist")
+    return problems
+
+
 def repo_url(text: str) -> str:
     m = re.search(r"(?m)^\[Unreleased\]:\s+(\S+?)/compare/", text)
     return m.group(1) if m else "https://github.com/nickyjacobs/NEST"
@@ -208,6 +239,7 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.buffer.write(body.encode("utf-8"))
         return 0
     problems = check_changelog(text)
+    problems += check_setup_parts(root)
     version = newest_version(text)
     if version:
         problems += check_versions(root, version)

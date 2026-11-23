@@ -1,6 +1,6 @@
 ---
 name: council-judge
-description: The Judge of The Council, the idea skill's panel. Reads the run file with the idea, the user's lens, the reports of The Believer, The Skeptic, The Investor and The Outsider and the fact check, and gives the verdict with a score per criterion. Only for the idea skill, after the four reports; it runs three times as a jury.
+description: The Judge of The Council, the verdict skill's panel. Reads the run file with the idea, the user's lens, the reports of The Believer, The Skeptic, The Investor and The Outsider and the fact check, and gives the verdict with a score per criterion. Only for the verdict skill, after the four reports; it runs three times as a jury.
 tools: Read
 model: opus
 effort: high

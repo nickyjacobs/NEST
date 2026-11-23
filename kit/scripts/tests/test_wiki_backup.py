@@ -346,6 +346,115 @@ def test_push_skips_excluded_files(backup, remote, capsys):
     assert remote_files(remote) == ["notes/a.md"]
 
 
+def test_push_leaves_plugin_and_theme_code_out_but_keeps_settings(backup, remote, capsys):
+    capsys.readouterr()
+    plugin = backup.wiki / ".obsidian/plugins/templater-obsidian"
+    write(plugin / "main.js", "code")
+    write(plugin / "manifest.json", "{}")
+    write(plugin / "styles.css", "")
+    write(plugin / "data.json", "{}")
+    write(plugin / "data.json.bak", "{}")
+    write(plugin / "data.json.before-restore", "{}")
+    write(backup.wiki / ".obsidian/themes/Minimal/theme.css", "")
+    write(backup.wiki / ".obsidian/appearance.json", "{}")
+    assert wb.main(["push"]) == 0
+    assert remote_files(remote) == [
+        ".obsidian/appearance.json",
+        ".obsidian/plugins/templater-obsidian/data.json",
+        "notes/a.md",
+    ]
+
+
+def test_push_adds_new_default_excludes_to_an_older_backup(backup, remote, capsys):
+    exclude = backup.git_dir / "info" / "exclude"
+    older = "# Written by wiki_backup.py. An older version.\n.trash/\nmy-own-line/\n"
+    exclude.write_text(older, encoding="utf-8")
+    write(backup.wiki / ".obsidian/themes/Minimal/theme.css", "")
+    write(backup.wiki / "my-own-line/x.md")
+    assert wb.main(["push"]) == 0
+    text = exclude.read_text(encoding="utf-8")
+    assert text.startswith(older) and ".obsidian/themes/" in text
+    assert text.count(".trash/") == 1 and text.count("Written by wiki_backup.py") == 1
+    assert remote_files(remote) == ["notes/a.md"]
+    before = text
+    assert wb.main(["push"]) == 0
+    assert exclude.read_text(encoding="utf-8") == before
+
+
+def test_push_keeps_what_an_older_backup_already_tracks(backup, remote, capsys):
+    """The exclude lines keep new files out. They never take a file out of a backup: plugin code
+    an earlier version backed up stays in it, and its changes are still backed up."""
+    exclude = backup.git_dir / "info" / "exclude"
+    exclude.write_text("# Written by wiki_backup.py. An older version.\n.trash/\n", encoding="utf-8")
+    plugin = backup.wiki / ".obsidian/plugins/some-plugin"
+    write(plugin / "main.js", "version 1")
+    write(plugin / "manifest.json", "{}")
+    backup.git("add", "-A")
+    backup.git("commit", "-q", "-m", "Backup by an older version")
+    backup.git("push", "-q", "origin", "HEAD:main")
+    tracked = [".obsidian/plugins/some-plugin/main.js", ".obsidian/plugins/some-plugin/manifest.json", "notes/a.md"]
+    assert remote_files(remote) == tracked
+
+    write(plugin / "main.js", "version 2")
+    write(backup.wiki / ".obsidian/plugins/templater-obsidian/main.js", "code install puts back")
+    assert wb.main(["push"]) == 0
+    assert ".obsidian/plugins/templater-obsidian/main.js" in exclude.read_text(encoding="utf-8")
+    assert remote_files(remote) == tracked  # the kit plugin's code stays out, the old one's stays in
+    assert git(f"--git-dir={remote}", "show", "main:.obsidian/plugins/some-plugin/main.js") == "version 2"
+
+
+def kit_lock() -> dict:
+    return json.loads(SCRIPT.with_name("obsidian.lock.json").read_text(encoding="utf-8"))
+
+
+def pattern_lines(text: str) -> list[str]:
+    return [line.strip() for line in text.splitlines() if line.strip() and not line.startswith("#")]
+
+
+@pytest.mark.parametrize("where", ["backup", "gitignore"])
+def test_the_excludes_leave_out_only_what_install_can_put_back(where):
+    """One line per plugin and theme in the kit's lock file, and no wildcard over other people's code."""
+    if where == "backup":
+        lines, prefix = pattern_lines(wb.DEFAULT_EXCLUDES), ""
+    else:
+        template = SCRIPT.parent.parent / "github" / "gitignore.template"
+        lines, prefix = pattern_lines(template.read_text(encoding="utf-8")), "wiki/"
+    lock = kit_lock()
+    code = {f"{prefix}.obsidian/plugins/{key}/{name}" for key in lock["plugins"]
+            for name in ("main.js", "manifest.json", "styles.css")}
+    themes = {f"{prefix}.obsidian/themes/{key}/" for key in lock["themes"]}
+    assert code | themes <= set(lines)
+    about_code = {line for line in lines
+                  if line.endswith(("/main.js", "/manifest.json", "/styles.css", "/theme.css"))
+                  or (line.startswith(f"{prefix}.obsidian/themes/") and not line.endswith(".part"))}
+    assert about_code == code | themes  # nothing wider, and nothing for a name the lock file lost
+    assert f"{prefix}.obsidian/plugins/*/data.json.before-restore*" in lines
+    assert f"{prefix}.obsidian/plugins/*/.nest-*.part" in lines and f"{prefix}.obsidian/themes/*/.nest-*.part" in lines
+
+
+def test_push_keeps_the_code_of_a_plugin_the_user_added(backup, remote, capsys):
+    """Only `install` puts code back, and only for the kit's plugins: anything else must be in the backup."""
+    obsidian = backup.wiki / ".obsidian"
+    for name in ("main.js", "manifest.json", "styles.css", "data.json"):
+        write(obsidian / "plugins/my-own-plugin" / name, name)
+        write(obsidian / "plugins/templater-obsidian" / name, name)
+    write(obsidian / "themes/My Theme/theme.css", "mine")
+    write(obsidian / "themes/Minimal/theme.css", "the kit's")
+    for leftover in ("data.json.bak", "data.json.before-restore", "data.json.before-restore-2", ".nest-abc123.part"):
+        write(obsidian / "plugins/my-own-plugin" / leftover, "left over")
+    write(obsidian / "themes/My Theme/.nest-abc123.part", "left over")
+    assert wb.main(["push"]) == 0
+    assert remote_files(remote) == [
+        ".obsidian/plugins/my-own-plugin/data.json",
+        ".obsidian/plugins/my-own-plugin/main.js",
+        ".obsidian/plugins/my-own-plugin/manifest.json",
+        ".obsidian/plugins/my-own-plugin/styles.css",
+        ".obsidian/plugins/templater-obsidian/data.json",
+        ".obsidian/themes/My Theme/theme.css",
+        "notes/a.md",
+    ]
+
+
 def test_push_sends_a_commit_that_stayed_local(backup, remote, capsys):
     write(backup.wiki / "b.md")
     backup.git("add", "-A")

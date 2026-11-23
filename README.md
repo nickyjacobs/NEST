@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/nickyjacobs/NEST/releases/latest"><img src="https://img.shields.io/badge/NEST_v1.1.0-3fb950?logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDMgMjIgOSAxMiAxNSAyIDlaIi8+PHBhdGggZD0iTTIgMTQuNSAxMiAyMC41IDIyIDE0LjUiLz48L3N2Zz4K" alt="NEST v1.1.0"></a>
+  <a href="https://github.com/nickyjacobs/NEST/releases/latest"><img src="https://img.shields.io/badge/NEST_v1.2.0-3fb950?logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDMgMjIgOSAxMiAxNSAyIDlaIi8+PHBhdGggZD0iTTIgMTQuNSAxMiAyMC41IDIyIDE0LjUiLz48L3N2Zz4K" alt="NEST v1.2.0"></a>
   <a href="https://code.claude.com/docs/en/overview"><img src="https://img.shields.io/badge/Claude_Code-D97757?logo=claude&logoColor=white" alt="Claude Code"></a>
   <a href="https://obsidian.md"><img src="https://img.shields.io/badge/Obsidian-7C3AED?logo=obsidian&logoColor=white" alt="Obsidian"></a>
   <img src="https://img.shields.io/badge/macOS-2b2b2b?logo=apple&logoColor=white" alt="macOS">
@@ -30,14 +30,18 @@
 </p>
 
 <p align="center">
-  <img src="assets/quickstart.gif" alt="Quick start in VS Code: clone the repo in the integrated terminal, cd NEST, start claude, type 'Read SETUP.md and follow it.', and the setup reads SETUP.md and asks which language to use" width="90%">
+  <img src="assets/quickstart.gif" alt="Quick start in VS Code, in five screens: add the Claude Code extension, open the NEST folder, trust the folder in VS Code, trust it in Claude Code, and type 'Read SETUP.md and follow it.' in the Claude Code panel" width="90%">
 </p>
 
 ## Quick start
 
-You need [Claude Code](https://code.claude.com/docs/en/overview) (a paid Claude plan or API
-access) and [Obsidian](https://obsidian.md). NEST checks the rest and tells you what to
-install for your system.
+**Never opened a terminal?** Follow [Getting started, step by step](docs/guide/getting-started.md):
+three free programs, one folder to download, one sentence to type, with a picture of every
+click. You work in VS Code, with your files on the left and a chat with Claude on the right.
+
+**At home in a terminal?** You need [Claude Code](https://code.claude.com/docs/en/overview) (a
+paid Claude plan or API access) and [Obsidian](https://obsidian.md). NEST checks the rest and
+tells you what to install for your system.
 
 ```bash
 git clone https://github.com/nickyjacobs/NEST.git
@@ -51,7 +55,8 @@ Then type:
 Read SETUP.md and follow it.
 ```
 
-That starts the first of about five sessions of 30 to 60 minutes. Stop whenever you like: the
+That starts the first of about four sessions: an hour and a half of questions, most of them a
+choice you click, and an hour in which the setup builds while you watch. Stop whenever you like: the
 setup remembers where you were and tells you the line that starts the next session.
 
 <details>
@@ -190,12 +195,12 @@ More questions: [docs/guide/faq.md](docs/guide/faq.md).
 ## Roadmap
 
 <p align="center">
-  <a href="ROADMAP.md"><img src="assets/roadmap.png" alt="NEST roadmap. Now: your assistant from your phone, a board on your Home page, what your assistant remembers is yours. Next: capture on the go, tried on Windows by a person. Later: upkeep that runs by itself, no plugin homework." width="100%"></a>
+  <a href="ROADMAP.md"><img src="assets/roadmap.png" alt="NEST roadmap. Now: plugins that fit you, bring your old notes with you, your assistant from your phone. Next: a command board on Home, ready in one sitting, what your assistant remembers is yours. Later: upkeep that runs by itself, your workspace on two computers." width="100%"></a>
 </p>
 
-The next releases work on three things: your assistant from your phone, a board for your
-projects and ideas on your Home page, and a place in your own workspace for what your
-assistant remembers. What comes after that: [ROADMAP.md](ROADMAP.md).
+The next releases work on three things: plugins for Claude Code that fit you, bringing the
+notes you already have into your wiki, and your assistant from your phone. What comes after
+that: [ROADMAP.md](ROADMAP.md).
 
 ## Documentation
 

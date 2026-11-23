@@ -3,16 +3,20 @@
 **If the user asked you to read `SETUP.md` and follow it, you are running the setup for them:
 follow `SETUP.md` only, and ignore everything below.** This file is for people who change NEST.
 
-You are Claude Code working on NEST itself: the setup prompt (`SETUP.md`) and its reference kit
-(`kit/`).
+You are Claude Code working on NEST itself: the setup prompt (`SETUP.md` and `setup/`) and its
+reference kit (`kit/`).
 
 ## Layout
 
-- `SETUP.md`: the prompt. Sections 0-10 plus appendices; section 7 is the answer routing table.
+- `SETUP.md` and `setup/`: the prompt, in parts. `SETUP.md` holds sections 0-4 (what every
+  session reads) and a table of the parts; `setup/` holds the phases: `check.md` (5),
+  `interview.md` (6), `routing.md` (7, the answer routing table), `build.md` (8), `finish.md`
+  (9 and 10) and `catalogue.md` (Appendix A and B). No part may outgrow one read: `tools/release_check.py` checks the sizes.
 - `kit/`: reference files the setup adapts per user (`kit/README.md` explains each folder).
   `kit/scripts/` holds the Python tools and their tests; `kit/skills/`, `kit/agents/`,
   `kit/wiki/`, `kit/claude/`, `kit/integrations/`, `kit/github/` the rest.
-- `assets/`: banner and the quick start GIF (source in `assets/quickstart-src/`).
+- `assets/`: banner, the quick start GIF (built by `assets/quickstart-src/slides.py` from the
+  same real screenshots as the getting-started guide, `assets/start/`) and the update GIF.
   `assets/roadmap.png` is drawn from `assets/roadmap.svg`: when `ROADMAP.md` changes, change the
   SVG to match and render it again with headless Chrome at twice the size
   (`--headless=new --force-device-scale-factor=2 --default-background-color=00000000
@@ -58,6 +62,12 @@ You are Claude Code working on NEST itself: the setup prompt (`SETUP.md`) and it
   the `nest-update` skill. Say what it means for them under `### For your workspace` in the
   changelog, in plain words. A new always-installed file goes into the list in `kit/README.md`,
   and a kit file with a fixed place in a workspace into `target_for` in `nest_update.py`.
+- A kit file or folder that gets another name gets one line in `RENAMES` in `nest_update.py`
+  (old path to new path), in the same change. Without it a workspace sees the part as dropped
+  plus new, and the user's own version of it does not move along. Never remove a line, never
+  give a new part a name that is an old name in the table (the table would send it on to the
+  newer name), and never rename by upper and lower case only (on macOS and Windows the old and
+  the new folder are the same folder).
 
 ## Trial runs
 
