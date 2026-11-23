@@ -30,7 +30,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/quickstart.gif" alt="Quick start in VS Code: clone the repo in the integrated terminal, cd NEST, start claude, type 'Read SETUP.md and follow it.', and the setup reads SETUP.md and asks which language to use" width="90%">
+  <img src="assets/quickstart.gif" alt="Quick start in VS Code, in five screens: add the Claude Code extension, open the NEST folder, trust the folder in VS Code, trust it in Claude Code, and type 'Read SETUP.md and follow it.' in the Claude Code panel" width="90%">
 </p>
 
 ## Quick start

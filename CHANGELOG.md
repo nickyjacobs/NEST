@@ -191,6 +191,10 @@ section in plain words: what it means if you already built a workspace with an e
   The board on Home became a command board and moved to Next, with a shorter route through the
   setup. New under Later: your workspace on two computers.
 
+- The quick start GIF in the README shows the route through VS Code in five real screens (add
+  the extension, open the folder, trust it twice, type the sentence), built by
+  `assets/quickstart-src/slides.py`. It used to be a drawn terminal.
+
 ### 🐛 Fixed
 
 - Plugin settings the setup wrote were lost for every user: installing a plugin from inside

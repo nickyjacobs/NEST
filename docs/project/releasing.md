@@ -135,7 +135,8 @@ Preview it before tagging: `uv run --script tools/release_check.py --notes <x.y.
    still to come: the example in `docs/reference/nest-json.md`, the session line in
    `docs/guide/updating.md`, the diagram and the template on this page, the overview in
    `kit/skills/nest-update/SKILL.md`, and `assets/quickstart-src/scene-update.html`. Render the
-   GIFs again (`assets/quickstart-src/README.md`): the quick start shows the head of `SETUP.md`.
+   GIFs again when what they show changed (`assets/quickstart-src/README.md`): the quick start
+   shows the first steps in VS Code, the update GIF the wording of `/nest-update`.
 4. Check:
    ```bash
    uv run --script tools/release_check.py
