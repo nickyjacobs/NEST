@@ -36,7 +36,7 @@ ideas), and whether an integration keeps working after its token expires.
 
 ## 10. Wrap-up
 
-When you start the wrap-up, add its six points to STATE.md as checkboxes, plus every B4 test that
+When you start the wrap-up, add its six points to STATE.md as checkboxes (and tick them as you go, so STATE.md holds no open line of the build when `next:` says `done`; an empty folder a test left is removed), plus every B4 test that
 did not run yet. Tick each only when it is done; the wrap-up is not done while one is open.
 
 1. Remove the "Setup in progress" line from `CLAUDE.md`. Something the user postponed (opening
@@ -56,7 +56,7 @@ did not run yet. Tick each only when it is done; the wrap-up is not done while o
    the form for where they work (section 3).
 4. A cheat sheet: capture (drop it in the inbox), file (the inbox skill), find (the query skill),
    end of session, maintenance once a week.
-5. Propose three or four **first tasks** with the choice dialog. When C7 found notes the user
+5. Only after the overview and the cheat sheet have been sent, propose three or four **first tasks** with the choice dialog. When C7 found notes the user
    wants to bring in, that move is the first one on the list: an empty wiki next to a full old
    vault does not get used. The others answer the top pain points from B3, for example:
    - "Notes pile up": put ten old notes in the inbox and run the inbox skill together.
@@ -65,8 +65,9 @@ did not run yet. Tick each only when it is done; the wrap-up is not done while o
    - "Every session starts from zero": end today with the session-end skill.
    Ask which one to start with. The first real task decides whether a workspace gets used.
 
-6. Last of all, when the user said yes to the short list before the build: take the build
-   permissions out again. Remove from `.claude/settings.local.json` exactly the rules
+6. Last of all, after the last snapshot of the setup and as your very last action with a tool
+   (anything you change after it asks again), when the user said yes to the short list before
+   the build: take the build permissions out again. Remove from `.claude/settings.local.json` exactly the rules
    `_setup/log.md` says you added, and nothing else; when nothing is left in the file and you
    created it, remove the file (check: none of the rules in
    `kit/claude/setup-permissions.example.json` is in it any more, unless the user had that rule

@@ -97,7 +97,9 @@ things in an inbox; the assistant files them into sections, links and indexes th
 deleted.
 
 - **C1** **Sections.** *Proposal.* First, in a message of its own, the idea of the wiki in
-  three lines and the folder tree itself; then the dialog. Propose a folder tree derived from A and B, with every folder name
+  three lines and the folder tree itself, each folder with a few words on what goes in it; then
+  the dialog. The dialog's question says how many folders the user just saw ("these nine
+  folders"), so you cannot ask it without having shown them. Propose a folder tree derived from A and B, with every folder name
   written exactly as it will be on disk (lowercase, hyphens, no spaces, for example
   `30-weiterbildung`) and the readable label next to it; what the user confirms is what you
   build, letter for letter. Letters of the user's language are fine in a folder name
@@ -127,7 +129,9 @@ deleted.
   copy `kit/wiki/palette-preview.html` to `_setup/preview/palette.html`, fill it with two or
   three options (an accent colour and one colour per section from C1, each option with a name
   in plain words), and open it in their browser (macOS `open`, Windows `start ""`, Linux
-  `xdg-open`, with the full path). Say in one line that a page opened in the browser. Then a
+  `xdg-open`, with the full path). Say in one line, in the message before the dialog, that a
+  page with the options has opened in their browser. The options in the dialog are in the order
+  of the letters on the page. Then a
   *choice* between the letters on that page, with "something else" as the way to ask for another
   round. No colour code ever appears in a message or a dialog: the user cannot see `#8B5CF6`.
   Write the chosen palette, with its codes, into `_setup/interview/C.md`. Keep the Minimal theme
@@ -152,23 +156,28 @@ deleted.
   command finds nothing, or the notes are on another computer or in another app: one *open*
   question, where. An answer such as "in my documents, a folder called Notes" is enough for
   now: record it as they said it, with an open item to find the exact folder together when
-  the move starts. Do not import now and do not
-  open any of those folders: record the paths in `CLAUDE.local.md` and plan the move as the
+  the move starts. Write down exactly what they said, word for word ("my documents, the folder
+  Notes Jolien"), so nobody has to ask again. Do not import now and do not
+  open any of those folders: record the paths, or their words, in `CLAUDE.local.md` and plan the move as the
   first task after the build (section 10).
 
-- **C8** **Other devices.** *Choice, several answers:* where else do you want to read and write
-  your notes (an iPhone, an Android phone, a tablet, a second computer such as a work laptop,
-  nowhere else). "Nowhere else" ends the question. Otherwise read `kit/wiki/obsidian/DEVICES.md`
-  and propose the route it gives for their combination of devices, in three or four lines:
-  what it is, what it costs (say a price as "about", with the month you read it, and that they
-  should check it), how much work it is for someone at their level, and the free alternative
-  with what it asks of them. Be honest when the only route a beginner can manage costs money.
-  Then a *choice:* this route, the alternative, or decide later. Say once what a sync route does
-  and does not do: their notes are on every device and stay in step; the assistant and its
-  routines stay on this computer. A note made on the phone lands in the inbox, and the
-  assistant files it the next time they sit down. Nothing is installed or paid for during the
-  interview: the route is set up after the build, with the user, and only when they want to.
-  Never propose to put the workspace folder itself in a cloud folder (see F1).
+- **C8** **Other devices.** *Choice, several answers, no recommended option:* where else do you
+  want to read and write your notes (an iPhone, an Android phone, a tablet, a second computer
+  such as a work laptop, nowhere else). "Nowhere else" ends the question. Otherwise read
+  `kit/wiki/obsidian/DEVICES.md` and write a message of its own before the next dialog, four
+  short lines in plain words:
+  1. the route it gives for their devices, and what it is ("Obsidian's own service that keeps
+     your notes the same on your computer and your phone");
+  2. what it costs, as an amount: "about" the price, the month you read it, and that they should
+     check it. "Paid" without an amount is not an answer;
+  3. the free alternative, what it is and what it asks of them;
+  4. what a sync route does not do: the assistant and its routines stay on this computer. A note
+     made on the phone lands in the inbox and is filed the next time they sit down here.
+  Be honest when the only route a beginner can manage costs money. Then a *choice,* without a
+  recommended option, because it is their money and their time: this route, the alternative, or
+  decide later. Nothing is installed or paid for during the interview: the route is set up
+  after the build, with the user, and only when they want to. Never propose to put the
+  workspace folder itself in a cloud folder (see F1).
 
 Show the final tree and the dashboard sketch as text. Yes, then on.
 
@@ -192,7 +201,7 @@ name, or an open question, never a fifth question in one message.
 - **D1** The wiki skills (inbox, ingest, query, maintenance) and the Obsidian skills. Recommended
   as a set, unless the user wants the backbone only (block C). A skill you leave out of a set is
   named with the reason; never drop one silently.
-- **D2** The Council (`verdict`) and The Architects (`blueprint`). They are two separate things and
+- **D2** The Council (`verdict`) and The Architects (`blueprint`). Recommend a team when a pain point from block B calls for it (ideas that never get decided: The Council; ideas that never get worked out: The Architects) and "no" otherwise; the size names are said in the user's language. They are two separate things and
   get two separate questions, each with its own options: "The Council, which judges an idea:
   no / light / full" and "The Architects, who work an idea out: no / light / full". Never one
   question "do you want the teams": in two trials that gave the user a team they did not want.
@@ -357,7 +366,11 @@ Recap of the whole interview in at most ten lines. Yes, then the handover.
 3. Only when the write was really refused (the tool result says so) does the user run that
    command themselves: give it with the real paths, in the form for where they work (section
    3), and check the result afterwards the same way.
-4. Tell the user how to open the new folder and start there, in the form for where they work
+4. Take the interview permission out again when the user said yes to it in Phase 0: remove
+   the rule `Edit(/_setup/**)` from `.claude/settings.local.json` in the NEST folder, and the
+   file itself when nothing else is in it and you created it. Tick the line in STATE.md (in
+   both copies). The build has its own, separate list in the workspace.
+5. Tell the user how to open the new folder and start there, in the form for where they work
    (section 3, "Open another folder"), with the path to paste and the trigger line quoted.
    This is the one moment in the interview where they must do something themselves: one short
    message, the steps numbered, nothing else in it (no recap, no warnings said before). With

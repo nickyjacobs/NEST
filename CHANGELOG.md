@@ -195,6 +195,20 @@ section in plain words: what it means if you already built a workspace with an e
   the extension, open the folder, trust it twice, type the sentence), built by
   `assets/quickstart-src/slides.py`. It used to be a drawn terminal.
 
+- From the trial before the release: the interview offers to write the setup's own notes
+  (`_setup/`) without a permission question each time, as one rule that is taken out again at
+  the handover (a trial in Claude Code's default mode counted 60 questions in one interview);
+  answers are written with the edit tools, never with a shell append; the first message is the
+  language question and nothing else; a question about a fact has no recommended option; the
+  question about other devices names the price and says that the assistant stays on this
+  computer, in a message before the dialog.
+- From the last trial of the build (54 permission questions where earlier trials had 143 and
+  64): helper agents, the security reviewer among them, get the single-command rule in their
+  brief; every later change to `.claude/` goes through the staging folder; each snapshot is
+  said in one line with one word; the overview comes before the dialog with the first tasks;
+  the build permissions are the very last thing removed; the words the user gave for an old
+  notes folder are kept, so nobody asks again.
+
 ### 🐛 Fixed
 
 - Plugin settings the setup wrote were lost for every user: installing a plugin from inside

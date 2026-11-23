@@ -117,7 +117,9 @@ The principles that make the original work, and that you keep in every build:
   or B or from `kit/`. Something else the user would like goes to `_setup/backlog.md`; say that
   it is not part of NEST instead of promising it.
 - **Write files with the Write and Edit tools,** not through a shell command (`cat > file`, a
-  heredoc, `sed -i`, a Python one-liner). The secret scan checks a file before a tool writes
+  heredoc, `sed -i`, `printf >>`, a Python one-liner), and read them with the Read tool, not
+  with `cat` or `sed -n` behind a `cd`. One shell command per call, in the interview and at the
+  handover as much as in the build: every chain is a permission question of its own. The secret scan checks a file before a tool writes
   it; a shell command is only checked afterwards.
 - **The fetched docs win.** If `_setup/docs/` says a field is named differently than this file
   does, follow the docs and log the difference.
@@ -278,8 +280,10 @@ Without that, the first hook in the workspace cannot find uv and every write is 
 ### 4.1 Before anything else
 
 Ask one question, in English and in the language of the user's first message if that differs:
-**which language should we use?** That question is the whole first message: no introduction
-before the answer. Everything after that (questions, dialogs, the wiki, folder
+**which language should we use?** That question is the whole first message: once in English,
+once more in their language when that is another one, and nothing else. No introduction before
+the answer, and no word about this file or its sections ("section 4.1 says ..."): the user
+never hears how the prompt is built. Everything after that (questions, dialogs, the wiki, folder
 names if the user wants, the assistant's tone) follows that choice. The repo-facing parts
 (scripts, settings keys) stay English.
 
@@ -298,7 +302,8 @@ the few questions where the user's own words matter.
 
 - **A choice is a click.** Every question with a known set of answers goes through the choice
   dialog (AskUserQuestion), in the user's language, your recommendation first and marked as
-  recommended. That holds in the build too: "now or later", "may I commit", "which of these
+  recommended. A question about a fact (where are you typing this, which phone do you have, do
+  you have an account) has no recommended option: there is nothing to recommend. That holds in the build too: "now or later", "may I commit", "which of these
   two". A yes to a proposal is a dialog with two options (this is right; I want to change
   something), not a typed "yes".
 - **A long list is a few dialogs, not a wall.** The dialog holds four questions with up to four
@@ -316,7 +321,10 @@ the few questions where the user's own words matter.
   proposal is in a message the user can read, sent before the dialog: what you worked out in
   your own reasoning is invisible to them, and a dialog that asks "is this folder layout right?"
   about a layout they never saw wastes a turn. A dialog never points at "the list above" unless
-  there is one. Never ask what you already know from an earlier answer or from the machine
+  there is one. This went wrong in two trials out of four, always the same way: the proposal was
+  worked out, the dialog was sent, and the message in between was never written. So before you
+  call the dialog for a proposal, look at the text you are about to send: the thing the user is
+  asked to approve must be in it, in full. Never ask what you already know from an earlier answer or from the machine
   check.
 - **The level decides how much you ask.** For a beginner, every block opens with a proposal
   for the whole block built from what they said so far, and you ask only what you cannot
@@ -333,8 +341,10 @@ the few questions where the user's own words matter.
 - **An answer you can read two ways** ("all of them", "the second") goes back as a dialog with
   the two readings, not as a guess.
 - **Write answers down as they come.** After every message with answers, append them verbatim
-  to `_setup/interview/<block>.md` and move `next:` in STATE.md to the next question, before
-  you ask anything else. When the answer is a yes to something you proposed (a folder tree, a
+  to `_setup/interview/<block>.md`, with the Edit or Write tool and never with a shell command
+  (`printf >>`, `echo >>`): in a trial every such append was a permission question of its own,
+  twenty-six of them in one interview. One write per message of answers, not one per answer.
+  Then move `next:` in STATE.md to the next question, before you ask anything else. When the answer is a yes to something you proposed (a folder tree, a
   dashboard, a palette, a list of skills), write the proposal itself with it, in full: "yes" on
   its own tells a later session nothing, and it would build something else than the user
   agreed to. The recap at the end of a block confirms what is already on file.

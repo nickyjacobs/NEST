@@ -96,6 +96,8 @@ same in the wiki's own backup repository when `nest.json` names one. Its last li
 files it scanned.
 <!-- customise: when the wiki is not in git at all, add: list its recent notes with find "<wiki-path>" -name "*.md" -mtime -1 and pass them to --file -->
 
+Every shell command you run is one command per call: no `;`, `&&` or `|` after it, no `echo "exit=$?"`, no `head` behind a `grep`. Read a file with the Read tool and search with the Grep tool. Each chain is a permission question for the user.
+
 For a list of those files for your report, one command per call:
 
 ```bash
