@@ -37,6 +37,7 @@ Type `/nest-update`, or just ask "is there a NEST update?".
 | New | Offered. A new skill is written for you the way the setup would |
 | Something with the same name as a file of your own | Yours stays. You are asked what you want |
 | Dropped by NEST | You choose: keep it, or take it out (the last version is kept) |
+| Given a new name by NEST | One question: the new name, or keep the old one. With the new name the folder moves as it is, your own files in it included, and what NEST changed is merged in after. With the old name nothing moves, the question does not come back, and later improvements still reach it |
 | An example that something of yours was made from, such as your wiki settings | You hear what changed in the example and whether yours needs it |
 | A wiki template or style | You hear what changed and get a proposal that fits your wiki; your pages are not touched |
 | Something you removed | Mentioned once; it only comes back when you ask |
@@ -73,6 +74,13 @@ puts back what the last update changed and takes away what it added. You are tol
 update it is and which files it concerns, and you say yes before anything moves. A file you
 changed yourself after the update is left alone, and you are told which one.
 
+One case needs a second step. When the update gave a part a new name and you went on working
+in the folder with the new name, an undo brings the old folder back as it was, and the folder
+with the new name stays, holding only the files you changed since. You are told both folders
+and those files. Your later work is then in the new folder and not in the old one: say
+whether you want it carried over into the old folder or let go, and the new folder is cleared
+after that (its files are kept in the history folder).
+
 Undo always means the last update, also when you brought it over in parts (some things first,
 the rest a little later): all parts go back together. Asking twice does not reach further back: an earlier update
 is only put back when you ask for that one by name.
@@ -89,4 +97,19 @@ file which kit file it came from and what that file looked like. `/nest-update` 
 release you are on and the newest one, both by their tag, and compares them file by file with
 your workspace. A file that still equals its kit original can be replaced; anything else is a
 merge. The exact part is done by `scripts/nest_update.py`, which has no dependencies beyond git.
+
+A part can get a new name in a release: The Council's skill was `idea` up to release 1.1.0 and
+is `verdict` after it, so its command is `/verdict`. The updater keeps a small table of such
+names (`RENAMES` in the script) and treats the old and the new path as one part: it compares
+your file with the kit file across the two names, moves the folder only after your yes, and
+an undo puts the old folder back. Each file is moved by renaming it, never by copying and
+deleting, and the stamp is saved after every file: when a move stops halfway (a file another
+program has open), no file is in two places and running it again carries on. The one line
+that changes in your files is the `name:` of the skill, and only when it held the old name:
+a name you gave it yourself stays, and the command follows the folder name either way.
+A skill you had installed under a folder name of your own keeps that name and is not asked
+about. If you keep the old name, `/idea` goes on working and the
+stamp records your files against the kit files under their new name. From then on no file is
+replaced with a version that says the new name: such a change is always merged by hand, with
+your name left as it is.
 Settings: [reference/nest-json.md](../reference/nest-json.md).

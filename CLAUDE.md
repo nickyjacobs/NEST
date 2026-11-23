@@ -61,6 +61,12 @@ reference kit (`kit/`).
   the `nest-update` skill. Say what it means for them under `### For your workspace` in the
   changelog, in plain words. A new always-installed file goes into the list in `kit/README.md`,
   and a kit file with a fixed place in a workspace into `target_for` in `nest_update.py`.
+- A kit file or folder that gets another name gets one line in `RENAMES` in `nest_update.py`
+  (old path to new path), in the same change. Without it a workspace sees the part as dropped
+  plus new, and the user's own version of it does not move along. Never remove a line, never
+  give a new part a name that is an old name in the table (the table would send it on to the
+  newer name), and never rename by upper and lower case only (on macOS and Windows the old and
+  the new folder are the same folder).
 
 ## Trial runs
 

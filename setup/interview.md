@@ -192,7 +192,7 @@ name, or an open question, never a fifth question in one message.
 - **D1** The wiki skills (inbox, ingest, query, maintenance) and the Obsidian skills. Recommended
   as a set, unless the user wants the backbone only (block C). A skill you leave out of a set is
   named with the reason; never drop one silently.
-- **D2** The Council (`idea`) and The Architects (`blueprint`). They are two separate things and
+- **D2** The Council (`verdict`) and The Architects (`blueprint`). They are two separate things and
   get two separate questions, each with its own options: "The Council, which judges an idea:
   no / light / full" and "The Architects, who work an idea out: no / light / full". Never one
   question "do you want the teams": in two trials that gave the user a team they did not want.
@@ -248,7 +248,7 @@ name, or an open question, never a fifth question in one message.
   read-only allow rules instead of skipping permissions altogether.
 - **D7** **Check the wiki tree against the skills.** Block C came before the skill choices, so
   compare: session-end needs a sessions section and a decisions log; research and wiki-query need a
-  research section; wiki-ingest needs a references section with a raw sources folder; idea and
+  research section; wiki-ingest needs a references section with a raw sources folder; verdict and
   blueprint need an ideas section; career and study-inbox need a projects section, and study-inbox
   needs the inbox folder name in `raw_folders`. Propose what is missing in one message, update
   `_setup/interview/C.md` after the yes, and write the name of the ideas section into `teams:`
