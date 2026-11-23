@@ -60,7 +60,7 @@ did not run yet. Tick each only when it is done; the wrap-up is not done while o
    wants to bring in, that move is the first one on the list: an empty wiki next to a full old
    vault does not get used. The others answer the top pain points from B3, for example:
    - "Notes pile up": put ten old notes in the inbox and run the inbox skill together.
-   - "Ideas never get decided": run the idea skill on the idea they mentioned in block B.
+   - "Ideas never get decided": run the verdict skill on the idea they mentioned in block B.
    - "Mail chaos": a first organizer run on the inbox, board only, no moves.
    - "Every session starts from zero": end today with the session-end skill.
    Ask which one to start with. The first real task decides whether a workspace gets used.

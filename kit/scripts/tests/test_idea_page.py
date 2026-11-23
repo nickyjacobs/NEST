@@ -472,14 +472,22 @@ def test_a_workspace_without_the_council_does_not_point_at_it(tmp_path, monkeypa
     assert idea_page.council_installed()                      # no workspace here: unknown counts as yes
     (tmp_path / ".claude/skills/blueprint").mkdir(parents=True)
     assert not idea_page.council_installed()
-    (tmp_path / ".claude/skills/idea").mkdir()
+    (tmp_path / ".claude/skills/verdict").mkdir()
+    assert idea_page.council_installed()
+
+
+def test_the_council_under_its_old_skill_name_still_counts(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".claude/skills/blueprint").mkdir(parents=True)
+    assert not idea_page.council_installed()
+    (tmp_path / ".claude/skills/idea").mkdir()               # built before the rename, and the name was kept
     assert idea_page.council_installed()
 
 
 def test_a_workspace_without_the_architects_does_not_point_at_them(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     assert idea_page.architects_installed()                   # no workspace here: unknown counts as yes
-    (tmp_path / ".claude/skills/idea").mkdir(parents=True)
+    (tmp_path / ".claude/skills/verdict").mkdir(parents=True)
     assert not idea_page.architects_installed()
     (tmp_path / ".claude/skills/blueprint").mkdir()
     assert idea_page.architects_installed()

@@ -43,6 +43,48 @@ section in plain words: what it means if you already built a workspace with an e
   the browser, so the user picks colours by eye and never from colour codes.
 - `obsidian_setup.py vaults --count` counts the notes per vault. Without the flag the command
   only lists the vaults, and no longer walks through every folder Obsidian knows.
+- The updater knows what a rename is. `RENAMES` in `kit/scripts/nest_update.py` maps an old kit
+  path to its new one, a folder or a file, one line per rename. `plan` reports a renamed part
+  this workspace has as one `rename` item (the recorded files and where they go, the user's own
+  files in the folder, what the part gained, and any place that is already taken) where it used
+  to report "removed" plus "new". The new command `rename` backs up every file of the part and
+  moves it as it is, and re-records it against the kit file under its new name with the hash
+  it was made from, so the next plan lists what NEST changed as an ordinary replace or merge.
+  In a skill it changes one line, the `name:` in `SKILL.md`, to the new folder name, so the
+  skills catalogue is valid at every moment. A file is moved by renaming it, never by copying
+  and deleting, and the stamp is saved after every file (`renaming` in `nest.json` marks a
+  rename that was begun): a run that stops at a file another program holds, or is killed
+  between two moves, leaves every file in one place, the plan keeps showing the rename until
+  the old folder holds nothing of the part, and the same command carries on. A file at the new
+  place that this rename did not put there blocks it before anything moves; the same file at
+  both places does not. Folders the rename emptied are removed, and symbolic links in the old
+  folder are named as left in place.
+  `diff` compares a renamed kit file across its two names. `decline` on a rename moves nothing
+  and re-records the files against the new kit paths, so the offer does not return and later
+  changes still arrive under the old name; it is refused for a rename that is half done. Both
+  clear what was declined under either name, so a "no" given to an updater from before the
+  table does not hide what NEST changed in the part. `restore` puts the old folder back and
+  takes the new one away, empty folders included; files the user changed in the new folder
+  after the update stay there and are named. A workspace that never had the part hears
+  nothing about it, and neither does one that has it under a folder name of its own (a
+  translated name, a rename it declined before): there the files just follow the kit file's
+  new name. `stamp` takes a folder under a part's old name for the kit's only when at least
+  one file in it is still the kit file, so a skill of the user's own that happens to be called
+  `idea` is left alone.
+- The updater never writes a renamed part's new name into a workspace that has the part under
+  another name (the old name was kept, the rename is still to be done, or the folder has a
+  name of the user's own). A kit file whose new version says the new name where the old one
+  said the old name (the last parts of the two paths in `RENAMES`, as whole words, per changed
+  block of lines: a `name: idea` that became `name: verdict`, a path `../idea/reference.md`
+  that became `../verdict/reference.md`) is a `merge` with `name_kept` in the plan, also when
+  the file is an untouched copy, and `apply` refuses it and says why. After `rename` the same
+  file is an ordinary `replace`. Scripts are exempt: they read both names.
+- `rename` changes the `name:` line of a moved `SKILL.md` only when it holds exactly the old
+  folder name, and keeps quotes, spacing and a trailing comment. A name of the user's own, an
+  empty or a missing `name:` is left alone, and the command says so.
+- A `rename` that stops before one file was moved is not begun: the marker is cleared, the
+  plan shows the ordinary offer again and `decline` works. The text form of `plan` says when
+  a rename is begun and not finished.
 
 - The interview asks where else the user wants their notes (a phone, a tablet, a second
   computer) and proposes a sync route from the new `kit/wiki/obsidian/DEVICES.md`: Obsidian
@@ -60,6 +102,19 @@ section in plain words: what it means if you already built a workspace with an e
 
 ### 🔧 Changed
 
+- The Council's skill is called `verdict` (the command `/verdict`), after what it gives, the
+  way The Architects' skill is called `blueprint`. It was `idea`, which named what the user
+  brings. `kit/skills/idea/` is `kit/skills/verdict/`, and the setup prompt, Appendix B, the
+  blueprint skill, the Council's agents and the wiki kit name the skill by its new name. The
+  team, its seats, the idea page (`idea.md`), `idea_page.py`, the ideas section and the
+  `idea-note` snippet keep their names: an idea is still an idea.
+- `idea_page.py` counts The Council as installed when the skill folder is `verdict` or `idea`,
+  and `nest_update.py` reads the light size and the team of an agent under either name
+  (`stamp --light` takes both), so a workspace that keeps `/idea` behaves as before.
+- A new file of a skill is offered next to that skill's own files, also when its folder in the
+  workspace has another name than in the kit.
+- `retire` works on a file a rename moved in the same update: the copy it keeps goes to the
+  update's `created/` folder, and the version from before the move stays under its old name.
 - Build step B2.5 installs the plugins and the theme after one yes, where the user used to
   install five plugins and a theme by hand. What is left for the user is opening the vault and
   "Trust author and enable plugins", and restarting Obsidian once. The instruction gives the

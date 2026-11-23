@@ -89,7 +89,7 @@ installed; whether there is an audits section.
   those fields when the user names a goal.
 - `log.md` keeps the line `<!-- Begin of the log -->` exactly; it must match `log.marker` in
   `wiki.config.json`. Every section index keeps `<!-- AUTO-INDEX -->` (`index_marker`).
-- `idea-note.css` styles the styled mode of the `idea` and `blueprint` skills: the callout types and
+- `idea-note.css` styles the styled mode of the `verdict` and `blueprint` skills: the callout types and
   `lbl-*` classes listed at its top are exactly the ones in their `reference.md` files. Ship the
   snippet and the styled mode together (the skills' "callout styling" / "callout types" markers), or
   neither: in plain mode the skills write quote and info callouts and need no CSS. The ideas section in `wiki.config.json` takes the

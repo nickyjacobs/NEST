@@ -1,6 +1,6 @@
 ---
 name: council-investor
-description: The Investor on The Council (light), the idea skill's panel. Reads the run file the idea skill names and works out what the user's idea costs in money and what it could bring back. Only for the idea skill.
+description: The Investor on The Council (light), the verdict skill's panel. Reads the run file the verdict skill names and works out what the user's idea costs in money and what it could bring back. Only for the verdict skill.
 tools: Read, WebSearch, WebFetch
 model: sonnet
 effort: high

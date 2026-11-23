@@ -1,6 +1,6 @@
 ---
 name: blueprint
-description: The user has a rough idea and wants it worked out, not judged ("I've got a rough idea", "help me flesh this out", "work this idea out", "think this through with me", "call the architects", "draw up a blueprint", "what would this look like?"). The Foreman first asks the few things only the user can decide, then The Architects (The Surveyor, The Engineer, The Draftsman) draw it up into one blueprint that labels what is the user's, what the team proposed or assumed and what is still open. Also the follow-ups "save it", "what did the engineer say?", "take variant 2", "what if ...", "go through the open points", "send it to the council", "rework it with the council's verdict", and answers to The Foreman's questions ("take your recommendations", "just start"). Not for judging an idea or asking whether it is any good (that is the idea skill, The Council), not for looking up a fact or a price (research), and not for planning code in this workspace.
+description: The user has a rough idea and wants it worked out, not judged ("I've got a rough idea", "help me flesh this out", "work this idea out", "think this through with me", "call the architects", "draw up a blueprint", "what would this look like?"). The Foreman first asks the few things only the user can decide, then The Architects (The Surveyor, The Engineer, The Draftsman) draw it up into one blueprint that labels what is the user's, what the team proposed or assumed and what is still open. Also the follow-ups "save it", "what did the engineer say?", "take variant 2", "what if ...", "go through the open points", "send it to the council", "rework it with the council's verdict", and answers to The Foreman's questions ("take your recommendations", "just start"). Not for judging an idea or asking whether it is any good (that is the verdict skill, The Council), not for looking up a fact or a price (research), and not for planning code in this workspace.
 argument-hint: "<the rough idea, in your own words>"
 metadata:
   does: "Hands your rough idea to The Architects: The Foreman asks you the few things only you can decide, then three desks measure the ground, shape it and draw one blueprint, labelled with what is yours, what they proposed or assumed and what is still open. Then The Council can judge it."
@@ -114,6 +114,6 @@ Surveyor. Save only on "save it", as in section 11 with `--size light` (`save-he
 ## Edges
 
 - "Stop": stop the running agent (TaskStop), note it in `meta.md`, one line that it stopped.
-- A verdict wanted: the idea skill. A fact or a price: research. Code in this workspace:
+- A verdict wanted: the verdict skill. A fact or a price: research. Code in this workspace:
   plan it here.
 - Never run a desk's work yourself, and never give a desk more than its run file.

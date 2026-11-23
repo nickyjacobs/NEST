@@ -109,8 +109,8 @@ tests in B4 that write a fake key or remove a test file.
    load by path, per FACTS.md).
 6. `scripts/`: copy from `kit/scripts/` with a file copy: `validate.py`, `session_context.py`,
    `session_guard.py`, `nest_update.py`, `agent_git_readonly.py`, `wiki.py`, `skills_catalog.py`,
-   `obsidian_setup.py` with its `obsidian.lock.json`, plus, each when its feature was chosen: `wiki_backup.py` (E4 a), `council_score.py` (idea),
-   `idea_page.py` and `blind_seat_guard.py` (idea or blueprint), `check_style.py`
+   `obsidian_setup.py` with its `obsidian.lock.json`, plus, each when its feature was chosen: `wiki_backup.py` (E4 a), `council_score.py` (verdict),
+   `idea_page.py` and `blind_seat_guard.py` (verdict or blueprint), `check_style.py`
    (writing-style). Then run `uv run --script scripts/validate.py --self-test` once:
    it proves the scanner works and makes uv fetch Python now, so the first hook does not time out
    (check: the self-test passes; `uv run --script scripts/wiki.py --help` runs). Tell the user
@@ -120,7 +120,7 @@ tests in B4 that write a fake key or remove a test file.
    work in completely (VS Code, or the terminal program) and start it again, so it sees uv.
 7. `.claude/settings.json` from `kit/claude/settings.reference.json`: the hooks, permissions from
    D6, the `attribution` block exactly as the reference has it (it keeps "Co-Authored-By" lines out of
-   the user's commits), with idea or blueprint the three allow rules their scripts need
+   the user's commits), with verdict or blueprint the three allow rules their scripts need
    (`Bash(uv run scripts/council_score.py *)`, `Bash(uv run --script scripts/idea_page.py *)`,
    `Bash(uv run scripts/wiki.py *)`, so a run is not stopped by a prompt halfway), and nothing
    else yet. Always: the secret scan before and after writes and after shell commands, the session-start
@@ -173,8 +173,8 @@ tests in B4 that write a fake key or remove a test file.
    `kit/scripts/wiki.config.example.json`, with the sections, kinds, status words and labels
    from block C. Keep its `authors` list as it is unless the user wants other names
    (`kit/scripts/WIKI-CONFIG.md` explains every key); pages you write carry `author: claude`
-   (check: valid JSON; every section in the tree from C1 is in it). When idea or blueprint was
-   chosen, add the ideas section exactly as `kit/skills/idea/reference.md` specifies (index type
+   (check: valid JSON; every section in the tree from C1 is in it). When verdict or blueprint was
+   chosen, add the ideas section exactly as `kit/skills/verdict/reference.md` specifies (index type
    `folders`, page `idea.md`, its own status words), with the section name recorded in STATE.md.
    When the user's language is not English, also fill that section's `idea_page.labels` with
    the headings and texts of the idea page in their language (the header of
@@ -247,7 +247,7 @@ tests in B4 that write a fake key or remove a test file.
    don't copy: paths and section names from `wiki.config.json`, labels in the user's language,
    their apps from A7, every `<!-- customise: ... -->` resolved and removed. The exception:
    `obsidian-markdown` and `obsidian-bases` come from Obsidian's own repository; copy those two
-   folders as they are, with their `NOTICE.md` (the licence asks for it), and change nothing. For idea and blueprint
+   folders as they are, with their `NOTICE.md` (the licence asks for it), and change nothing. For verdict and blueprint
    take `SKILL.md` with `formats.md` (full) or `SKILL.light.md` renamed to `SKILL.md` with
    `formats.light.md` kept under its own name (light; the skill refers to it), plus the other
    supporting files in the folder (`reference.md`, `run-files.md`). Leave out the files of the
@@ -269,7 +269,7 @@ tests in B4 that write a fake key or remove a test file.
    Build the skills one at a time and run `uv run --script scripts/skills_catalog.py --check` after
    each one, or in parallel with helper agents: then give each helper the frontmatter rules from
    FACTS.md, and before the stop point check every file they wrote (catalogue check, secret scan,
-   no `customise:` left). Saving idea and blueprint results always goes through
+   no `customise:` left). Saving verdict and blueprint results always goes through
    `scripts/idea_page.py`, never through a script you write yourself.
 3. `disable-model-invocation` per skill from D5. The skills list in CLAUDE.md, one line each.
 4. `uv run scripts/skills_catalog.py` to write `docs/skills.md`, then
@@ -349,7 +349,7 @@ the wiki log.
    test, not the user's notes: the rule that nothing is deleted is about theirs.
 4. **One run per chosen team,** when the user said yes to it in the opening dialog: an idea of
    your own, small and harmless, in the area the user named in block B (never their real idea:
-   that one deserves a run they follow). Run it through `idea` (light or full) and, if chosen,
+   that one deserves a run they follow). Run it through `verdict` (light or full) and, if chosen,
    through `blueprint`. Say at the start of the run that it is a setup test, approve the brief
    yourself, and take the recommended answer to every question a seat asks. Check the board
    shows and the score comes from `council_score.py`. Do not save the result to the wiki: the

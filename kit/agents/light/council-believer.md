@@ -1,6 +1,6 @@
 ---
 name: council-believer
-description: The Believer on The Council (light), the idea skill's panel. Reads the run file the idea skill names and makes the strongest honest case for the user's idea. Only for the idea skill.
+description: The Believer on The Council (light), the verdict skill's panel. Reads the run file the verdict skill names and makes the strongest honest case for the user's idea. Only for the verdict skill.
 tools: Read, WebSearch, WebFetch
 model: sonnet
 effort: high

@@ -3,7 +3,7 @@
 What `SKILL.md` (full) and `SKILL.light.md` (light) point to: the rounds, the labels, the
 sixteen sections, how a run file is put together, the rival read, the source check, the
 follow-ups and where a blueprint lands in the wiki. The idea page itself (`idea.md`) is
-shared with The Council: its layout is specified in `../idea/reference.md`, and that file
+shared with The Council: its layout is specified in `../verdict/reference.md`, and that file
 wins where the two differ.
 
 ## 1. The rounds
@@ -290,8 +290,8 @@ On a version 2 and up (the idea's folder exists in the ideas section):
 | "take variant 3", "go with the smaller one", "what if ...", a changed direction | a new version: new run directory, version + 1, `Changed:` one line; copy surveyor.report.md, dreamer.report.md, client.report.md and `rival/` from the previous run (round one stays), then round two and three. Light: copy surveyor.report.md and `rival/`, then Engineer and Draftsman. When the idea itself changed so much that the ground must be measured again: the whole flow, Foreman first |
 | "go through the open points", "ask me" | the idea must be saved (save it first, after a yes). List the unticked points of idea.md, numbered, each with its options and recommendation; the user answers in one message by number |
 | an answer to an open point | section 11, "Answers to open points"; "I don't know" or a pointer that leads nowhere is a `**Still open:**` note, not an answer. A pointer to their own notes ("it's in my wiki"): look there first and record what the page says, with its name |
-| "send it to the council", "is it any good?" | save first (after a yes when unsaved), then start the idea skill with the Skill tool, args: the blueprint's Council brief (labels stripped) and `idea_slug: <slug>`. The idea skill puts the latest blueprint, the user's answers to its open points and the pages its sources list into the member and judge run files (not the Outsider's). The Council never saves by itself: its board offers to save, and the user can save the verdict into the same folder |
-| "rework it with the council's verdict", "version two" (also when the idea skill hands a saved review over) | a new version with the latest file in `<slug>/reviews/` as Council feedback (verdict and score from its frontmatter; the `- Label: value` lines under `## Verdict: ...`, chiefly Biggest risk, Conditions, Missed by all four, Kill criteria and Next step; the seat reports below it are context): The Foreman first with the rework blocks (at most three questions, and Round one: keep or again); keep copies round one as above, again runs it fresh |
+| "send it to the council", "is it any good?" | save first (after a yes when unsaved), then start the verdict skill with the Skill tool, args: the blueprint's Council brief (labels stripped) and `idea_slug: <slug>`. The verdict skill puts the latest blueprint, the user's answers to its open points and the pages its sources list into the member and judge run files (not the Outsider's). The Council never saves by itself: its board offers to save, and the user can save the verdict into the same folder |
+| "rework it with the council's verdict", "version two" (also when the verdict skill hands a saved review over) | a new version with the latest file in `<slug>/reviews/` as Council feedback (verdict and score from its frontmatter; the `- Label: value` lines under `## Verdict: ...`, chiefly Biggest risk, Conditions, Missed by all four, Kill criteria and Next step; the seat reports below it are context): The Foreman first with the rework blocks (at most three questions, and Round one: keep or again); keep copies round one as above, again runs it fresh |
 | "stop" while desks work | stop the running agents (TaskStop), note it in meta.md, one line that it stopped |
 | "done", "close it" | one word that it's closed; when unsaved, one line that it isn't saved and the run stays in `.runs/` |
 
@@ -299,10 +299,10 @@ On a version 2 and up (the idea's folder exists in the ideas section):
 
 Only on the user's "save it" (or their yes when a follow-up needs it saved). The layout of
 `idea.md`, the status words and the review files are The Council's spec in
-`../idea/reference.md` ("Saving"); this section adds only what the blueprint brings.
+`../verdict/reference.md` ("Saving"); this section adds only what the blueprint brings.
 
 <!-- customise: ideas section (the wiki folder for ideas, `25-ideas` by default) -->
-<!-- customise: folder names `blueprints` and `reviews` (English by default; translate both here and in the idea skill, or neither) -->
+<!-- customise: folder names `blueprints` and `reviews` (English by default; translate both here and in the verdict skill, or neither) -->
 
 1. The slug: the idea's existing folder when it has one, otherwise the run's slug.
 2. With the Write tool, write `<run dir>/save-head.md`: the header lines of the layout below
@@ -317,7 +317,7 @@ Only on the user's "save it" (or their yes when a follow-up needs it saved). The
    `<ideas>/<slug>/blueprints/<YYYY-MM-DD-HHMM>-v<n>.md` in the layout below (the stamp is
    the run's start, from the run directory's name, not the time of saving) and rebuilds
    `<ideas>/<slug>/idea.md` per the idea page layout and its rebuild rules in
-   `../idea/reference.md`, which is canonical for `idea.md`. It prints the paths it wrote.
+   `../verdict/reference.md`, which is canonical for `idea.md`. It prints the paths it wrote.
    Exit 1: an input file is missing or in the wrong shape; fix that and run it again. Exit 2:
    a config problem; tell the user what it printed. Never write these files by hand or with a
    script of your own. Saving the same run again rewrites the same file.

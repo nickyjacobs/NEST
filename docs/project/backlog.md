@@ -43,6 +43,29 @@ for users is in the [roadmap](../../ROADMAP.md).
 - **Undo after carrying on:** when an undo fails in an older part of an update and the user
   starts a new update without running `restore` again, that older part is only reachable by
   name (`restore --run`). `restore --list` does not show which parts belong together.
+- **A rename into a folder of the user's that differs only by case:** on macOS and Windows a
+  folder `Verdict` of the user's own is the folder `verdict` the rename moves into. Files with
+  the same name block the rename, as they should; when none collide, the part's files land in
+  the user's folder, next to theirs, under the user's spelling. An undo takes them out again.
+- **A `renaming` marker that does not match the disk:** the marker in `nest.json` says a rename
+  was begun. When it is there while nothing was moved (a hand edit, a `nest.json` from another
+  backup than the files, a run that was killed before its first move), a folder with the old
+  name counts as a half rename, a folder of the user's own included, and `decline` is refused
+  until `rename` or an undo. The marker should count only when a recorded file is at the new place.
+- **What the name guard misses:** a kit file is held back from a workspace that kept a part's
+  old name only when a changed block puts the new name where the old one stood. A later release
+  that only adds a new path or command (`../verdict/x.md`, `/verdict`) to a file, or drops the
+  old name in one place and adds the new one in another, reaches such a workspace as a plain
+  `replace`. Names written with a capital are not seen either.
+- **A name of the user's own in a renamed skill:** `rename` changes the `name:` line only when
+  it holds the old folder name. A name the user chose stays, the command says so, and the
+  skills catalogue reports that name and folder differ, as it did before the rename.
+- **What a rename leaves in the old folder:** symbolic links stay (the command names them),
+  and an undo does not make empty folders again that the rename removed.
+- **A skill file that was never adapted, after a rename:** the `name:` line is the one change
+  `rename` makes, so an untouched copy of `SKILL.md` no longer equals its kit original. It is
+  a `replace` when the new kit file differs from the old one in that line only, and a `merge`
+  otherwise. Skills are adapted by the setup, so this is rare.
 - **Undo of an update nobody closed:** an update that was started and left without `finish`
   counts as the update's own work when it is put back, also for edits made days later. Those
   edits are kept in the history folder, not in place.

@@ -1,8 +1,8 @@
 /* NEST: idea pages (25-ideas)
- * Callouts and labels for the pages The Council (idea skill) and The Architects (blueprint skill)
+ * Callouts and labels for the pages The Council and The Architects, each through its own skill,
  * write in their styled mode: idea.md, the runs in blueprints/ and the verdicts in reviews/. The names
- * below are exactly the ones in kit/skills/idea/reference.md ("Review layout", "Idea page layout") and
- * kit/skills/blueprint/reference.md (section 11). Rename a type in the skills, rename it here.
+ * below are exactly the ones in the Council skill's reference.md ("Review layout", "Idea page layout") and
+ * the Architects skill's reference.md (section 11). Rename a type in the skills, rename it here.
  * Without this snippet the skills write plain Markdown (quote and info callouts) and need no CSS.
  *
  *   idea.md       [!verdict] or [!blueprint] stamp, [!core] Core, [!blueprint]- Full blueprint (with the

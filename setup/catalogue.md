@@ -16,7 +16,7 @@ when to read this one. Read `SETUP.md` first.
 | Losing track of projects and priorities | One README per project with phase and next step, a priorities page, Home panels, session-end updating the project, `docs/next-session.md` |
 | Forgetting what was learned | Knowledge notes by kind, filed from the inbox, linked to at least two pages; the research skill saves answers back; the query skill finds them |
 | Studying for a course or certification | The study inbox: one inbox per course, raw material into a module note in your words, your own answers kept word for word, a checklist per module |
-| Ideas never worked out or decided | The Architects (blueprint) to work an idea out, The Council (idea) to judge it, the decisions log |
+| Ideas never worked out or decided | The Architects (blueprint) to work an idea out, The Council (verdict) to judge it, the decisions log |
 | Career or job search | The career skill: tracks, a log, preparation for a vacancy against your own experience |
 | Mail chaos | The mail skill (read, archive, move, draft replies, never send) and the mail organizer (a board first, then folders and rules on your go, undo within a day) |
 | Calendar and day planning | The calendar skill and the morning briefing |
@@ -44,7 +44,7 @@ runs it after a yes; **A** = the assistant may just do it.
 | wiki-query | Answers a question from the wiki with links, and can save the answer | wiki | A | none beyond the sections |
 | wiki-maint | Reindex, lint, stats and signals (stale pages, big inbox, backups) | wiki | C | how often (weekly is recommended) |
 | obsidian-markdown, obsidian-bases | Correct Obsidian syntax for notes and Bases views | wiki | A | none |
-| idea (The Council) | Judges an idea: four perspectives, a fact check, a jury, a verdict with a score and a next step | agents; web | P | full or light; which context pages hold their goals, time and money; currency; the ideas section name; whether The Architects are installed too |
+| verdict (The Council) | Judges an idea: four perspectives, a fact check, a jury, a verdict with a score and a next step | agents; web | P | full or light; which context pages hold their goals, time and money; currency; the ideas section name; whether The Architects are installed too |
 | blueprint (The Architects) | Works a rough idea out into a blueprint: what exists, variants, the first user, the smallest version, risks | agents; web | P | full or light; same context pages; the ideas section name; whether The Council is installed too |
 | career | Tracks applications and career moves, prepares for a vacancy | wiki | A for status, C for writing | which tracks (jobs, study, promotion, freelance); where their CV or experience lives |
 | study-inbox | Turns raw course material into a module note, a file with their own answers kept verbatim, and a checklist per module | wiki | C | which courses or certifications, with exam dates; where course folders live if not under projects |
