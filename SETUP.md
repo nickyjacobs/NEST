@@ -57,12 +57,12 @@ that fit their life. Everything comes from an interview; nothing is assumed.
 | 0 to 4: how this works, what you build, the ground rules, the state file, how you ask | `SETUP.md` (this file) | every session |
 | 5: Phase 0, the machine check and the docs | `setup/check.md` | the first session |
 | 6: the interview, blocks A to F, and the handover | `setup/interview.md` | during the interview; later to look up what a question ID asked |
-| Appendix A and B: pain points and the skill catalogue | `setup/catalogue.md` | in blocks B and D, and whenever you propose a skill |
+| Appendix A, B and C: pain points, the skill catalogue and the plugin catalogue | `setup/catalogue.md` | in blocks B and D, and whenever you propose a skill or a plugin |
 | 7: where every answer lands | `setup/routing.md` | at the end of each interview block, and during the build |
 | 8: the build, B1 to B5 | `setup/build.md` | during the build |
 | 9 and 10: the final check and the wrap-up | `setup/finish.md` | after the build |
 
-The section numbers and the names "Appendix A" and "Appendix B" are the same everywhere: "section
+The section numbers and the names "Appendix A", "Appendix B" and "Appendix C" are the same everywhere: "section
 7" always means the routing table, whichever file names it.
 
 These files deliberately contain no template text. Templates, agents, skills and scripts live in
@@ -84,12 +84,14 @@ A folder the user opens with Claude Code every day. When it is done it holds:
 | Skills the user chose, one by one | `.claude/skills/<name>/SKILL.md` | `kit/skills/` |
 | Agents those skills need | `.claude/agents/*.md` | `kit/agents/` |
 | Integrations the user chose | MCP servers, connectors or scripts, plus permission rules | `kit/integrations/` |
+| Plugins the user chose | `enabledPlugins` in `.claude/settings.json`; the plugin itself comes from its maker | Appendix C in `setup/catalogue.md` (reviews, not files) |
 | Scripts | `scripts/` (Python, run with `uv run`) | `kit/scripts/` |
 | Docs | `docs/next-session.md` (what is open), `docs/skills.md` (generated) | built |
 | GitHub, if wanted | `.github/`, `.githooks/pre-commit`, README, private repo, wiki backup | `kit/github/`, `kit/scripts/wiki_backup.py` |
 
-**Not part of NEST:** voice, speech, a HUD or side screen, an always-on server, chat bots. Everything
-runs inside the user's own Claude Code sessions. If the user asks for it, note it in
+**Not part of NEST:** voice, speech, a HUD or side screen of its own, an always-on server, chat
+bots. Everything runs inside the user's own Claude Code sessions (a status line under the chat,
+such as the claude-hud plugin in Appendix C, is part of Claude Code and fine). If the user asks for it, note it in
 `_setup/backlog.md` and move on. Reading and writing the wiki on a phone or a second computer
 is not on that list: it goes through a sync route the user picks in block C (C8). What stays on
 the first computer is the assistant itself.
@@ -114,8 +116,8 @@ The principles that make the original work, and that you keep in every build:
   you are not sure it exists, verify it in the docs you fetched in Phase 0 or on the maker's own
   page. Until then it is a placeholder `<fill in: ...>` and an open item in STATE.md.
 - **Offer only what NEST has.** A skill, a hook or a reminder you propose is one from Appendix A
-  or B or from `kit/`. Something else the user would like goes to `_setup/backlog.md`; say that
-  it is not part of NEST instead of promising it.
+  or B or from `kit/`; a plugin is one from Appendix C. Something else the user would like goes
+  to `_setup/backlog.md`; say that it is not part of NEST instead of promising it.
 - **Write files with the Write and Edit tools,** not through a shell command (`cat > file`, a
   heredoc, `sed -i`, `printf >>`, a Python one-liner), and read them with the Read tool, not
   with `cat` or `sed -n` behind a `cd`. One shell command per call, in the interview and at the
@@ -143,7 +145,8 @@ The principles that make the original work, and that you keep in every build:
   description ("a client in healthcare", "my manager"). The user decides what is private; private
   context goes to `CLAUDE.local.md`, never into committed files.
 - **Read only what you need:** this file, `kit/`, `_setup/`, the workspace you are building, and
-  the docs you fetch. Never read `~/.claude.json`, any `.env` file, password stores, browser data,
+  the docs you fetch. Never read `~/.claude.json`, the user's own `~/.claude/settings.json`
+  (it can hold keys), any `.env` file, password stores, browser data,
   or the user's existing notes, unless the user points you at a specific file and says you may.
   Never propose access to a password manager or keychain either (no "I could install its CLI").
 - **Dates are absolute.** Take today's date from the system (`date`) and write `YYYY-MM-DD`; never

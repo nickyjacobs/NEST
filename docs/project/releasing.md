@@ -151,6 +151,11 @@ Preview it before tagging: `uv run --script tools/release_check.py --notes <x.y.
    A lock file that changed since the last release (a new version, a new plugin) is tried in a
    real vault before the release: `obsidian_setup.py install`, open the vault, trust it, and see
    that Home and the plugins work.
+   Then the Claude Code plugins in Appendix C of `setup/catalogue.md`: read each plugin's
+   manifest, hooks and `.mcp.json` again at the version its card names (or at the default branch
+   where the card says it is not pinned). A new hook, server or script, or a new need, goes on
+   the card with today's date, or the plugin leaves the appendix. A newer tag is taken only after
+   that reading.
 5. Commit as `Docs: changelog and version for <x.y.z>`, push, and open a pull request into
    `main` titled `Release: v<x.y.z>`.
 6. Merge it with a merge commit. Then tag the merge commit and push the tag:
