@@ -1,6 +1,6 @@
 # NEST setup prompt
 
-Version 1.2.0 · New Environment Setup Toolkit
+Version 1.3.0 · New Environment Setup Toolkit
 
 This file is a prompt for Claude Code. You (Claude) read it and follow it. The person in front of
 you is "the user". Together you build their own workspace: a Claude Code project with a named
@@ -207,7 +207,7 @@ restart_app: <no | yes>               # yes when a tool was installed in this ru
 workspace: <fill in at F1>            # absolute path once known
 assistant: <fill in at F3>            # the name; written at F3
 teams: <fill in at D2 and D7>         # for example "council: light, architects: none, ideas: 50-ideas"
-nest_version: 1.2.0
+nest_version: 1.3.0
 started: <YYYY-MM-DD>
 ---
 next: Phase 0, step 0.3

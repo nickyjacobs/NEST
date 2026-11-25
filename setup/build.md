@@ -318,9 +318,11 @@ tests in B4 that write a fake key or remove a test file.
       `python3 -m pip install --user python-pptx XlsxWriter skia-pathops uharfbuzz`, after
       their own yes. When pip refuses because the system manages that Python, never force it
       (no `--break-system-packages`): it becomes an open item with the link to the maker's
-      install notes. claude-hud: its setup (`/hud`) runs in the test session, after the yes
+      install notes. `flask` only when the user wants ppt-master's pages in the browser; without
+      it, ppt-master confirms in the chat. claude-hud: its setup (`/hud`) runs in the test session, after the yes
       from its card, because the plugin loads when a session starts. The obsidian plugin's
-      `defuddle` program is installed only when the user first asks to read a web page.
+      `defuddle`, `knap` and `ob` programs are installed only when the user first asks for
+      what they do.
       dutchquill: `/dutchquill:instellen` runs in the test session, after the yes from its card;
       it asks where its work folder goes, and its first `dq` command downloads its Python
       packages into the plugin's data folder, so say that once.
