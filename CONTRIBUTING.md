@@ -62,6 +62,8 @@ Prefix: what it does, in the imperative
 - Run the tests: `uv run --project kit/scripts pytest -q kit/scripts/tests`.
 - A change to the setup prompt (`SETUP.md` and `setup/`) keeps the answer routing table
   (`setup/routing.md`) and Appendix B (`setup/catalogue.md`) complete.
+- A plugin enters Appendix C only after it was read through: its manifest, hooks, servers and
+  scripts, what leaves the machine and what it needs. The card says all of that and the date.
 - No personal names, paths, IPs, customer data or secrets in examples. Use placeholders
   (`<your-name>`, `<vault-path>`) and fictional people.
 
