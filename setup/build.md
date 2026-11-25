@@ -293,7 +293,8 @@ tests in B4 that write a fake key or remove a test file.
    one line, that this downloads the plugins the user chose.
    1. **What it needs.** `node --version` (22.18 or newer for claude-hud, any for
       session-report), `python3 --version` (3.10 to 3.14 for ppt-master; `python --version` on
-      Windows). Node missing or too old: offer the install the way Phase 0.2 installs a tool,
+      Windows), `uv --version` for dutchquill (the setup's own uv is enough; without uv,
+      `python3` at 3.10 or newer). Node missing or too old: offer the install the way Phase 0.2 installs a tool,
       after a yes. `python3` at another version: ppt-master becomes an open item; do not offer a
       second Python, which the plugin would not use, and never change the user's default one.
       Without what it needs, the plugin is not installed and becomes an open item.
@@ -320,6 +321,9 @@ tests in B4 that write a fake key or remove a test file.
       install notes. claude-hud: its setup (`/hud`) runs in the test session, after the yes
       from its card, because the plugin loads when a session starts. The obsidian plugin's
       `defuddle` program is installed only when the user first asks to read a web page.
+      dutchquill: `/dutchquill:instellen` runs in the test session, after the yes from its card;
+      it asks where its work folder goes, and its first `dq` command downloads its Python
+      packages into the plugin's data folder, so say that once.
    5. In `CLAUDE.md`, under the skills list, one line per plugin: what it is for, and that its
       maker keeps it up to date.
 7. Stop point: STATE.md `next: B3b` (or `next: B4` without integrations to connect now), the

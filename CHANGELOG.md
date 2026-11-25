@@ -33,6 +33,10 @@ section in plain words: what it means if you already built a workspace with an e
   says how it is installed, what runs, what leaves the computer and what it needs: obsidian,
   skill-creator, session-report, claude-hud, diagram-design, playground, ppt-master and
   frontend-design.
+- A ninth card in Appendix C: dutchquill, a writing assistant for Dutch and English (templates
+  per kind of text, APA 7, export to Word and PDF), pinned to `v2.0.2`. It sits next to the
+  writing-style skill, not instead of it; D9 and B3 step 6 say what it needs and what happens
+  after the install.
 - Interview question D9 proposes at most three plugins that fit the answers so far. The build
   (B3 step 6) checks each card against the source before it installs, installs in the project
   scope, and the tests in B4 try each plugin once.
