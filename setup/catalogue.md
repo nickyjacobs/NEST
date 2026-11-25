@@ -163,13 +163,15 @@ presentations are a real part of their work or study.
 **frontend-design** · `frontend-design@claude-plugins-official` (Anthropic). Runs: nothing; it is
 one skill file with design guidance. Leaves the machine: nothing. Needs: nothing.
 
-**dutchquill** · `dutchquill@dutchquill`, marketplace `nickyjacobs/DutchQuill-AI#v2.0.2` (MIT, by
+**dutchquill** · `dutchquill@dutchquill`, marketplace `nickyjacobs/DutchQuill-AI#v2.1.0` (MIT, by
 the maker of NEST; say so). Runs: six skills (`/dutchquill:schrijven`, `herschrijven`,
 `reviewen`, `humaniseren`, `instellen`, `bijwerken`) and three subagents; local Python scripts
 (`dq`) in their own environment in the plugin's data folder, made the first time a command needs
 them; one hook at the start of a session (a small Python file, standard library only) that says
 once that it is not set up yet and reminds once a month to check its guides; DutchQuill Studio,
-a settings page on 127.0.0.1 with a one-time key, only when the user asks for it. No server.
+a settings page on 127.0.0.1 with a one-time key, only when the user asks for it; it can open
+the user's own documents and folders from the work folder. No server. It keeps a copy of each
+text it makes in the work folder (history); the user can switch that off.
 `/dutchquill:instellen` asks where its work folder for input and output goes. Leaves the machine:
 its Python packages from PyPI the first time (and a Python download by uv when none fits); the
 online language check only when the user switches it on, and then the checked text goes to
