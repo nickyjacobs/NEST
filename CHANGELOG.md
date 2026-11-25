@@ -10,6 +10,7 @@ section in plain words: what it means if you already built a workspace with an e
 
 | Release | Date | In short |
 |---|---|---|
+| [1.3.0](#130---2026-11-25) | 2026-11-25 | The setup can now suggest a few ready-made plugins for Claude Code that fit you, each read through by NEST first, from diagrams and PowerPoint files to a writing assistant for Dutch and English. |
 | [1.2.0](#120---2026-11-23) | 2026-11-23 | Made for the person who never opened a terminal: a guide with a picture of every click, questions you answer by clicking, a setup that builds and tests by itself, installs your Obsidian plugins, and asks far less. |
 | [1.1.0](#110---2026-11-22) | 2026-11-22 | Everything an audit of 1.0.0 found, fixed and tested: safer updates and undo, a secret scan that sees more, guards that hold, a setup that resumes where you stopped, and a roadmap. |
 | [1.0.0](#100---2026-11-22) | 2026-11-22 | The first release: an interview that builds your own Claude Code workspace, and a way to keep it up to date afterwards. |
@@ -17,6 +18,12 @@ section in plain words: what it means if you already built a workspace with an e
 <sub>Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versions: [Semantic Versioning](https://semver.org/) · How a release is made: [docs/project/releasing.md](docs/project/releasing.md)</sub>
 
 ## [Unreleased]
+
+---
+
+## [1.3.0] - 2026-11-25
+
+> **In short:** The setup can now suggest a few ready-made plugins for Claude Code that fit you, each read through by NEST first, from diagrams and PowerPoint files to a writing assistant for Dutch and English.
 
 ### 🏠 For your workspace
 
@@ -43,6 +50,29 @@ section in plain words: what it means if you already built a workspace with an e
 - With the obsidian plugin chosen, the setup no longer copies `obsidian-markdown` and
   `obsidian-bases`: the plugin brings both and Obsidian keeps them up to date.
 - The release steps read every plugin card again before a release.
+
+### 🔧 Changed
+
+- New setups install Notebook Navigator 3.5.2 (was 3.5.1). A workspace that exists keeps the
+  version it has; Obsidian updates it from there.
+- The obsidian card is pinned to `1.2.3` (was `1.2.1`): only its descriptions changed, and its
+  `defuddle` skill now treats a fetched page as data, not as instructions.
+
+### 🐛 Fixed
+
+- Five plugin cards said less than their source, found when every card was read again for this
+  release (2026-11-25):
+  - obsidian brings seven skills, not five: also `knap` (note templates, needs Node 20 or newer)
+    and `obsidian-headless` (Sync and Publish from the command line, needs Node 22 or newer and
+    a paid plan; the vault then goes to Obsidian's servers).
+  - skill-creator shows its results on a page on `127.0.0.1:3117`, stops a program already using
+    that port first, loads fonts and a script from the web, and needs PyYAML for packaging.
+  - session-report's report loads its font from Google Fonts.
+  - diagram-design gained a PDF export (`export_pdf.py`, Playwright), keeps brand profiles in
+    `~/.diagram-design/profiles/`, and fetches your website only when you give it one.
+  - ppt-master opens a confirmation page and a live preview from small local servers on
+    `127.0.0.1` (ports 5050 and 6060), with `flask`; without it, it confirms in the chat.
+  The build (B3 step 6) installs `flask` and the obsidian programs only after their own yes.
 
 ### 🔒 Security
 
@@ -639,7 +669,8 @@ Nothing breaks: everything you have keeps working. What you will notice after `/
   scoring, the idea page builder, the writing-style check and the wiki backup, tested on macOS,
   Linux and Windows.
 
-[Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/nickyjacobs/NEST/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/nickyjacobs/NEST/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/nickyjacobs/NEST/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/nickyjacobs/NEST/releases/tag/v1.0.0

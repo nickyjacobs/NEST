@@ -107,58 +107,77 @@ Rules for every plugin:
 ### The cards
 
 Each card: how it is installed (`<plugin>@<marketplace>`, and the marketplace source), what runs,
-what leaves the machine, what it needs. Read through on 2026-11-24 (dutchquill on 2026-11-25).
+what leaves the machine, what it needs. Read through again on 2026-11-25.
 
-**obsidian** · `obsidian@obsidian-skills`, marketplace `obsidianmd/obsidian-skills#1.2.1`
+**obsidian** · `obsidian@obsidian-skills`, marketplace `obsidianmd/obsidian-skills#1.2.3`
 (Obsidian's own repository, MIT). Runs: skills only; no hooks, no server, no scripts. Chosen, it
 replaces the copies of `obsidian-markdown` and `obsidian-bases` (B3 step 1 skips them), so the
 user gets one set that Obsidian keeps up to date instead of a copy that stays as it was. Plus
 `obsidian-cli` (uses the command line built into the Obsidian app, which the user turns on in
 Obsidian), `defuddle` (reads a web page as clean Markdown; needs the `defuddle` program, installed
-with npm only after its own yes) and `json-canvas`. Leaves the machine: nothing, except the web
-pages `defuddle` is asked to read. Needs: nothing for the core; Node for `defuddle`.
+with npm only after its own yes), `json-canvas`, `knap` (fills note templates; needs the `knap`
+program, Node 20 or newer, installed with npm only after its own yes) and `obsidian-headless`
+(Obsidian Sync and Publish from the command line; needs the `ob` program, Node 22 or newer, and a
+paid Sync or Publish plan; the user logs in in their own terminal). Leaves the machine: nothing,
+except the web pages `defuddle` is asked to read, and the vault to Obsidian's servers when the
+user runs Sync or Publish through `obsidian-headless`. Needs: nothing for the core; Node for
+`defuddle`, `knap` and `obsidian-headless`. Read again on 2026-11-25.
 
 **skill-creator** · `skill-creator@claude-plugins-official` (Anthropic). Runs: a skill with
-Python scripts that run test prompts through Claude Code (`claude -p`); no hooks, no server. Leaves the
-machine: only the test prompts, as any Claude Code request; a test run uses part of the
-user's usage, so say so. Needs: Python (uv provides it).
+Python scripts that run test prompts through Claude Code (`claude -p`); no hooks. To show the
+results it starts a review page on 127.0.0.1, port 3117, and opens the browser; before it starts
+it stops any program already using that port, so say that. With `--static` it writes an HTML file
+instead. Leaves the machine: the test prompts, as any Claude Code request (a test run uses part
+of the user's usage, so say so); the review page loads fonts from Google Fonts and a script from
+`cdn.sheetjs.com`. Needs: Python (uv provides it), with PyYAML for checking and packaging a
+skill. Read again on 2026-11-25.
 
 **session-report** · `session-report@claude-plugins-official` (Anthropic). Runs: one local Node
 script that reads the user's own Claude Code transcripts on this computer and writes an HTML
-report; no hooks, no server. Leaves the machine: nothing. Needs: Node.
+report; no hooks, no server. Leaves the machine: nothing, except that the report loads its font
+from Google Fonts when it is opened. Needs: Node. Read again on 2026-11-25.
 
 **claude-hud** · `claude-hud@claude-hud`, marketplace `jarrodwatts/claude-hud#v0.15.0` (MIT).
 Runs: a status line program in a locked-down Node process with no network access; no hooks, no
 server. Its `/hud` command sets Claude Code's status line in the user's own settings, after
 asking: the line then shows in every Claude Code project on this computer, not only this
 workspace. Say that before the yes; an existing status line is only replaced after a second
-yes. Leaves the machine: nothing. Needs: Node 22.18 or newer.
+yes. It reads the git status of the project folder. Leaves the machine: nothing; its bug report
+command opens a GitHub issue only after the user's OK. Needs: Node 22.18 or newer. Read again on
+2026-11-25.
 
 **diagram-design** · `diagram-design@diagram-design`, marketplace `cathrynlavery/diagram-design`
 (MIT). Has no release tags, so it is installed at the version of that day and stays there.
-Runs: a skill with small local scripts; no hooks, no server, no telemetry (its `PRIVACY.md`).
-Leaves the machine: a diagram loads its fonts from Google Fonts when it is opened. Needs:
-nothing for a diagram as a page (an HTML file) or an SVG; a PNG image needs Playwright for
-Python and a Chromium browser, installed only after their own yes.
+Runs: a skill with small local scripts (standard library Python); no hooks, no server, no
+telemetry (its `PRIVACY.md`). Brand profiles are saved in `~/.diagram-design/profiles/`, outside
+the workspace. Leaves the machine: a diagram loads its fonts from Google Fonts when it is opened;
+setting up a brand profile fetches the user's website only when they give one. Needs: the
+`python3` command; nothing else for a diagram as a page (an HTML file) or an SVG; a PNG image or
+a PDF needs Playwright for Python and a Chromium browser, installed only after their own yes.
+Read again on 2026-11-25: the PDF export (`export_pdf.py`) is new since 2026-11-24, so read the
+scripts folder again on the day of the install.
 
 **playground** · `playground@claude-plugins-official` (Anthropic). Runs: a skill only. Leaves the
 machine: nothing. Needs: a browser to open the page.
 
 **ppt-master** · `ppt-master@ppt-master`, marketplace `hugohe3/ppt-master#v6.10.0` (MIT). The
 marketplace points at the plugin's own repository without a fixed version, so the install takes
-the version of that day. Runs: a skill with Python scripts; no hooks, no server. At every start
+the version of that day. Runs: a skill with Python scripts; no hooks. By default it opens local
+pages in the browser, each from its own small server on 127.0.0.1: a two-step confirmation (from
+port 5050) and a live preview of the slides (from port 6060). The user can ask to confirm in the
+chat instead; without Flask it does that by itself. At every start
 it runs a local integrity check (`attribution_guard.py`) that stops when a file of the skill was
 changed, so its files are never edited. Needs: the `python3` command itself (`python` on
 Windows) at version 3.10 to 3.14, because the skill calls that command. A second Python next to
 it (from uv or elsewhere) does not help: when `python3` is another version, ppt-master is an open
 item, and the user's default Python is never changed for it. With a fitting `python3`, four
-packages for the core (`python-pptx`, `XlsxWriter`, `skia-pathops`, `uharfbuzz`), installed with
-pip after their own yes; the other packages in its `requirements.txt` belong to one feature each
+packages for the core (`python-pptx`, `XlsxWriter`, `skia-pathops`, `uharfbuzz`), installed with pip
+after their own yes, and `flask` only when the user wants the local pages; the other packages in its `requirements.txt` belong to one feature each
 and are installed only when the user asks for that feature. Leaves the machine: images it
 fetches from openly licensed sources when a slide needs one; slide notes read aloud go to
 Microsoft's online speech service (`edge-tts`), so say that before narration is used; generated
 images only with an image service key the user sets up themselves. Propose it only when
-presentations are a real part of their work or study.
+presentations are a real part of their work or study. Read again on 2026-11-25.
 
 **frontend-design** · `frontend-design@claude-plugins-official` (Anthropic). Runs: nothing; it is
 one skill file with design guidance. Leaves the machine: nothing. Needs: nothing.

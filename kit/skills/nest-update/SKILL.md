@@ -65,7 +65,7 @@ workspace does not have (a team, mail, a backup they never set up). `items` hold
 group them by `group` so the user chooses about parts, never about single files.
 
 ```
-NEST 1.3.0 is out. You are on 1.2.0.
+NEST 1.4.0 is out. You are on 1.3.0.
 
 What is new for you
 1. The wiki check catches empty links. (improvement to something you have, safe)
@@ -359,14 +359,14 @@ is written again for them (`backup <path>`, write, `mark <path>=<kit path>`).
 4. Report short, in plain words:
 
 ```
-You are now on NEST 1.3.0.
+You are now on NEST 1.4.0.
 Updated: the wiki check, the inbox skill (your wording kept).
 Added: the study skill.
 Skipped: the old_tool cleanup (I will not ask again).
 The old versions are in .claude/.history/nest-update-20260108-1430/. "/nest-update undo" puts them back.
 ```
 
-5. Offer a commit of the update on its own, with a message like `Update: NEST 1.3.0`: only the
+5. Offer a commit of the update on its own, with a message like `Update: NEST 1.4.0`: only the
    files the update touched, never the user's own notes that happen to be uncommitted. Commit
    only after a yes, and settle it in this session.
 6. Last of all, when the commit question is answered: ask the user to restart Claude Code, so

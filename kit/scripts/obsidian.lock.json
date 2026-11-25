@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-22",
+  "generated": "2026-11-25",
   "plugins": {
     "obsidian-minimal-settings": {
       "name": "Minimal Theme Settings",
@@ -44,19 +44,19 @@
     "notebook-navigator": {
       "name": "Notebook Navigator",
       "repo": "johansan/notebook-navigator",
-      "version": "3.5.1",
+      "version": "3.5.2",
       "minAppVersion": "1.13.0",
       "files": {
         "main.js": {
-          "sha256": "64de05f2f0cec9225979956f173a1443e3f041974b7d7845fd81bbf972a13f0c",
-          "size": 2712902
+          "sha256": "2dc12da45d89f359e2eb1e6bb1aee5ad2212b6c359a8431c7d08e69e599890a3",
+          "size": 3225362
         },
         "styles.css": {
-          "sha256": "0ee78c84fb943cbc246b388464aaa49d7cf1ec8e469be0daa3b9dda8a38f416f",
-          "size": 339852
+          "sha256": "fd12332913403a3273d0301d2054874d245aac602b9b0b1576a98fb7790eaf56",
+          "size": 349570
         },
         "manifest.json": {
-          "sha256": "a4e2b0358be831dec4e1d662b7bbbf76898328491648c9bbe93351d15de33cb0",
+          "sha256": "301e825df3622dec11f266efcf970dc4073599ddc593dc8af1b960100efcdf74",
           "size": 498
         }
       }
