@@ -176,7 +176,7 @@ text it makes in the work folder (history); the user can switch that off.
 its Python packages from PyPI the first time (and a Python download by uv when none fits); the
 online language check only when the user switches it on, and then the checked text goes to
 LanguageTool (`api.languagetool.org`); `/dutchquill:bijwerken` reads public pages (Scribbr NL,
-Wikipedia, GitHub) only when asked. Its privacy page is `docs/privacy.md` in its repository.
+APA Style, Wikipedia, GitHub) only when asked. Its privacy page is `docs/privacy.md` in its repository.
 Needs: uv (the setup's own) or Python 3.10 or newer; the hook uses the `python3` command and stays
 silent without it. LibreOffice is optional, for a PDF that looks exactly like the Word file.
 Next to writing-style: that skill keeps the user's voice and word list for every text,
