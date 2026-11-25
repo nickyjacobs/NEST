@@ -286,10 +286,11 @@ name, or an open question, never a fifth question in one message.
   no; "show me the others" is the last option of the last question and lists the rest of
   Appendix C the same way. No fit at all: say that in one line and ask nothing. For a beginner,
   name the plugin only after the choice. A plugin that needs something new on the computer
-  (Node for claude-hud or session-report, Python with packages for ppt-master) says so in its
-  line; installing that is its own yes in B3 step 6. A plugin the user asks for that is not in
-  Appendix C goes to `_setup/backlog.md` (Appendix C, "Only these"). With the obsidian plugin
-  chosen, say that it replaces the two Obsidian skills NEST would otherwise copy.
+  (Node for claude-hud or session-report, Python with packages for ppt-master or dutchquill) says
+  so in its line; installing that is its own yes in B3 step 6. A plugin the user asks for that is
+  not in Appendix C goes to `_setup/backlog.md` (Appendix C, "Only these"). With the obsidian
+  plugin chosen, say that it replaces the two Obsidian skills NEST would otherwise copy. With
+  dutchquill and writing-style both chosen, say in one line which is for what (its card).
 
 ### Block E: GitHub and tooling
 

@@ -102,11 +102,12 @@ Rules for every plugin:
 | playground | A small interactive page: buttons and a live preview to try choices, then a prompt to copy back | they decide by seeing options (a design, a concept map, a document to review) |
 | ppt-master | Real PowerPoint files that stay editable, from a document or a topic | presentations are part of their work or study |
 | frontend-design | A clear visual direction for any page Claude makes, instead of a template look | they asked for diagram-design or playground, or Claude makes pages for them |
+| dutchquill | Writes, rewrites, reviews and humanizes texts in Dutch and English, with templates per kind of text, APA 7 and export to Word and PDF | they write reports, papers or other long documents (especially in Dutch), need APA for their study, or want Word or PDF in a house style; next to writing-style, not instead of it |
 
 ### The cards
 
 Each card: how it is installed (`<plugin>@<marketplace>`, and the marketplace source), what runs,
-what leaves the machine, what it needs. Read through on 2026-11-24.
+what leaves the machine, what it needs. Read through on 2026-11-24 (dutchquill on 2026-11-25).
 
 **obsidian** · `obsidian@obsidian-skills`, marketplace `obsidianmd/obsidian-skills#1.2.1`
 (Obsidian's own repository, MIT). Runs: skills only; no hooks, no server, no scripts. Chosen, it
@@ -161,3 +162,20 @@ presentations are a real part of their work or study.
 
 **frontend-design** · `frontend-design@claude-plugins-official` (Anthropic). Runs: nothing; it is
 one skill file with design guidance. Leaves the machine: nothing. Needs: nothing.
+
+**dutchquill** · `dutchquill@dutchquill`, marketplace `nickyjacobs/DutchQuill-AI#v2.0.2` (MIT, by
+the maker of NEST; say so). Runs: six skills (`/dutchquill:schrijven`, `herschrijven`,
+`reviewen`, `humaniseren`, `instellen`, `bijwerken`) and three subagents; local Python scripts
+(`dq`) in their own environment in the plugin's data folder, made the first time a command needs
+them; one hook at the start of a session (a small Python file, standard library only) that says
+once that it is not set up yet and reminds once a month to check its guides; DutchQuill Studio,
+a settings page on 127.0.0.1 with a one-time key, only when the user asks for it. No server.
+`/dutchquill:instellen` asks where its work folder for input and output goes. Leaves the machine:
+its Python packages from PyPI the first time (and a Python download by uv when none fits); the
+online language check only when the user switches it on, and then the checked text goes to
+LanguageTool (`api.languagetool.org`); `/dutchquill:bijwerken` reads public pages (Scribbr NL,
+Wikipedia, GitHub) only when asked. Its privacy page is `docs/privacy.md` in its repository.
+Needs: uv (the setup's own) or Python 3.10 or newer; the hook uses the `python3` command and stays
+silent without it. LibreOffice is optional, for a PDF that looks exactly like the Word file.
+Next to writing-style: that skill keeps the user's voice and word list for every text,
+DutchQuill is for longer pieces, checks and documents. With both chosen, say which is for what.
