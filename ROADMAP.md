@@ -6,17 +6,13 @@ it ships. Every new part stays a choice, and reaches a workspace you already hav
 `/nest-update`.
 
 <p align="center">
-  <img src="assets/roadmap.png" alt="NEST roadmap. Now: plugins that fit you, bring your old notes with you, your assistant from your phone. Next: a command board on Home, ready in one sitting, what your assistant remembers is yours. Later: upkeep that runs by itself, your workspace on two computers." width="100%">
+  <img src="assets/roadmap.png" alt="NEST roadmap. Now: bring your old notes with you, your assistant from your phone. Next: a command board on Home, ready in one sitting, what your assistant remembers is yours. Later: upkeep that runs by itself, your workspace on two computers." width="100%">
 </p>
 
 ## 🟠 Now
 
 What the next releases work on.
 
-- 🔌 **Plugins that fit you.** Claude Code has plugins, made by Anthropic and by other people,
-  that add routines and tools. Some make a real difference and many do not. The setup proposes
-  the few that fit what you told it, and only ones NEST has looked through first: a plugin can
-  run programs on your computer, so "popular" is not enough.
 - 📦 **Bring your old notes with you.** The setup already finds the notes you have. This is the
   step after it: your assistant moves them in a batch at a time, files them where they belong,
   and leaves the originals where they are until you say otherwise.

@@ -19,6 +19,11 @@ section in plain words: what it means if you already built a workspace with an e
 
 ## [Unreleased]
 
+### 🔧 Changed
+
+- The roadmap no longer lists plugins under Now: they shipped in 1.3.0. `ROADMAP.md` and
+  `assets/roadmap.png` (drawn from `assets/roadmap.svg`) show the two points that are left.
+
 ---
 
 ## [1.3.0] - 2026-11-25
