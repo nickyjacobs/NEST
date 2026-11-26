@@ -7,16 +7,36 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read   # gitleaks lists the commits of a pull request
+
+env:
+  # Pinned version and the SHA-256 of its linux_x64 archive, from the release's checksums file.
+  # Dependabot does not move this pin: a newer gitleaks is a change by hand, with its new hash.
+  GITLEAKS_VERSION: 8.30.1
+  GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
 
 jobs:
   scan:
     runs-on: ubuntu-latest
     steps:
-      # Verify the current major versions on the actions' release pages before use.
+      # Verify the current major version on the action's release page before use.
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0   # full history, so every commit is scanned
-      - uses: gitleaks/gitleaks-action@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # The gitleaks command itself rather than gitleaks-action: on a push the action scans only
+      # the pushed commits, from "<first>^", which fails on the first push of a repository with
+      # more than one commit (the first commit has no parent) and never scans that history
+      # afterwards. A workspace repository is small, so every run scans all of it.
+      - name: Install gitleaks
+        run: |
+          cd "$RUNNER_TEMP"
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfL --retry 3 -o "$archive" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}"
+          echo "${GITLEAKS_SHA256}  ${archive}" | sha256sum --check --strict
+          tar -xzf "$archive" gitleaks
+          rm "$archive"
+
+      - name: Scan the full history
+        run: |
+          "$RUNNER_TEMP/gitleaks" git --redact --no-banner --verbose --exit-code 1 .

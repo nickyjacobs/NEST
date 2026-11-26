@@ -21,8 +21,13 @@ section in plain words: what it means if you already built a workspace with an e
 
 ### 🏠 For your workspace
 
-- Nothing changes in a workspace that exists. These are fixes to the setup itself, for people
-  who start a new one.
+- The secret scan on GitHub now checks your whole history every time. Before, it failed on the
+  first upload of a new workspace (when it held more than one snapshot, as it always does after
+  the setup) and from then on only looked at what was new, so the first upload was never
+  checked on GitHub. The check on your own computer, if you chose it, did run before every
+  snapshot. If your workspace has the scan on GitHub, `/nest-update` offers the new version:
+  say yes, and from the next upload on it checks everything.
+- The other fixes in this release change the setup for new workspaces only.
 
 ### 🔧 Changed
 
@@ -49,6 +54,11 @@ section in plain words: what it means if you already built a workspace with an e
 - On Windows with only the VS Code extension, `claude` is not on the path, so installing a
   plugin failed with "command not found". Build step B3.6 now uses the `claude.exe` that the
   extension brings, by its full path.
+- `kit/github/workflows/gitleaks.yml` runs the gitleaks command itself (8.30.1, checked
+  against its SHA-256) on the full history, instead of `gitleaks/gitleaks-action`. On a push
+  the action scans `<first pushed commit>^..<last>`, which fails on the first push of a new
+  repository with more than one commit and leaves that history unscanned afterwards. Found in
+  a real setup. B5 now reads the first run and reports it truthfully.
 
 ---
 
