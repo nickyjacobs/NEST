@@ -10,6 +10,7 @@ section in plain words: what it means if you already built a workspace with an e
 
 | Release | Date | In short |
 |---|---|---|
+| [1.4.0](#140---2026-11-26) | 2026-11-26 | A shorter setup that shows you everything it asks you to approve, opens your new workspace for you, signs you in to GitHub with a code, and can add a better web search. |
 | [1.3.1](#131---2026-11-26) | 2026-11-26 | Fixes from a second real setup: the secret scan on GitHub now checks your whole history, and the setup introduces itself as NEST, keeps to your language and gives one honest time. |
 | [1.3.0](#130---2026-11-25) | 2026-11-25 | The setup can now suggest a few ready-made plugins for Claude Code that fit you, each read through by NEST first, from diagrams and PowerPoint files to a writing assistant for Dutch and English. |
 | [1.2.0](#120---2026-11-23) | 2026-11-23 | Made for the person who never opened a terminal: a guide with a picture of every click, questions you answer by clicking, a setup that builds and tests by itself, installs your Obsidian plugins, and asks far less. |
@@ -19,6 +20,90 @@ section in plain words: what it means if you already built a workspace with an e
 <sub>Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versions: [Semantic Versioning](https://semver.org/) · How a release is made: [docs/project/releasing.md](docs/project/releasing.md)</sub>
 
 ## [Unreleased]
+
+---
+
+## [1.4.0] - 2026-11-26
+
+> **In short:** A shorter setup that shows you everything it asks you to approve, opens your new workspace for you, signs you in to GitHub with a code, and can add a better web search.
+
+### 🏠 For your workspace
+
+- Your research skill can now use Tavily, a better web search, once it is connected; without
+  it, or when its free searches for the month are used up, it quietly uses the normal search.
+  `/nest-update` offers the new version of the skill. To connect Tavily, ask your assistant to
+  follow `kit/integrations/tavily/README.md` from NEST: you sign in once in the browser and no
+  key is needed.
+- Everything else in this release changes how a new workspace is set up. A workspace you have
+  keeps working as it is.
+
+### ✨ Added
+
+- Tavily as an optional web search (`kit/integrations/tavily/README.md`): Tavily's own server,
+  signed in once in the browser, so no key passes the chat or lands in a file. Free for 1,000
+  credits a month. The research and wiki-ingest skills fall back to `WebSearch` and `WebFetch`
+  without a word when it is missing, refuses or is out of credits (the fallback rule in the
+  guide becomes `.claude/rules/web-search.md`).
+- A check on the setup's own dialogs (`kit/scripts/ask_guard.py`, a PreToolUse hook on
+  AskUserQuestion). In a real setup a summary and a folder tree were four times only in the
+  model's reasoning, and the user approved what she never saw; the rule in 4.2 did not stop it.
+  A dialog that asks the user to judge something without showing it is now refused once, with
+  the reason; the same question asked again passes, so it cannot loop. It acts only while
+  `_setup/STATE.md` exists and `next:` is not `done`, and lets everything through on its own
+  error. The setup adds it to `.claude/settings.local.json` at the end of Phase 0 (with the full
+  path of uv) and in the build, and takes it out at the handover and the wrap-up. It runs
+  from the kit itself; `/nest-update` never offers it to a workspace (`SETUP_ONLY`).
+- A weekly version check (`tools/version_check.py`, `.github/workflows/versions.yml`). Every
+  Monday it compares what NEST pins with upstream: a newer tag for a pinned plugin card in
+  Appendix C, commits since the card's reading date for Anthropic's and unpinned plugins, and
+  `tools/obsidian_lock.py --check` for the Obsidian plugins and theme. What moved goes into one
+  open issue, "Weekly version check", which closes when nothing moved. Moving a pin stays a
+  human step: read, try, release.
+
+### 🔧 Changed
+
+- The roadmap no longer lists "Ready in one sitting": the shorter interview below is that
+  point. `assets/roadmap.svg` and `assets/roadmap.png` follow, one row lower.
+- The examples in the docs and the update GIF moved one release up (1.5.0 is now the example of
+  a release still to come).
+- The interview asks now what the build needs and leaves the rest for later. A real setup
+  took seventy minutes of interview, twelve on one open question and twenty-one on block D.
+  A1 starts with choices and one short open question; A5 is a choice; B4 and C2 are not asked
+  of a beginner. Block D is one proposal for everyone (the skills, the plugins and the defaults
+  in the preview; The Council and The Architects; connections now, later or not), with "show
+  me everything" for the old route. Customise questions are no longer asked: skills get the
+  value earlier answers give or a default, listed under "Fine-tune later" in
+  `docs/next-session.md`. Connections (mail, calendar, Tavily) are set up after the setup by
+  default, when the user asks. Block E is one proposal for a beginner. The name starts with a
+  choice of kind: a name that stands for something, a nice name, or their own. A trial with a
+  fictional beginner, in Claude Code's default mode: 29 dialogs with 48 questions and 6 typed
+  messages (the real run on 1.3.0: 36 dialogs with 81 questions and 15 typed), 38 permission
+  questions (60 in the last trial), no proposal out of sight. The promised time is now about
+  three quarters of an hour.
+- B1 checks that the shell is in the workspace root before `git init`: the shell keeps the
+  folder of its last `cd`, and in a trial the repository landed in `_setup/`.
+- A plugin folder that ends up inside the workspace (DutchQuill's work folder, for example) is
+  checked before the next snapshot and kept out of git unless the user says otherwise; an
+  unanswered question to the user goes into STATE.md the moment it is asked, so a `/clear`
+  does not lose it.
+- "I see nothing" now means the content is missing, not the dialog: the setup puts it in the
+  preview and keeps using dialogs. In a real setup and a trial that remark turned the rest of
+  the interview into typed answers. The language question is in English and at most the
+  language of the first message.
+- The handover opens the new workspace for the user (`code "<path>"` in VS Code, the Open Folder
+  steps when that fails) and writes a short `CLAUDE.md` there, so any first message, a plain
+  "continue", starts the build: no English start line any more. A real user had to ask "open
+  it", typed the English line, and typed it again the next morning.
+- Signing in to GitHub is started by the setup: `gh auth login --web` in the background, the
+  one-time code in the chat and the sign-in page opened in the browser; the user only logs in.
+  The terminal steps stay as the other choice. A real user had to open a terminal for it.
+- A restart says which one it is: only a new conversation, or the whole app closed and opened
+  again. The app is restarted only when uv was installed (the hooks call it by name); other
+  tools keep their full path in STATE.md (`tool_paths:`), also in a later session.
+- A proposal now goes in the dialog itself, in the `preview` of the first option, as plain text
+  (section 4.2). Tested by hand: the preview shows in the terminal and in the VS Code panel.
+- The playground, frontend-design and dutchquill cards in Appendix C carry their reading date
+  too, so the version check knows since when to look.
 
 ---
 
@@ -717,7 +802,8 @@ Nothing breaks: everything you have keeps working. What you will notice after `/
   scoring, the idea page builder, the writing-style check and the wiki backup, tested on macOS,
   Linux and Windows.
 
-[Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/nickyjacobs/NEST/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/nickyjacobs/NEST/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/nickyjacobs/NEST/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/nickyjacobs/NEST/compare/v1.1.0...v1.2.0

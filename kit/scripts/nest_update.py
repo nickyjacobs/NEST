@@ -420,12 +420,18 @@ def group_of(kit_rel: str) -> str:
     return parts[1] if len(parts) >= 2 else "kit"
 
 
+# Kit files a setup runs from the kit itself and never copies into a workspace.
+SETUP_ONLY = {"kit/scripts/ask_guard.py"}
+
+
 def target_for(kit_rel: str, light: set[str]) -> str | None:
     """Where a kit file lands in a workspace by default, or None when there is no fixed place."""
     parts = kit_rel.split("/")[1:]
     if not parts:
         return None
     top, name = parts[0], parts[-1]
+    if kit_rel in SETUP_ONLY:
+        return None
     if top == "scripts" and len(parts) == 2 and (name.endswith(".py") or name == "obsidian.lock.json"):
         return f"scripts/{name}"
     if kit_rel == "kit/integrations/microsoft-graph/graph.py":
@@ -885,6 +891,8 @@ def build_plan(root: Path, stamp: dict, latest: tuple[int, int, int]) -> dict:
     base_groups = {group_of(name) for kit_rel in base_files for name in (kit_rel, renamed(kit_rel))}
     has_wiki = (root / "wiki.config.json").is_file() or (root / "wiki").is_dir()
     for kit_rel in sorted(set(new_files) - mapped):
+        if kit_rel in SETUP_ONLY:
+            continue  # runs from the kit during a setup; a workspace never gets a copy
         group = group_of(kit_rel)
         was = next((name for name in (kit_rel, *former(kit_rel)) if name in base_files), None)  # its name in the old release
         if group == "wiki":

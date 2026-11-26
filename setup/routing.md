@@ -28,7 +28,8 @@ open question.
 | C7 | `CLAUDE.local.md` (where the old notes are, as paths); the first of the first tasks in the wrap-up. The old vault itself is never opened or touched during the setup |
 | C8 | the devices and the chosen sync route on the "apps and tools" context page; an open item in `docs/next-session.md` with the steps from `kit/wiki/obsidian/DEVICES.md` when the route is not set up during the build; never a file inside `.obsidian/` |
 | D1 to D3 | `.claude/skills/`, `.claude/agents/`, the skills list in `CLAUDE.md`, `docs/skills.md`; the course list in the study-inbox skill |
-| D4 | the integration skill files, `tool-map.md`, `.claude/settings.json` permissions, `mail-folders.md` in the workspace root (gitignored), the blocks in the morning-briefing skill; failed or postponed routes in STATE.md "Open" |
+| D4 | the integration skill files, `tool-map.md`, `.claude/settings.json` permissions, `mail-folders.md` in the workspace root (gitignored), the blocks in the morning-briefing skill; with Tavily, the local MCP server, `.claude/rules/web-search.md` (its text is in the Tavily guide) and the wiki-ingest web-tools marker; postponed connections under "Connect later" in `docs/next-session.md`; failed routes in STATE.md "Open" |
+| skill defaults instead of customise questions | the skill files; each default the user may change under "Fine-tune later" in `docs/next-session.md` |
 | D5 | `disable-model-invocation` per skill; the "When you act on your own" section of `CLAUDE.md` |
 | D6 | `.claude/settings.json` (`permissions`). The short list for the build is something else: it lives in `.claude/settings.local.json` from before B1 until the wrap-up, after its own yes |
 | D7 | `_setup/interview/C.md`, then `wiki.config.json` and the tree in B2 |

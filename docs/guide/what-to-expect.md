@@ -21,7 +21,7 @@ and Linux. You do not need to know how to code.
 
 ## The four sessions
 
-The setup suggests four sessions. The interview takes about an hour, in the first one or two; the build about an hour, in which you mostly watch and say yes. You start each
+The setup suggests four sessions. The interview takes about three quarters of an hour, in the first one or two; the build about an hour, in which you mostly watch and say yes. You start each
 session with the same line, and you can stop between any two steps.
 
 | Session | What happens | It ends with |
@@ -81,4 +81,5 @@ the next session picks up where you left off with the same line:
 Read SETUP.md and follow it.
 ```
 
-After the workspace folder exists, the setup tells you the new line to use from inside it.
+After the workspace folder exists, the setup opens it for you. From then on you open that folder
+and type anything, for example "continue" in your own language: the setup picks up by itself.

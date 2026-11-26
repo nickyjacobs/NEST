@@ -6,11 +6,11 @@ created in their workspace.
 
 | Folder | What is in it | How the setup uses it |
 |---|---|---|
-| `scripts/` | Python tools: wiki lint and reindex, secret scan, session-start line, session guards, the updater, wiki backup, Council scoring, skills catalogue, the installer for the Obsidian plugins and theme | Copied as files (`cp`, never retyped); configured through `wiki.config.json` and `nest.json` |
-| `claude/` | `settings.json` reference with the hook wiring, rules, example lists of sensitive terms and style words, and the short permission list a build may use until its wrap-up (`setup-permissions.example.json`) | Merged into the workspace's `.claude/`, values from the interview |
+| `scripts/` | Python tools: wiki lint and reindex, secret scan, session-start line, session guards, the updater, wiki backup, Council scoring, skills catalogue, the installer for the Obsidian plugins and theme, and the check on setup dialogs (`ask_guard.py`, run from the kit itself during a setup and never copied) | Copied as files (`cp`, never retyped); configured through `wiki.config.json` and `nest.json` |
+| `claude/` | `settings.json` reference with the hook wiring, rules, example lists of sensitive terms and style words, the short permission list a build may use until its wrap-up (`setup-permissions.example.json`), and the hook block for the check on setup dialogs (`ask-guard.example.json`), added for the interview and the build and taken out again | Merged into the workspace's `.claude/`, values from the interview |
 | `agents/full/`, `agents/light/` | The Council and The Architects in two sizes, plus `researcher` and `security-reviewer` | Only the chosen team and size; names and output language adjusted |
 | `skills/` | One reference `SKILL.md` per recommended skill, with "customise from the interview" points | Rewritten per user: paths, labels, apps, language |
-| `integrations/` | Decision guide per app category (mail, calendar, tasks, weather, smart home) and one proven route (Microsoft Graph) | Used in interview block D and build step B3b; every route is verified before use |
+| `integrations/` | Decision guide per app category (mail, calendar, tasks, weather, smart home), one proven route (Microsoft Graph), and the optional Tavily web search (`tavily/`) | Used in interview block D and build step B3b; every route is verified before use |
 | `wiki/` | Templates, base CSS with colour tokens, a colour preview for the browser (`palette-preview.html`), Bases views, Home and how-to skeletons, Obsidian plugin settings | Translated and restructured to the user's folder design |
 | `github/` | Workspace README skeleton, `.gitignore`, `.gitattributes`, pre-commit hook, workflows | The ignore file always; the pre-commit hook when the user wants it; the README and the workflows only with GitHub |
 

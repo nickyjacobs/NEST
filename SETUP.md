@@ -1,6 +1,6 @@
 # NEST setup prompt
 
-Version 1.3.1 · New Environment Setup Toolkit
+Version 1.4.0 · New Environment Setup Toolkit
 
 This file is a prompt for Claude Code. You (Claude) read it and follow it. The person in front of
 you is "the user". Together you build their own workspace: a Claude Code project with a named
@@ -11,9 +11,11 @@ that fit their life. Everything comes from an interview; nothing is assumed.
 
 ## 0. How to use this file
 
-- Every session starts with the same line from the user: **"Read SETUP.md and follow it."**
-  After the workspace folder exists (the handover after block F) the line becomes
-  **"Read _setup/nest/SETUP.md and follow it."**; STATE.md and CLAUDE.md say so.
+- Every session in the NEST folder starts with the same line from the user: **"Read SETUP.md
+  and follow it."** In the workspace folder (after the handover at the end of the interview)
+  any first message will do, a plain "continue" in their language: its `CLAUDE.md` tells every
+  session to read `_setup/nest/SETUP.md` while the setup runs. The line
+  **"Read _setup/nest/SETUP.md and follow it."** still works there too.
 - **The prompt comes in parts.** This file holds what every session needs (sections 0 to 4).
   The rest is in the folder `setup/` next to it, one file per phase; the table below says which.
   Read a part when its phase starts, not before: a session that reads everything has less room
@@ -33,7 +35,11 @@ that fit their life. Everything comes from an interview; nothing is assumed.
   also read `setup/routing.md`. Then continue at `next:`.
 - **`next:` says `done`:** the setup is finished. Say so in one line, and that from now on they
   just say what they want: the setup line is not needed any more. Name what is still under
-  "Open during the setup", and offer the nest-update skill or one of the open items. Build nothing.
+  "Open during the setup", and offer the nest-update skill or one of the open items. Build
+  nothing, with one exception: a connection the user postponed in D4 ("Connect later" in
+  `docs/next-session.md`) is set up when they ask for it, now or in any later session. Read
+  `setup/interview.md` (D4) and `setup/build.md` (B3b), ask the D4 rounds for that one
+  connection, run B3b for it including its test, then tick its line.
 - **`next:` says `handover`:** see "The handover" at the end of `setup/interview.md`: check
   whether the workspace folder exists and continue there.
 - **Why several sessions:** the setup is long, and a person's attention is not. A new session
@@ -207,11 +213,12 @@ language: <the user's language>
 level: <beginner | intermediate | technical>
 os: <macOS | Windows | Linux> <version>
 surface: <vscode | terminal | desktop | other>   # where the user types; from Phase 0.2
-restart_app: <no | yes>               # yes when a tool was installed in this run (see 0.2)
+restart_app: <no | yes>               # yes when uv was installed in this run (see 0.2)
+tool_paths: <none>                    # full paths of tools installed in this run, e.g. gh=C:\Program Files\GitHub CLI\gh.exe
 workspace: <fill in at F1>            # absolute path once known
 assistant: <fill in at F3>            # the name; written at F3
 teams: <fill in at D2 and D7>         # for example "council: light, architects: none, ideas: 50-ideas"
-nest_version: 1.3.1
+nest_version: 1.4.0
 started: <YYYY-MM-DD>
 ---
 next: Phase 0, step 0.3
@@ -230,6 +237,10 @@ Rules:
 
 - One line per step, with the check that proves it in brackets. Tick a step only after its check
   passed. A step that failed or was skipped goes under "Open during the setup" with the reason.
+- A question to the user that is not answered yet (a choice they put off, a "may I remove
+  this?") goes under "Open during the setup" the moment you ask it, and is ticked when
+  answered: a `/clear` or a closed window loses the conversation, not STATE.md. In a real setup
+  a privacy question vanished that way.
 - `next:` always points at the next concrete action, also in the middle of the interview (for
   example `next: interview block B, question B3`). `read:` names the parts it needs, as file
   names (`setup/interview.md, setup/catalogue.md`). Update both whenever you write answers to a block file, so a session that ends without
@@ -259,7 +270,7 @@ new session follows so the new tools load before they are tested. A user with en
 may do sessions 1 and 2 in one sitting; never push for it.
 
 Tell the user this plan in Phase 0, in two or three lines, with an honest time: the interview
-takes about an hour, in one sitting or two, the build about an hour in which they mostly watch
+takes about three quarters of an hour, in one sitting or two, the build about an hour in which they mostly watch
 and say yes. Give that one plan and keep to it: do not name another number of sessions later.
 
 **Starting a session.** Whenever the user has to open a folder, start a new session or come
@@ -269,12 +280,15 @@ the `!` prefix there: it does not exist in the panel.
 
 | | A new session in the same folder | Open another folder (the handover) |
 |---|---|---|
-| `vscode` (the Claude Code panel in VS Code) | Start a new conversation in the Claude Code panel. VS Code stays open. | File > Open Folder, paste the path, confirm. Trust the folder when VS Code asks, and again when Claude Code asks. Open the Claude Code panel and start a conversation. |
+| `vscode` (the Claude Code panel in VS Code) | Start a new conversation in the Claude Code panel (its new-conversation button). VS Code stays open: say so in those words. | Run `code "<path>"` yourself: it opens the folder in a new VS Code window. When `code` is not found or fails: File > Open Folder, paste the path, confirm. Either way: trust the folder when VS Code asks, and again when Claude Code asks; open the Claude Code panel and start a conversation. |
 | `terminal` | Leave Claude Code (`/exit`), then `claude` again in the same folder. | `cd "<path>"`, then `claude`. Trust the folder when asked. |
 | `desktop`, `other` | Ask the user how they opened this folder, and describe the same route back. | The same, for the new folder. |
 
 Take the exact names of buttons and menus from the docs you fetched in Phase 0 (the VS Code
-page for `vscode`), not from this table: they change. When `restart_app:` is `yes`, the first
+page for `vscode`), not from this table: they change. A user who has to restart something hears
+which of the two it is, in so many words: only a new conversation (the app stays open), or
+the whole app closed and opened again. "A new session" alone made a real user ask whether she
+had to restart Claude or VS Code. When `restart_app:` is `yes`, the first
 time the user reopens anything they quit the whole app first (VS Code or the terminal program)
 and start it again: an app only sees a newly installed tool after it was started afresh.
 Without that, the first hook in the workspace cannot find uv and every write is refused. Set
@@ -288,7 +302,8 @@ Without that, the first hook in the workspace cannot find uv and every write is 
 
 Ask one question, in English and in the language of the user's first message if that differs:
 **which language should we use?** That question is the whole first message: once in English,
-once more in their language when that is another one, and nothing else. No introduction before
+once more in their language when that is another one, and nothing else: no third language,
+no line before it about the setup not having started. No introduction before
 the answer, and no word about this file or its sections ("section 4.1 says ..."): the user
 never hears how the prompt is built. Everything after that (questions, dialogs, the wiki, folder
 names if the user wants, the assistant's tone) follows that choice. The repo-facing parts
@@ -326,15 +341,17 @@ the few questions where the user's own words matter.
   an answer covers only part of what you asked, you asked too much at once: take what you got
   and ask the rest as its own question, once.
 - **Propose, then ask.** Where earlier answers let you fill something in (a folder tree, a
-  dashboard, the tone, the skills), show your proposal and ask whether it is right. The
-  proposal is in a message the user can read, sent before the dialog: what you worked out in
-  your own reasoning is invisible to them, and a dialog that asks "is this folder layout right?"
-  about a layout they never saw wastes a turn. A dialog never points at "the list above" unless
-  there is one. This went wrong in two trials out of four, always the same way: the proposal was
-  worked out, the dialog was sent, and the message in between was never written. So before you
-  call the dialog for a proposal, look at the text you are about to send: the thing the user is
-  asked to approve must be in it, in full. Never ask what you already know from an earlier answer or from the machine
-  check.
+  dashboard, the tone, the skills, a recap), show your proposal and ask whether it is right.
+  **The proposal goes in the dialog itself: in the `preview` field of the first option** (the
+  option that is selected when the dialog opens), in full, as plain text without backticks or
+  other markup (the VS Code panel shows them as they are). What you worked out in your own
+  reasoning is invisible to the user: in a real setup a summary and a folder tree were four
+  times only in the model's reasoning, and the user approved what she never saw. A rule asking
+  for a message before the dialog did not stop that, so a check does (`ask_guard.py`, set up at
+  the end of Phase 0): a dialog that asks the user to judge something without showing it is
+  refused once, with the reason. A proposal longer than about fifteen lines may also go in a
+  message before the dialog, but the preview carries it all the same. Never ask what you
+  already know from an earlier answer or from the machine check.
 - **The level decides how much you ask.** For a beginner, every block opens with a proposal
   for the whole block built from what they said so far, and you ask only what you cannot
   propose. Choices that need knowledge they do not have (status words, kinds of notes,
@@ -347,6 +364,11 @@ the few questions where the user's own words matter.
   was saved: say so in one line and show the same dialog once more. Do not turn it into typed
   questions. Only when the dialog does not exist in this session at all (the tool is missing or
   errors every time) do you ask the same choice as a short lettered list.
+- **"I see nothing" means the content is missing, not the dialog.** When the user says they
+  cannot see what a question is about, put that content in the preview of the first option
+  (or in the question) and ask with the dialog again. Never conclude from it that dialogs do
+  not work for this user: in a real setup and in a trial that conclusion turned the rest of
+  the interview into typed answers.
 - **An answer you can read two ways** ("all of them", "the second") goes back as a dialog with
   the two readings, not as a guess.
 - **Write answers down as they come.** After every message with answers, append them verbatim
@@ -359,7 +381,8 @@ the few questions where the user's own words matter.
   agreed to. The recap at the end of a block confirms what is already on file.
 - Each block opens with one sentence: why you ask this and where the answers will land.
 - Follow up when an answer raises a new question, at most twice per topic.
-- After each block: a recap of at most five lines and the two-option dialog. A block without a
+- After each block: a recap of at most five lines, in the preview of the first option of the
+  two-option dialog. A block without a
   yes is not done. Then offer to stop here or go on.
 - After each block, check the routing table (section 7): every answer has a place. An answer that
   landed nowhere is a silent failure.

@@ -17,18 +17,33 @@ Each question below says how it is asked: **open** (the user's own words, one pe
 right, with the two-option dialog). Section 4.2 has the rules; for a beginner more questions
 become proposals or defaults, as each block says.
 
+**Ask now what the build needs; the rest comes later.** A real setup took seventy minutes of
+interview, twelve of them on one open question and twenty-one on block D, and the user found
+it long and dull. What the build cannot do without is asked here: who the user is, where they
+get stuck, the wiki, GitHub, the names. What only tunes a skill (its customise questions) and
+what connects an account (mail, calendar, a better web search) is not asked one by one: the
+skill gets the value earlier answers give or a default you name, and each default a user may
+want to change becomes one line under "Fine-tune later" in `docs/next-session.md`, with the
+sentence to say ("say: adjust the morning briefing"). A connection the user wants later is set
+up after the setup, when they ask (section 0 of `SETUP.md`, `next: done`). A technical user can
+still ask for every question ("show me everything" in block D).
+
 ### Block A: who you are
 
 *Why:* every recommendation later (wiki sections, skills, the names) comes from this. *Lands in:*
 the context pages of the wiki, the card in CLAUDE.md, `CLAUDE.local.md` for what is private.
 
-- **A1** *Open.* Tell me about yourself in a few sentences: what you do and where you live
-  (country or time zone is enough). Say that a short answer is fine and that names of other
-  people are not needed. Their week comes in A3; do not ask for it here. Then a *choice* to confirm the local formats,
-  proposed from the country: time zone, 24-hour or AM/PM clock, date format, units, currency.
-  Skills that show times, prices or weather use these.
-- **A2** *Open:* work or study, your role, the kind of organisation, what you are responsible
-  for. Then two *choices*: will you use this workspace for work too; and if yes, does your
+- **A1** *Choices first, then one short open question.* One dialog: what fills most of your
+  days (study, work, both, between things or looking for work; "Other"), and the country you
+  live in (the countries where their language is spoken first; "Other"). From the country, the
+  local formats as a third question, with the formats in the preview of its first option: time
+  zone, 24-hour or AM/PM clock, date format, units, currency. Skills that show times, prices or
+  weather use these. Then one *open* question: in one or two sentences, what do you do? Say that
+  two sentences are enough and that names of other people are not needed. The open "tell me
+  about yourself" took a real user twelve minutes. Their week comes in A3; do not ask for it
+  here.
+- **A2** *Open, only for what A1 did not say:* work or study, your role, the kind of
+  organisation, what you are responsible for. Then two *choices*: will you use this workspace for work too; and if yes, does your
   employer or school have rules about AI tools (yes, there are rules / no / I do not know).
   Unknown is fine: then work content stays out until it is known, as an open question.
 - **A3** *Choices:* the hours you have for your own projects in a week, and when you are at
@@ -37,8 +52,10 @@ the context pages of the wiki, the card in CLAUDE.md, `CLAUDE.local.md` for what
 - **A4** *Choice, several answers:* the people around you that matter for planning (partner,
   children, manager, team, clients, nobody in particular). Roles only. Names only if the user
   wants them in the private context.
-- **A5** *Open.* What do you like to do outside work or study? (What they want to learn comes
-  out of A6; do not add it as a second question here.)
+- **A5** *Choices with several answers:* what do you like to do outside work or study? Families
+  such as sport and exercise, music, reading and writing, games, cooking, travel, making
+  things, nature, friends and family, technology, grouped in one dialog, "Other" for their own.
+  (What they want to learn comes out of A6; do not add it as a second question here.)
 - **A6** *Open.* What would make this year a good year? Follow up once for the longer view
   (one to three years) when the answer invites it; do not ask for goals per quarter.
 - **A7** **Apps and software.** *Choices with several answers,* one dialog of up to four
@@ -78,8 +95,9 @@ blocks C and D, and the first tasks at the end.
   difference if it were gone?
 - **B2** *Open.* For that one: what does it look like in practice? A recent example. One
   example is enough; do not ask for the others.
-- **B4** *Open, and say it may be skipped.* What have you tried before that did not stick, and
-  why? (This prevents rebuilding the thing that failed.)
+- **B4** *Open, and say it may be skipped; not asked of a beginner.* What have you tried before
+  that did not stick, and why? (This prevents rebuilding the thing that failed.) A beginner who
+  mentions something that failed before gets it written down without the question.
 
 Then show the matching recommendations from the matrix in Appendix A: per pain point one line
 with what NEST would build for it. This is a preview, not a decision; blocks C and D decide.
@@ -97,9 +115,10 @@ things in an inbox; the assistant files them into sections, links and indexes th
 deleted.
 
 - **C1** **Sections.** *Proposal.* First, in a message of its own, the idea of the wiki in
-  three lines and the folder tree itself, each folder with a few words on what goes in it; then
-  the dialog. The dialog's question says how many folders the user just saw ("these nine
-  folders"), so you cannot ask it without having shown them. Propose a folder tree derived from A and B, with every folder name
+  three lines; then the dialog, with the folder tree itself in the preview of its first option,
+  each folder with a few words on what goes in it (section 4.2). Naming the number of folders
+  in the question was the earlier fix, and in a real setup the model asked about "these twelve
+  folders" without showing one: the tree belongs in the preview. Propose a folder tree derived from A and B, with every folder name
   written exactly as it will be on disk (lowercase, hyphens, no spaces, for example
   `30-weiterbildung`) and the readable label next to it; what the user confirms is what you
   build, letter for letter. Letters of the user's language are fine in a folder name
@@ -110,7 +129,8 @@ deleted.
   domain sections from block A (for example study, family, health, clients, a hobby) and leave
   out what the user will not use. Show the tree; the user adjusts. At most about ten top-level
   sections: more is a list nobody uses.
-- **C2** **Language of the wiki.** *Choice.* Folder names and labels in the user's language or English?
+- **C2** **Language of the wiki.** *Choice; for a beginner the default (their language), said in
+  one line.* Folder names and labels in the user's language or English?
   (Recommend: page content in their language; folder names in whatever they find easiest to read
   in the file explorer.)
 - **C3** **Kinds and status words.** *Proposal; for a beginner a default, not a question.*
@@ -179,24 +199,40 @@ deleted.
   after the build, with the user, and only when they want to. Never propose to put the
   workspace folder itself in a cloud folder (see F1).
 
-Show the final tree and the dashboard sketch as text. Yes, then on.
+The recap of this block shows the final tree and the dashboard sketch in the preview of its first option. Yes, then on.
 
 ### Block D: skills and agents
 
 *Why:* skills are the assistant's routines. Only what fits gets built. *Lands in:*
 `.claude/skills/`, `.claude/agents/`, permission rules, the skills list in CLAUDE.md.
 
-Present the catalogue in Appendix B first, as a short list: one line per skill that says what
-it does for this user, the ones that match their pain points from B on top. For a beginner
-leave the skill names out of that list until they chose. Then go through them with the choice
-dialog, **one dialog per group, at most three skills in it**: what it does, why it fits them
-(name the pain point), recommended yes or no. Group the small ones (the wiki skills).
+**Block D is one proposal, at every level.** Build it from A and B with Appendices A, B and C,
+and show it in the preview of the first option of one dialog of at most four questions:
 
-For each chosen skill, the customise questions listed for it in Appendix B are *proposals*: fill
-in what earlier answers give you and ask only what is left, one dialog per skill at most. Read
-the `<!-- customise: ... -->` markers in the skill's reference files in `kit/skills/<name>/` to
-make sure every marker gets a value; a marker the interview cannot fill becomes a default you
-name, or an open question, never a fifth question in one message.
+1. **The set** (proposal): the preview lists, one line each and in plain words, the skills that
+   fit (D1, D3; the ones that answer a pain point from B first), the plugins that fit (D9, at
+   most three, each with what it needs), and what is on without a question (D5 defaults, D8
+   lessons and news; plans when they use plan mode). Options: build it like this
+   (recommended); I want to change something; show me everything.
+2. **The Council** (D2): none, light or full, recommended from B, the trade-off in the option
+   descriptions.
+3. **The Architects** (D2): the same.
+4. **Connections** (D4), only when A7 named mail or calendar apps or the set has research or
+   wiki-ingest: connect them after the setup, when you ask (recommended); during the build;
+   not at all. The preview of its first option names what can be connected: their mail and
+   calendar apps from A7, and a better web search (Tavily, free for a thousand searches a
+   month, signed in once in the browser; without it the normal search is used).
+
+"I want to change something": one dialog with the items of the set as a choice with several
+answers (take out, or "add something"), then the new set once more as a proposal. "Show me
+everything" (recommended for a technical user) is the old route: the catalogue in Appendix B,
+one dialog per group of at most three skills, and the customise questions per skill.
+
+**Customise questions are not asked** in the proposal route. Read the `<!-- customise: ... -->`
+markers in each chosen skill's reference files in `kit/skills/<name>/` and give every one a
+value: from earlier answers, or a sensible default you name in the skill. Each default a user may
+want to change goes under "Fine-tune later" in `docs/next-session.md` (B3), one line with the
+sentence to say.
 
 - **D1** The wiki skills (inbox, ingest, query, maintenance) and the Obsidian skills. Recommended
   as a set, unless the user wants the backbone only (block C). A skill you leave out of a set is
@@ -215,10 +251,14 @@ name, or an open question, never a fifth question in one message.
   add a second one); the name of the ideas section is added to that line in D7.
   With a team chosen, ask here whether the idea pages get the styled look (the idea snippet
   from C6's list) or the plain one.
-- **D3** career, study-inbox, research, session-end, writing-style, release, skill-builder: per
-  skill yes or no and its customise questions.
-- **D4** **Integration skills** (calendar, mail, mail-organizer, morning-briefing). These touch the
-  user's real accounts, so each gets its own round:
+- **D3** career, study-inbox, research, session-end, writing-style, release, skill-builder: in the
+  set when they fit; their customise questions only in the "show me everything" route.
+- **D4** **Integration skills** (calendar, mail, mail-organizer, morning-briefing) and the
+  Tavily web search. With "after the setup" (question 4 above) the skills are built with their
+  "not connected" path, nothing below is asked now, and each connection becomes one line in
+  `docs/next-session.md` ("say: connect my calendar"); the rounds below run when the user asks,
+  after the setup. With "during the build", each gets its own round now, because they touch
+  the user's real accounts:
   1. **Which app and account**, from the inventory in A7. A work account often cannot or may not
      be connected; ask explicitly and respect the answer from A2.
   2. **Which route exists today.** First check what this session already has (Phase 0.4). If
@@ -239,8 +279,10 @@ name, or an open question, never a fifth question in one message.
      calendars to read and to write, working hours, appointment types; for the briefing which blocks
      in which order, and from which apps.
   If no route works now, the skill is still built with a "not connected" path and the connection
-  becomes an open item in STATE.md.
-- **D5** **How independent may the assistant be?** *Proposal; for a beginner the defaults.*
+  becomes an open item in STATE.md. Tavily has one route and needs no round: B3b step for
+  Tavily (`kit/integrations/tavily/README.md`); it asks nothing beyond the yes.
+- **D5** **How independent may the assistant be?** *In the set as defaults; asked only in "show
+  me everything".*
   Three groups (Appendix B gives each skill a default): runs only on the user's command; the
   assistant may propose it and runs it after a yes; the assistant may just do it. A beginner
   hears the idea in two sentences and gets the defaults, with "show me the list" as the other
@@ -263,10 +305,11 @@ name, or an open question, never a fifth question in one message.
   `_setup/interview/C.md` after the yes, and write the name of the ideas section into `teams:`
   in STATE.md.
 
-- **D8** **Session guards and updates.** Two things always run and need no answer, so only tell
-  the user in two lines: their own messages are kept word for word in a local file, so a long
-  conversation that gets summarised does not lose what they asked; and the assistant is told when
-  a second session is open in the same folder. Then ask, in one dialog, with a recommendation each:
+- **D8** **Session guards and updates.** Two things always run and need no answer: their own
+  messages are kept word for word in a local file, so a long conversation that gets summarised
+  does not lose what they asked; and the assistant is told when a second session is open in the
+  same folder. In the proposal route the four below are lines in the set with their
+  recommendation (the morning nudge off); in "show me everything" ask them in one dialog:
   1. **Lessons** (recommended yes): when something goes wrong, the assistant records a one-line
      lesson and is reminded of it the next time the same kind of step comes up.
   2. **Plans into the inbox** (yes when they use plan mode): an approved plan is
@@ -277,12 +320,12 @@ name, or an open question, never a fifth question in one message.
      week checked online, when NEST has a newer release. Nothing is ever installed on its own;
      the nest-update skill shows what is new and they pick.
 
-- **D9** **Plugins.** *Proposal.* Say in two sentences what a plugin is (a ready-made package
-  from Anthropic or another maker, installed as it is and kept up to date by its maker) and that
-  NEST only offers the ones it read through. Then take the "Fits when" column of Appendix C
-  against the answers so far and propose at most three, in one message: per plugin one line on
-  what it does for them, then what runs on their computer, what leaves it and what it needs,
-  from its card. Then one choice dialog, one question per proposed plugin, recommended yes or
+- **D9** **Plugins.** *In the set.* One line in the set says what a plugin is (a ready-made
+  package from Anthropic or another maker, installed as it is and kept up to date by its maker,
+  and only ones NEST read through). Take the "Fits when" column of Appendix C against the
+  answers so far and put at most three in the set: per plugin one line on what it does for
+  them, then what runs on their computer, what leaves it and what it needs, from its card. In
+  "show me everything": one choice dialog, one question per proposed plugin, recommended yes or
   no; "show me the others" is the last option of the last question and lists the rest of
   Appendix C the same way. No fit at all: say that in one line and ask nothing. For a beginner,
   name the plugin only after the choice. A plugin that needs something new on the computer
@@ -298,7 +341,10 @@ name, or an open question, never a fifth question in one message.
 `.githooks/`, the README, `nest.json`, the backup setup.
 
 Explain in two lines what git and GitHub add for this workspace (history, a backup off the
-machine, undo). Then:
+machine, undo). Then E1 on its own. For a beginner, E3 to E7 are one proposal with the
+recommended answers in the preview of its first option (a private repository named after the
+workspace, the wiki in its own private backup, a plain README, all protections on), and E8 is
+the second question of the same dialog. A technical user gets them one by one:
 
 - **E1** Do you have a GitHub account? (yes / no, I want one / no GitHub). "I want one": they
   make it themselves on github.com (free), then go on with E2. No GitHub, or "later":
@@ -306,7 +352,9 @@ machine, undo). Then:
   E5 (a name and an address for the commits; any address works locally), E7 (the pre-commit
   scan only) and E8. E4 is then (b): the wiki lives inside the local repo, so it has a history;
   a backup off the machine becomes an open item.
-- **E2** Is the GitHub CLI signed in (from Phase 0)? If not: the user runs `gh auth login` themselves, in the form for where they work (section 3: `!` in front in a terminal session, a terminal window in VS Code).
+- **E2** Is the GitHub CLI signed in (from Phase 0)? If it is installed and not signed in: "Signing
+  in to GitHub" in Phase 0 (`setup/check.md`). If it is not installed yet, the sign-in follows
+  in the build, right after the install, the same way.
   Is a GitHub MCP server connected (Phase 0.4)? Not needed: the CLI is enough.
 - **E3** A repo for the workspace: private (recommended), named after the workspace.
 - **E4** The wiki: (a) a separate private backup repo with its own git folder, while the workspace
@@ -349,9 +397,16 @@ machine, undo). Then:
   hooks work either way.
 - **F2** **What the workspace is for, in one sentence**, in the user's words. *Proposal:* one from A
   and B. It becomes the first line of CLAUDE.md and the README tagline.
-- **F3** **The assistant's name.** *Choice,* the first question of this block: four acronyms in the dialog, with "show me four others" among them; "Other" is their own name. At most three rounds, then ask what a good name would sound like. Each one:
-  - spells a short, pronounceable name (four to six letters works best);
-  - has every letter written out, in English or the user's language;
+- **F3** **The assistant's name.** The first question of this block. First a *choice*: a name
+  that stands for something (each letter means a word), simply a nice name, or "I already have
+  one" (then "Other" is where they type it). Then *choice*: three names of that kind in the
+  dialog, each with one line on why it fits them, and "show me three others" as the fourth
+  option; "Other" is their own name. At most three rounds, then ask what a good name would
+  sound like. A real user typed her own name after one round of acronyms, and only then was
+  asked whether its letters could mean something; ask the kind first. Each name:
+  - is short and pronounceable (four to six letters works best);
+  - for the kind that stands for something, has every letter written out, in English or the
+    user's language;
   - carries what this workspace means for the user: their goals from A6, their pain points from
     B, their interests from A5;
   - avoids brand names, product names and the names of real people;
@@ -359,41 +414,53 @@ machine, undo). Then:
   Example of the shape (do not reuse it): **MAPLE**, "Memory, Agenda, Projects, Learning,
   Everyday", for someone whose main pains were forgetting and overview.
 - **F4** **Personality.** *Proposal* from A8: three adjectives, and how the assistant addresses
-  the user (first name, formal or informal).
+  the user (first name, formal or informal). F2 and F4 are the two questions of one dialog, each
+  proposal in the preview of its first option.
 
-Recap of the whole interview in at most ten lines. Yes, then the handover.
+Recap of the whole interview in at most ten lines, in the preview of the first option. Yes,
+then the handover.
 
 **The handover.** The workspace is a new folder outside this one. You make it; the user opens it.
 
 1. After the yes to the recap, update STATE.md first: `workspace:` the absolute path,
    `assistant:` the name, `next: handover (create the workspace folder; then B1 there)`,
-   `read: setup/build.md (B1)`, `trigger: Read _setup/nest/SETUP.md and follow it.`
+   `read: setup/build.md (B1)`, `trigger: <a plain "continue" in the user's language>`.
 2. Create the folder and fill it yourself: the folder `<ws>/_setup/nest`, the contents of
    `_setup/` copied into `<ws>/_setup/`, and `SETUP.md`, `setup/` and `kit/` copied into
    `<ws>/_setup/nest/`. Use absolute paths for both sides (your shell may no longer be in the
    NEST folder), and a copy command of the user's system: macOS and Linux
    `mkdir -p "<ws>/_setup/nest" && cp -R "<nest>/_setup/." "<ws>/_setup/" && cp -R "<nest>/SETUP.md" "<nest>/setup" "<nest>/kit" "<ws>/_setup/nest/"`;
    Windows PowerShell `New-Item -ItemType Directory -Force "<ws>\_setup\nest" | Out-Null; Copy-Item -Recurse -Force "<nest>\_setup\*" "<ws>\_setup\"; Copy-Item -Recurse -Force "<nest>\SETUP.md","<nest>\setup","<nest>\kit" "<ws>\_setup\nest\"`.
+   Then write `<ws>/CLAUDE.md` with the Write tool, exactly these lines in English (B1 replaces
+   the file later and keeps the instruction at its top):
+   `# Setup in progress` and `NEST is setting up this workspace. Whatever the first message of
+   a session says, read _setup/nest/SETUP.md and follow it.`
    Claude Code may ask the user whether you may write outside this folder: tell them
    beforehand that this question comes and that yes is right here. Check the result:
-   `<ws>/_setup/STATE.md`, `<ws>/_setup/nest/SETUP.md` and `<ws>/_setup/nest/setup/build.md`
-   exist.
+   `<ws>/_setup/STATE.md`, `<ws>/_setup/nest/SETUP.md`, `<ws>/_setup/nest/setup/build.md` and
+   `<ws>/CLAUDE.md` exist.
 3. Only when the write was really refused (the tool result says so) does the user run that
    command themselves: give it with the real paths, in the form for where they work (section
    3), and check the result afterwards the same way.
-4. Take the interview permission out again when the user said yes to it in Phase 0: remove
-   the rule `Edit(/_setup/**)` from `.claude/settings.local.json` in the NEST folder, and the
-   file itself when nothing else is in it and you created it. Tick the line in STATE.md (in
-   both copies). The build has its own, separate list in the workspace.
-5. Tell the user how to open the new folder and start there, in the form for where they work
-   (section 3, "Open another folder"), with the path to paste and the trigger line quoted.
-   This is the one moment in the interview where they must do something themselves: one short
-   message, the steps numbered, nothing else in it (no recap, no warnings said before). With
-   `restart_app: yes` they quit the app completely first. The copy of `_setup/` next to NEST can
+4. Take out of `.claude/settings.local.json` in the NEST folder what the interview added: the
+   dialog check from 0.5b (the `AskUserQuestion` entry under `hooks.PreToolUse`, and `hooks`
+   when nothing else is in it), and the rule `Edit(/_setup/**)` when the user said yes to it in
+   Phase 0. Then remove the file itself when nothing else is in it and you created it. Tick
+   the lines in STATE.md (in both copies). The build has its own, separate list and check in
+   the workspace.
+5. Open the new folder for the user where you can, and tell them what is left, in the form for
+   where they work (section 3, "Open another folder"). With `vscode`: run `code "<ws>"` yourself
+   (a real user had to ask "open it"); a new VS Code window opens, and they trust the folder,
+   open the Claude Code panel and type the word after `trigger:`. Only when `code` fails, the
+   File > Open Folder steps with the path to paste. With `restart_app: yes` they quit the app
+   completely first, so do not run `code`: give the steps. This is the one moment in the
+   interview where they must do something themselves: one short message, the steps numbered,
+   nothing else in it (no recap, no warnings said before). Say that this window can be closed
+   afterwards. The copy of `_setup/` next to NEST can
    go later; it is gitignored.
 
 A session that starts while `next:` still says `handover`: if the current folder is the
 workspace path from STATE.md and `_setup/nest/SETUP.md` and `_setup/nest/setup/build.md`
 exist, the copy worked: set `next: B1` and go on with B1. If you are still in the NEST folder:
-check whether the workspace folder exists. If it does, tell the user how to open it and give
-the trigger line; if it does not, do step 2. Never start B1 from the NEST folder.
+check whether the workspace folder exists. If it does, open it for them as step 5 says; if it
+does not, do step 2. Never start B1 from the NEST folder.

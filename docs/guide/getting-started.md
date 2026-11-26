@@ -15,8 +15,8 @@ three commands.
 
 - A computer with Windows, macOS or Linux.
 - A paid Claude plan (Pro or higher). The free plan does not include Claude Code.
-- About fifteen minutes for the steps on this page. The setup itself takes about an hour and a
-  half of questions and an hour in which it builds, spread over as many days as you like.
+- About fifteen minutes for the steps on this page. The setup itself takes about three quarters
+  of an hour of questions and an hour in which it builds, spread over as many days as you like.
 
 You do not need git, a terminal or any knowledge of code. The setup installs what else it
 needs, after asking.
@@ -144,9 +144,10 @@ The setup takes several sittings. To go on where you were:
 Read SETUP.md and follow it.
 ```
 
-Halfway through, the setup makes a new folder: your own workspace, with the name you chose. It
-tells you when, gives you the folder to open with **File**, **Open Folder**, and gives you the
-sentence to type there. From then on that folder is the one you open, also after the setup is
+Halfway through, the setup makes a new folder: your own workspace, with the name you chose, and
+opens it for you in a new VS Code window (if that does not work, it gives you the folder to open
+with **File**, **Open Folder**). There you do not need the sentence any more: type anything, for
+example "continue" in your own language, and the setup picks up where it was. From then on that folder is the one you open, also after the setup is
 done: it is where your assistant lives.
 
 More: [what the setup asks and how long it takes](what-to-expect.md), [your notes on a phone

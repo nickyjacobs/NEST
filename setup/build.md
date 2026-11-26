@@ -8,7 +8,8 @@ when to read this one. Read `SETUP.md` first.
 ## 8. Build
 
 At the start of each build phase (B1, B2, B3, B3b, B5) show the whole plan for that phase as one
-short tree or list and ask **one yes for the phase**, with the choice dialog. Then build its
+short tree or list, in the preview of the dialog's first option (section 4.2), and ask **one yes
+for the phase**. Then build its
 steps one after the other without asking again, unless something deviates from the plan, leaves
 the machine, or cannot be undone. After each step run its check and tick the line in STATE.md.
 If a check fails, fix the cause; never tick around it.
@@ -65,7 +66,12 @@ assistant's own settings, and saving a snapshot. Then one dialog: yes, use the s
   edits for the rest of the session, and that picking it once is reasonable. It is their
   choice.
 
-Either way: never change the permission mode yourself, and never suggest skipping permissions
+Either way, also add the check on dialogs (section 4.2) to the same file: the `hooks` block of
+`kit/claude/ask-guard.example.json`, with `uv` as `command` as in the workspace's other hooks and
+`_setup/nest/kit` in the script path, plus the line
+`- [ ] take the dialog check out again (wrap-up)` under "Open during the setup" in STATE.md.
+
+Never change the permission mode yourself, and never suggest skipping permissions
 altogether. The copy into `.claude/` and a commit stay questions on purpose.
 
 **Work in plain single commands, or the list does not help.** (This holds for the whole setup,
@@ -96,9 +102,11 @@ tests in B4 that write a fake key or remove a test file.
    staging folder (see the top of this section), in B1 and in every later phase: the rules, the
    settings, the terms list, and a later change to one of them (a status word added to the wiki
    rule in B2 is a change in the staging copy, then one copy). One copy into `.claude/` at the
-   end of B1, before the stamp of step 11; the only other write into `.claude/` is the short
-   permission list itself.
-2. `git init -b main` (some systems still start on `master`; the rules and the workflows expect
+   end of B1, before the stamp of step 11; the only other writes into `.claude/` are
+   `settings.local.json` before B1 (the short permission list, the check on dialogs) and its
+   clean-up in the wrap-up.
+2. First `pwd` (Windows PowerShell `Get-Location`): the shell keeps the folder of its last `cd`,
+   and in a trial `git init` landed in `_setup/`. Only in the workspace root: `git init -b main` (some systems still start on `master`; the rules and the workflows expect
    `main`), the commit identity from E5 set for this repo (`git config user.name` and
    `user.email` without `--global`), and a `.gitignore` from `kit/github/gitignore.template`:
    keep the `/wiki/` line only when E4 is (a) (check: `git status` runs; `git config user.name`
@@ -111,7 +119,8 @@ tests in B4 that write a fake key or remove a test file.
    wiki rules (the four from section 1, points 1 to 4, in one short list); when the assistant
    acts on its own (D5); with a yes to lessons in D8, one line that a lesson goes into
    `.claude/lessons.json`; the skills list (one line each); and at the top a
-   temporary line: "Setup in progress: next session, read `_setup/nest/SETUP.md` and follow it."
+   temporary line: "Setup in progress: whatever the first message of a session says, read
+   `_setup/nest/SETUP.md` and follow it."
    Write it in the user's language unless they chose English. No project facts that change weekly:
    those live in the wiki (check: `wc -l` under 150; the assistant's name appears in the title).
 4. `CLAUDE.local.md` with the private context from A2, A4, C7, and a section "Approved to keep here"
@@ -164,7 +173,10 @@ tests in B4 that write a fake key or remove a test file.
    `test -x .githooks/pre-commit` succeeds. Git skips a hook that is not executable without
    saying so).
 10. `docs/next-session.md`: a title, then one line per open item as a Markdown checkbox
-    (`- [ ] ...`); a done item becomes `- [x] ...`. The session-start line shows the first unchecked
+    (`- [ ] ...`); a done item becomes `- [x] ...`. Two sections fill up in B3: "Connect later"
+    (each connection postponed in D4, with the sentence to say, "say: connect my calendar") and
+    "Fine-tune later" (each default given to a skill instead of asking, with the sentence to
+    say, "say: adjust the morning briefing"). The session-start line shows the first unchecked
     one (check: `uv run --script scripts/session_context.py` prints it).
 11. The stamp: `uv run --script scripts/nest_update.py stamp`. It writes into `nest.json` which
     NEST release this workspace is built from and which kit file each installed file came from,
@@ -176,8 +188,8 @@ tests in B4 that write a fake key or remove a test file.
     release found, or that it could not reach the source. All four are fine here). The stamp
     is run again at the end of B3, B3b and B5 (each has its own step): it only adds what is new.
     A kit file installed under another name gets `--map <workspace path>=<kit path>`.
-12. Update STATE.md (`next: B2`, `read: setup/build.md (B2)`,
-    `trigger: Read _setup/nest/SETUP.md and follow it.`). The guards are active now: say so in
+12. Update STATE.md (`next: B2`, `read: setup/build.md (B2)`; `trigger:` stays the plain
+    "continue"). The guards are active now: say so in
     one line. Offer a stop; otherwise go on with B2 in this session.
 
 ### B2. The wiki
@@ -286,6 +298,8 @@ tests in B4 that write a fake key or remove a test file.
    no `customise:` left). Saving verdict and blueprint results always goes through
    `scripts/idea_page.py`, never through a script you write yourself.
 3. `disable-model-invocation` per skill from D5. The skills list in CLAUDE.md, one line each.
+   Every customise marker the interview did not fill gets its default here, and the defaults a
+   user may want to change go under "Fine-tune later" in `docs/next-session.md` (B1 step 10).
 4. `uv run scripts/skills_catalog.py` to write `docs/skills.md`, then
    `uv run scripts/skills_catalog.py --check --installed` (check: zero problems; `--installed`
    also fails on a `customise:` or `<fill in` marker left in a skill or agent).
@@ -332,6 +346,12 @@ tests in B4 that write a fake key or remove a test file.
       dutchquill: `/dutchquill:instellen` runs in the test session, after the yes from its card;
       it asks where its work folder goes, and its first `dq` command downloads its Python
       packages into the plugin's data folder, so say that once.
+      **A plugin folder inside the workspace** (a work folder, settings, output a plugin keeps,
+      such as DutchQuill's `dutchquill.yaml` and its output folders) is checked before the next
+      snapshot: what it holds about the user (their name, school or employer, their texts) is
+      private. Add it to `.gitignore` unless the user says it may be saved and sent with the
+      rest, and say so in one line. In a real setup a moved DutchQuill folder put a surname and
+      a school under git, and the question about it was lost with a `/clear`.
    5. In `CLAUDE.md`, under the skills list, one line per plugin: what it is for, and that its
       maker keeps it up to date.
 7. Stop point: STATE.md `next: B3b` (or `next: B4` without integrations to connect now), the
@@ -341,8 +361,11 @@ tests in B4 that write a fake key or remove a test file.
 
 ### B3b. Integrations
 
-Per integration skill the user wants connected now (D4), in a fresh session. A skill whose
-connection was postponed has nothing to do here: its open item stays.
+Per integration skill the user wants connected now (D4), and Tavily when chosen, in a fresh
+session. A connection that was postponed has nothing to do here: its line in
+`docs/next-session.md` stays, and it is set up when the user asks after the setup. With
+everything postponed, skip B3b. Tavily has its own steps: `kit/integrations/tavily/README.md`
+(one command, a new conversation, the user signs in once in the browser, a read-only search).
 
 1. Connect the route the user chose: add the MCP server, enable the connector, or run the login
    script. Only after a yes; a login the user does themselves, in the form for where they work (section 3). Tokens stay where the
