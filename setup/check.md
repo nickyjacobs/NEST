@@ -100,5 +100,15 @@ the question: how at home are you with a terminal (a window where you type comma
 daily). Store it as `level` in STATE.md. It decides how much you explain and how much you ask
 (section 4.2).
 
+**0.5b The check on dialogs.** Now that uv is on this machine, add the check that keeps every
+proposal inside its dialog (section 4.2): copy the `hooks` block of
+`kit/claude/ask-guard.example.json` into `.claude/settings.local.json` in this folder, adding
+to what the file holds and changing nothing else, with the full path of uv as `command` (from
+`command -v uv`, or `where uv` on Windows; a bare `uv` is not found by an app that was open
+before uv was installed) and `kit` in the script path. Claude Code asks once for this write;
+say in one line that this is a check on your own questions, not a permission. Add the line
+`- [ ] take the dialog check out again (handover)` under "Open during the setup" in STATE.md.
+When the write is refused, note it in `_setup/log.md` and go on: the rule in 4.2 still holds.
+
 **0.6 Tell the plan.** The session plan from section 3, in two or three lines. Then block A:
 read `setup/interview.md` now, and set `read:` in STATE.md to it.
