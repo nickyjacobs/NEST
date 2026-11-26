@@ -435,7 +435,12 @@ user wants a README, and go on to the final check.
    `workflows/checks.yml` (it runs the skills catalogue check and the secret scan on every
    push) and `dependabot.yml`.
 3. Ask the `security-reviewer` agent to scan everything that will be pushed. Fix hard findings.
-4. `gh repo create <name> --private --source . --remote origin`, then push after a yes.
+4. `gh repo create <name> --private --source . --remote origin`, then push after a yes. With
+   the gitleaks workflow, find its first run (`gh run list --workflow gitleaks.yml --limit 1`;
+   ask again after a few seconds when none is listed yet), wait for it with
+   `gh run watch <id> --exit-status`, and tell the user the result in one line. It scans the whole history on every run. When it
+   fails, read the log (`gh run view <id> --log-failed`) and say what it found; never tell the
+   user that a later run will fix a failed scan.
 5. Wiki backup per E4 (a): the backup needs its own private repository, so after a yes
    `gh repo create <name>-wiki --private` (no `--source`: the script fills it). Then
    `uv run scripts/wiki_backup.py init <private-repo-url>` and the first backup after a yes;

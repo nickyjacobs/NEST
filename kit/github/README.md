@@ -9,9 +9,11 @@ hook, the README and the workflows only when the user wants them.
 | `pre-commit` | `.githooks/pre-commit` | Enable with `git config core.hooksPath .githooks` |
 | `gitattributes.template` | `.gitattributes` | Goes with the pre-commit hook: keeps its line endings right on Windows |
 | `README.template.md` | `README.md` | Plain or styled per E6; no personal details |
-| `workflows/gitleaks.yml` | `.github/workflows/gitleaks.yml` | Secret scan of the full history on GitHub |
+| `workflows/gitleaks.yml` | `.github/workflows/gitleaks.yml` | Secret scan of the full history on GitHub, on every push; gitleaks at a pinned version with its SHA-256 |
 | `workflows/checks.yml` | `.github/workflows/checks.yml` | Only when the workspace has checks worth running in CI |
 | `dependabot.yml` | `.github/dependabot.yml` | Keeps workflow actions up to date |
 
 Before use, check the current major versions of the actions on their release pages; the versions
-here were current on 2026-11-21.
+here were current on 2026-11-21. Dependabot keeps the actions current but not the gitleaks
+version pinned in `workflows/gitleaks.yml`: move that by hand, with the SHA-256 of the new
+release's `linux_x64` archive from its checksums file.
