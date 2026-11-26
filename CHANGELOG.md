@@ -20,6 +20,28 @@ section in plain words: what it means if you already built a workspace with an e
 
 ## [Unreleased]
 
+### 🏠 For your workspace
+
+- Nothing changes in a workspace that exists. The new check on dialogs only runs while a setup
+  is running.
+
+### ✨ Added
+
+- A check on the setup's own dialogs (`kit/scripts/ask_guard.py`, a PreToolUse hook on
+  AskUserQuestion). In a real setup a summary and a folder tree were four times only in the
+  model's reasoning, and the user approved what she never saw; the rule in 4.2 did not stop it.
+  A dialog that asks the user to judge something without showing it is now refused once, with
+  the reason; the same question asked again passes, so it cannot loop. It acts only while
+  `_setup/STATE.md` exists and `next:` is not `done`, and lets everything through on its own
+  error. The setup adds it to `.claude/settings.local.json` at the end of Phase 0 (with the full
+  path of uv) and in the build, and takes it out at the handover and the wrap-up. It runs
+  from the kit itself; `/nest-update` never offers it to a workspace (`SETUP_ONLY`).
+
+### 🔧 Changed
+
+- A proposal now goes in the dialog itself, in the `preview` of the first option, as plain text
+  (section 4.2). Tested by hand: the preview shows in the terminal and in the VS Code panel.
+
 ---
 
 ## [1.3.1] - 2026-11-26

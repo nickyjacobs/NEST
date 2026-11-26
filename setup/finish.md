@@ -24,9 +24,10 @@ done, and say what failed or was skipped.
    "Approved to keep here" list in `CLAUDE.local.md`; a finding that is on that list, or a cost
    estimate inside an idea review, is not a reason to fail.
 9. `git status` is clean after the last commit, or what is left is explained.
-10. The build permissions are still in `.claude/settings.local.json` only until the wrap-up:
-    note here that the last step of section 10 takes them out, and never report "done" while
-    the line in STATE.md is unticked.
+10. The build permissions and the check on dialogs are still in `.claude/settings.local.json`
+    only until the wrap-up: note here that the last step of section 10 takes them out, and never
+    report "done" while a line for them in STATE.md is unticked. A check left behind blocks
+    every dialog once `_setup/nest/` is gone.
 
 Say what this check does not cover: whether the answers describe the user well (that shows in the
 first weeks), whether the Council's scores are well calibrated (that shows after about ten real
@@ -68,13 +69,14 @@ did not run yet. Tick each only when it is done; the wrap-up is not done while o
    Ask which one to start with. The first real task decides whether a workspace gets used.
 
 6. Last of all, after the last snapshot of the setup and as your very last action with a tool
-   (anything you change after it asks again), when the user said yes to the short list before
-   the build: take the build permissions out again. Remove from `.claude/settings.local.json` exactly the rules
-   `_setup/log.md` says you added, and nothing else; when nothing is left in the file and you
-   created it, remove the file (check: none of the rules in
-   `kit/claude/setup-permissions.example.json` is in it any more, unless the user had that rule
-   before). Tick the line in STATE.md, and tell the user in one line that the short list is
-   gone and Claude Code asks again from now on. Only then set `next: done`.
+   (anything you change after it asks again): take out of `.claude/settings.local.json` what the
+   build added. Always the dialog check (the `AskUserQuestion` entry under `hooks.PreToolUse`,
+   and `hooks` when nothing else is in it). When the user said yes to the short list before the
+   build, also exactly the rules `_setup/log.md` says you added, and nothing else (check: none
+   of the rules in `kit/claude/setup-permissions.example.json` is in it any more, unless the
+   user had that rule before), and tell the user in one line that the short list is gone and
+   Claude Code asks again from now on. When nothing is left in the file and you created it,
+   remove the file. Tick the lines in STATE.md. Only then set `next: done`.
 
 Through the final check and the wrap-up the rules of the build still hold: you stay in the turn
 while a helper agent works, a choice is a dialog, and points 3 and 4 above are not optional.

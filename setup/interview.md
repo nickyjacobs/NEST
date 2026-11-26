@@ -97,9 +97,10 @@ things in an inbox; the assistant files them into sections, links and indexes th
 deleted.
 
 - **C1** **Sections.** *Proposal.* First, in a message of its own, the idea of the wiki in
-  three lines and the folder tree itself, each folder with a few words on what goes in it; then
-  the dialog. The dialog's question says how many folders the user just saw ("these nine
-  folders"), so you cannot ask it without having shown them. Propose a folder tree derived from A and B, with every folder name
+  three lines; then the dialog, with the folder tree itself in the preview of its first option,
+  each folder with a few words on what goes in it (section 4.2). Naming the number of folders
+  in the question was the earlier fix, and in a real setup the model asked about "these twelve
+  folders" without showing one: the tree belongs in the preview. Propose a folder tree derived from A and B, with every folder name
   written exactly as it will be on disk (lowercase, hyphens, no spaces, for example
   `30-weiterbildung`) and the readable label next to it; what the user confirms is what you
   build, letter for letter. Letters of the user's language are fine in a folder name
@@ -179,7 +180,7 @@ deleted.
   after the build, with the user, and only when they want to. Never propose to put the
   workspace folder itself in a cloud folder (see F1).
 
-Show the final tree and the dashboard sketch as text. Yes, then on.
+The recap of this block shows the final tree and the dashboard sketch in the preview of its first option. Yes, then on.
 
 ### Block D: skills and agents
 
@@ -381,10 +382,12 @@ Recap of the whole interview in at most ten lines. Yes, then the handover.
 3. Only when the write was really refused (the tool result says so) does the user run that
    command themselves: give it with the real paths, in the form for where they work (section
    3), and check the result afterwards the same way.
-4. Take the interview permission out again when the user said yes to it in Phase 0: remove
-   the rule `Edit(/_setup/**)` from `.claude/settings.local.json` in the NEST folder, and the
-   file itself when nothing else is in it and you created it. Tick the line in STATE.md (in
-   both copies). The build has its own, separate list in the workspace.
+4. Take out of `.claude/settings.local.json` in the NEST folder what the interview added: the
+   dialog check from 0.5b (the `AskUserQuestion` entry under `hooks.PreToolUse`, and `hooks`
+   when nothing else is in it), and the rule `Edit(/_setup/**)` when the user said yes to it in
+   Phase 0. Then remove the file itself when nothing else is in it and you created it. Tick
+   the lines in STATE.md (in both copies). The build has its own, separate list and check in
+   the workspace.
 5. Tell the user how to open the new folder and start there, in the form for where they work
    (section 3, "Open another folder"), with the path to paste and the trigger line quoted.
    This is the one moment in the interview where they must do something themselves: one short

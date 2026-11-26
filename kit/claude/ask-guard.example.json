@@ -1,0 +1,22 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "<fill in: full path of uv>",
+            "args": [
+              "run",
+              "--quiet",
+              "--script",
+              "${CLAUDE_PROJECT_DIR}/<fill in: kit or _setup/nest/kit>/scripts/ask_guard.py"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

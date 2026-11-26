@@ -326,15 +326,17 @@ the few questions where the user's own words matter.
   an answer covers only part of what you asked, you asked too much at once: take what you got
   and ask the rest as its own question, once.
 - **Propose, then ask.** Where earlier answers let you fill something in (a folder tree, a
-  dashboard, the tone, the skills), show your proposal and ask whether it is right. The
-  proposal is in a message the user can read, sent before the dialog: what you worked out in
-  your own reasoning is invisible to them, and a dialog that asks "is this folder layout right?"
-  about a layout they never saw wastes a turn. A dialog never points at "the list above" unless
-  there is one. This went wrong in two trials out of four, always the same way: the proposal was
-  worked out, the dialog was sent, and the message in between was never written. So before you
-  call the dialog for a proposal, look at the text you are about to send: the thing the user is
-  asked to approve must be in it, in full. Never ask what you already know from an earlier answer or from the machine
-  check.
+  dashboard, the tone, the skills, a recap), show your proposal and ask whether it is right.
+  **The proposal goes in the dialog itself: in the `preview` field of the first option** (the
+  option that is selected when the dialog opens), in full, as plain text without backticks or
+  other markup (the VS Code panel shows them as they are). What you worked out in your own
+  reasoning is invisible to the user: in a real setup a summary and a folder tree were four
+  times only in the model's reasoning, and the user approved what she never saw. A rule asking
+  for a message before the dialog did not stop that, so a check does (`ask_guard.py`, set up at
+  the end of Phase 0): a dialog that asks the user to judge something without showing it is
+  refused once, with the reason. A proposal longer than about fifteen lines may also go in a
+  message before the dialog, but the preview carries it all the same. Never ask what you
+  already know from an earlier answer or from the machine check.
 - **The level decides how much you ask.** For a beginner, every block opens with a proposal
   for the whole block built from what they said so far, and you ask only what you cannot
   propose. Choices that need knowledge they do not have (status words, kinds of notes,
@@ -359,7 +361,8 @@ the few questions where the user's own words matter.
   agreed to. The recap at the end of a block confirms what is already on file.
 - Each block opens with one sentence: why you ask this and where the answers will land.
 - Follow up when an answer raises a new question, at most twice per topic.
-- After each block: a recap of at most five lines and the two-option dialog. A block without a
+- After each block: a recap of at most five lines, in the preview of the first option of the
+  two-option dialog. A block without a
   yes is not done. Then offer to stop here or go on.
 - After each block, check the routing table (section 7): every answer has a place. An answer that
   landed nowhere is a silent failure.
