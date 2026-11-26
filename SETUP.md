@@ -11,9 +11,11 @@ that fit their life. Everything comes from an interview; nothing is assumed.
 
 ## 0. How to use this file
 
-- Every session starts with the same line from the user: **"Read SETUP.md and follow it."**
-  After the workspace folder exists (the handover after block F) the line becomes
-  **"Read _setup/nest/SETUP.md and follow it."**; STATE.md and CLAUDE.md say so.
+- Every session in the NEST folder starts with the same line from the user: **"Read SETUP.md
+  and follow it."** In the workspace folder (after the handover at the end of the interview)
+  any first message will do, a plain "continue" in their language: its `CLAUDE.md` tells every
+  session to read `_setup/nest/SETUP.md` while the setup runs. The line
+  **"Read _setup/nest/SETUP.md and follow it."** still works there too.
 - **The prompt comes in parts.** This file holds what every session needs (sections 0 to 4).
   The rest is in the folder `setup/` next to it, one file per phase; the table below says which.
   Read a part when its phase starts, not before: a session that reads everything has less room
@@ -207,7 +209,8 @@ language: <the user's language>
 level: <beginner | intermediate | technical>
 os: <macOS | Windows | Linux> <version>
 surface: <vscode | terminal | desktop | other>   # where the user types; from Phase 0.2
-restart_app: <no | yes>               # yes when a tool was installed in this run (see 0.2)
+restart_app: <no | yes>               # yes when uv was installed in this run (see 0.2)
+tool_paths: <none>                    # full paths of tools installed in this run, e.g. gh=C:\Program Files\GitHub CLI\gh.exe
 workspace: <fill in at F1>            # absolute path once known
 assistant: <fill in at F3>            # the name; written at F3
 teams: <fill in at D2 and D7>         # for example "council: light, architects: none, ideas: 50-ideas"
@@ -269,12 +272,15 @@ the `!` prefix there: it does not exist in the panel.
 
 | | A new session in the same folder | Open another folder (the handover) |
 |---|---|---|
-| `vscode` (the Claude Code panel in VS Code) | Start a new conversation in the Claude Code panel. VS Code stays open. | File > Open Folder, paste the path, confirm. Trust the folder when VS Code asks, and again when Claude Code asks. Open the Claude Code panel and start a conversation. |
+| `vscode` (the Claude Code panel in VS Code) | Start a new conversation in the Claude Code panel (its new-conversation button). VS Code stays open: say so in those words. | Run `code "<path>"` yourself: it opens the folder in a new VS Code window. When `code` is not found or fails: File > Open Folder, paste the path, confirm. Either way: trust the folder when VS Code asks, and again when Claude Code asks; open the Claude Code panel and start a conversation. |
 | `terminal` | Leave Claude Code (`/exit`), then `claude` again in the same folder. | `cd "<path>"`, then `claude`. Trust the folder when asked. |
 | `desktop`, `other` | Ask the user how they opened this folder, and describe the same route back. | The same, for the new folder. |
 
 Take the exact names of buttons and menus from the docs you fetched in Phase 0 (the VS Code
-page for `vscode`), not from this table: they change. When `restart_app:` is `yes`, the first
+page for `vscode`), not from this table: they change. A user who has to restart something hears
+which of the two it is, in so many words: only a new conversation (the app stays open), or
+the whole app closed and opened again. "A new session" alone made a real user ask whether she
+had to restart Claude or VS Code. When `restart_app:` is `yes`, the first
 time the user reopens anything they quit the whole app first (VS Code or the terminal program)
 and start it again: an app only sees a newly installed tool after it was started afresh.
 Without that, the first hook in the workspace cannot find uv and every write is refused. Set

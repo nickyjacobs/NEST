@@ -46,6 +46,16 @@ section in plain words: what it means if you already built a workspace with an e
 
 ### 🔧 Changed
 
+- The handover opens the new workspace for the user (`code "<path>"` in VS Code, the Open Folder
+  steps when that fails) and writes a short `CLAUDE.md` there, so any first message, a plain
+  "continue", starts the build: no English start line any more. A real user had to ask "open
+  it", typed the English line, and typed it again the next morning.
+- Signing in to GitHub is started by the setup: `gh auth login --web` in the background, the
+  one-time code in the chat and the sign-in page opened in the browser; the user only logs in.
+  The terminal steps stay as the other choice. A real user had to open a terminal for it.
+- A restart says which one it is: only a new conversation, or the whole app closed and opened
+  again. The app is restarted only when uv was installed (the hooks call it by name); other
+  tools keep their full path in STATE.md (`tool_paths:`), also in a later session.
 - A proposal now goes in the dialog itself, in the `preview` of the first option, as plain text
   (section 4.2). Tested by hand: the preview shows in the terminal and in the VS Code panel.
 - The playground, frontend-design and dutchquill cards in Appendix C carry their reading date

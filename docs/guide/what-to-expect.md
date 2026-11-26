@@ -81,4 +81,5 @@ the next session picks up where you left off with the same line:
 Read SETUP.md and follow it.
 ```
 
-After the workspace folder exists, the setup tells you the new line to use from inside it.
+After the workspace folder exists, the setup opens it for you. From then on you open that folder
+and type anything, for example "continue" in your own language: the setup picks up by itself.

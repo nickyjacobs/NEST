@@ -144,9 +144,10 @@ The setup takes several sittings. To go on where you were:
 Read SETUP.md and follow it.
 ```
 
-Halfway through, the setup makes a new folder: your own workspace, with the name you chose. It
-tells you when, gives you the folder to open with **File**, **Open Folder**, and gives you the
-sentence to type there. From then on that folder is the one you open, also after the setup is
+Halfway through, the setup makes a new folder: your own workspace, with the name you chose, and
+opens it for you in a new VS Code window (if that does not work, it gives you the folder to open
+with **File**, **Open Folder**). There you do not need the sentence any more: type anything, for
+example "continue" in your own language, and the setup picks up where it was. From then on that folder is the one you open, also after the setup is
 done: it is where your assistant lives.
 
 More: [what the setup asks and how long it takes](what-to-expect.md), [your notes on a phone

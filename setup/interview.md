@@ -307,7 +307,9 @@ machine, undo). Then:
   E5 (a name and an address for the commits; any address works locally), E7 (the pre-commit
   scan only) and E8. E4 is then (b): the wiki lives inside the local repo, so it has a history;
   a backup off the machine becomes an open item.
-- **E2** Is the GitHub CLI signed in (from Phase 0)? If not: the user runs `gh auth login` themselves, in the form for where they work (section 3: `!` in front in a terminal session, a terminal window in VS Code).
+- **E2** Is the GitHub CLI signed in (from Phase 0)? If it is installed and not signed in: "Signing
+  in to GitHub" in Phase 0 (`setup/check.md`). If it is not installed yet, the sign-in follows
+  in the build, right after the install, the same way.
   Is a GitHub MCP server connected (Phase 0.4)? Not needed: the CLI is enough.
 - **E3** A repo for the workspace: private (recommended), named after the workspace.
 - **E4** The wiki: (a) a separate private backup repo with its own git folder, while the workspace
@@ -368,17 +370,21 @@ Recap of the whole interview in at most ten lines. Yes, then the handover.
 
 1. After the yes to the recap, update STATE.md first: `workspace:` the absolute path,
    `assistant:` the name, `next: handover (create the workspace folder; then B1 there)`,
-   `read: setup/build.md (B1)`, `trigger: Read _setup/nest/SETUP.md and follow it.`
+   `read: setup/build.md (B1)`, `trigger: <a plain "continue" in the user's language>`.
 2. Create the folder and fill it yourself: the folder `<ws>/_setup/nest`, the contents of
    `_setup/` copied into `<ws>/_setup/`, and `SETUP.md`, `setup/` and `kit/` copied into
    `<ws>/_setup/nest/`. Use absolute paths for both sides (your shell may no longer be in the
    NEST folder), and a copy command of the user's system: macOS and Linux
    `mkdir -p "<ws>/_setup/nest" && cp -R "<nest>/_setup/." "<ws>/_setup/" && cp -R "<nest>/SETUP.md" "<nest>/setup" "<nest>/kit" "<ws>/_setup/nest/"`;
    Windows PowerShell `New-Item -ItemType Directory -Force "<ws>\_setup\nest" | Out-Null; Copy-Item -Recurse -Force "<nest>\_setup\*" "<ws>\_setup\"; Copy-Item -Recurse -Force "<nest>\SETUP.md","<nest>\setup","<nest>\kit" "<ws>\_setup\nest\"`.
+   Then write `<ws>/CLAUDE.md` with the Write tool, exactly these lines in English (B1 replaces
+   the file later and keeps the instruction at its top):
+   `# Setup in progress` and `NEST is setting up this workspace. Whatever the first message of
+   a session says, read _setup/nest/SETUP.md and follow it.`
    Claude Code may ask the user whether you may write outside this folder: tell them
    beforehand that this question comes and that yes is right here. Check the result:
-   `<ws>/_setup/STATE.md`, `<ws>/_setup/nest/SETUP.md` and `<ws>/_setup/nest/setup/build.md`
-   exist.
+   `<ws>/_setup/STATE.md`, `<ws>/_setup/nest/SETUP.md`, `<ws>/_setup/nest/setup/build.md` and
+   `<ws>/CLAUDE.md` exist.
 3. Only when the write was really refused (the tool result says so) does the user run that
    command themselves: give it with the real paths, in the form for where they work (section
    3), and check the result afterwards the same way.
@@ -388,15 +394,19 @@ Recap of the whole interview in at most ten lines. Yes, then the handover.
    Phase 0. Then remove the file itself when nothing else is in it and you created it. Tick
    the lines in STATE.md (in both copies). The build has its own, separate list and check in
    the workspace.
-5. Tell the user how to open the new folder and start there, in the form for where they work
-   (section 3, "Open another folder"), with the path to paste and the trigger line quoted.
-   This is the one moment in the interview where they must do something themselves: one short
-   message, the steps numbered, nothing else in it (no recap, no warnings said before). With
-   `restart_app: yes` they quit the app completely first. The copy of `_setup/` next to NEST can
+5. Open the new folder for the user where you can, and tell them what is left, in the form for
+   where they work (section 3, "Open another folder"). With `vscode`: run `code "<ws>"` yourself
+   (a real user had to ask "open it"); a new VS Code window opens, and they trust the folder,
+   open the Claude Code panel and type the word after `trigger:`. Only when `code` fails, the
+   File > Open Folder steps with the path to paste. With `restart_app: yes` they quit the app
+   completely first, so do not run `code`: give the steps. This is the one moment in the
+   interview where they must do something themselves: one short message, the steps numbered,
+   nothing else in it (no recap, no warnings said before). Say that this window can be closed
+   afterwards. The copy of `_setup/` next to NEST can
    go later; it is gitignored.
 
 A session that starts while `next:` still says `handover`: if the current folder is the
 workspace path from STATE.md and `_setup/nest/SETUP.md` and `_setup/nest/setup/build.md`
 exist, the copy worked: set `next: B1` and go on with B1. If you are still in the NEST folder:
-check whether the workspace folder exists. If it does, tell the user how to open it and give
-the trigger line; if it does not, do step 2. Never start B1 from the NEST folder.
+check whether the workspace folder exists. If it does, open it for them as step 5 says; if it
+does not, do step 2. Never start B1 from the NEST folder.
