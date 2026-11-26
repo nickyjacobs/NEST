@@ -20,7 +20,7 @@ reference kit (`kit/`).
   `assets/roadmap.png` is drawn from `assets/roadmap.svg`: when `ROADMAP.md` changes, change the
   SVG to match and render it again with headless Chrome at twice the size
   (`--headless=new --force-device-scale-factor=2 --default-background-color=00000000
-  --window-size=1600,772 --screenshot=assets/roadmap.png file://<path>/assets/roadmap.svg`).
+  --window-size=1600,624 --screenshot=assets/roadmap.png file://<path>/assets/roadmap.svg`).
 - `docs/project/backlog.md`: what is known to be open. `docs/reference/hooks-notes.md`: the hook facts
   the scripts rely on. `CHANGELOG.md`: Keep a Changelog, in the template of `docs/project/releasing.md`.
 - `tools/`: checks for this repo itself (`release_check.py`, `obsidian_lock.py`, and

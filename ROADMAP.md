@@ -6,7 +6,7 @@ it ships. Every new part stays a choice, and reaches a workspace you already hav
 `/nest-update`.
 
 <p align="center">
-  <img src="assets/roadmap.png" alt="NEST roadmap. Now: bring your old notes with you, your assistant from your phone. Next: a command board on Home, ready in one sitting, what your assistant remembers is yours. Later: upkeep that runs by itself, your workspace on two computers." width="100%">
+  <img src="assets/roadmap.png" alt="NEST roadmap. Now: bring your old notes with you, your assistant from your phone. Next: a command board on Home, what your assistant remembers is yours. Later: upkeep that runs by itself, your workspace on two computers." width="100%">
 </p>
 
 ## 🟠 Now
@@ -25,8 +25,6 @@ What the next releases work on.
 - 🎛️ **A command board on Home.** Your day, your tasks and your routines in one place on your
   start page: what is on today, what is open, and the things you ask your assistant most, a
   click away instead of a command to remember.
-- ⏱️ **Ready in one sitting.** A short route to a workspace that works: the questions that
-  cannot wait, a build, and the rest of the interview whenever you feel like it.
 - 🔖 **What your assistant remembers is yours.** Claude Code keeps notes of its own about how you
   work, outside your workspace. NEST gives them a place you can see: inside your workspace, in
   your backup, and under the same secret scan as everything else.
