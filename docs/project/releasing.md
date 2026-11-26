@@ -151,6 +151,9 @@ Preview it before tagging: `uv run --script tools/release_check.py --notes <x.y.
    A lock file that changed since the last release (a new version, a new plugin) is tried in a
    real vault before the release: `obsidian_setup.py install`, open the vault, trust it, and see
    that Home and the plugins work.
+   The open issue "Weekly version check" (from `.github/workflows/versions.yml`, or
+   `uv run --script tools/version_check.py` by hand) lists what moved upstream since the last
+   reading: decide per line whether this release moves the pin.
    Then the Claude Code plugins in Appendix C of `setup/catalogue.md`: read each plugin's
    manifest, hooks and `.mcp.json` again at the version its card names (or at the default branch
    where the card says it is not pinned). A new hook, server or script, or a new need, goes on

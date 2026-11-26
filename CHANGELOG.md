@@ -20,6 +20,25 @@ section in plain words: what it means if you already built a workspace with an e
 
 ## [Unreleased]
 
+### 🏠 For your workspace
+
+- Nothing changes in a workspace that exists. NEST now looks every week whether the plugins it
+  installs have a newer version, so a new setup does not fall behind.
+
+### ✨ Added
+
+- A weekly version check (`tools/version_check.py`, `.github/workflows/versions.yml`). Every
+  Monday it compares what NEST pins with upstream: a newer tag for a pinned plugin card in
+  Appendix C, commits since the card's reading date for Anthropic's and unpinned plugins, and
+  `tools/obsidian_lock.py --check` for the Obsidian plugins and theme. What moved goes into one
+  open issue, "Weekly version check", which closes when nothing moved. Moving a pin stays a
+  human step: read, try, release.
+
+### 🔧 Changed
+
+- The playground, frontend-design and dutchquill cards in Appendix C carry their reading date
+  too, so the version check knows since when to look.
+
 ---
 
 ## [1.3.1] - 2026-11-26

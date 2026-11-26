@@ -160,7 +160,7 @@ Read again on 2026-11-25: the PDF export (`export_pdf.py`) is new since 2026-11-
 scripts folder again on the day of the install.
 
 **playground** · `playground@claude-plugins-official` (Anthropic). Runs: a skill only. Leaves the
-machine: nothing. Needs: a browser to open the page.
+machine: nothing. Needs: a browser to open the page. Read again on 2026-11-25.
 
 **ppt-master** · `ppt-master@ppt-master`, marketplace `hugohe3/ppt-master#v6.10.0` (MIT). The
 marketplace points at the plugin's own repository without a fixed version, so the install takes
@@ -182,7 +182,8 @@ images only with an image service key the user sets up themselves. Propose it on
 presentations are a real part of their work or study. Read again on 2026-11-25.
 
 **frontend-design** · `frontend-design@claude-plugins-official` (Anthropic). Runs: nothing; it is
-one skill file with design guidance. Leaves the machine: nothing. Needs: nothing.
+one skill file with design guidance. Leaves the machine: nothing. Needs: nothing. Read again on
+2026-11-25.
 
 **dutchquill** · `dutchquill@dutchquill`, marketplace `nickyjacobs/DutchQuill-AI#v2.1.0` (MIT, by
 the maker of NEST; say so). Runs: six skills (`/dutchquill:schrijven`, `herschrijven`,
@@ -202,3 +203,4 @@ Needs: uv (the setup's own) or Python 3.10 or newer; the hook uses the `python3`
 silent without it. LibreOffice is optional, for a PDF that looks exactly like the Word file.
 Next to writing-style: that skill keeps the user's voice and word list for every text,
 DutchQuill is for longer pieces, checks and documents. With both chosen, say which is for what.
+Read again on 2026-11-25.
