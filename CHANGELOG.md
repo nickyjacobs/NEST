@@ -19,10 +19,27 @@ section in plain words: what it means if you already built a workspace with an e
 
 ## [Unreleased]
 
+### 🏠 For your workspace
+
+- The secret scan on GitHub now checks your whole history every time. Before, it failed on the
+  first upload of a new workspace (when it held more than one snapshot, as it always does after
+  the setup) and from then on only looked at what was new, so the
+  first upload was never checked on GitHub. The check on your own computer, if you chose it,
+  did run before every snapshot. If your workspace has the scan on GitHub, `/nest-update`
+  offers the new version: say yes, and from the next upload on it checks everything.
+
 ### 🔧 Changed
 
 - The roadmap no longer lists plugins under Now: they shipped in 1.3.0. `ROADMAP.md` and
   `assets/roadmap.png` (drawn from `assets/roadmap.svg`) show the two points that are left.
+
+### 🐛 Fixed
+
+- `kit/github/workflows/gitleaks.yml` runs the gitleaks command itself (8.30.1, checked
+  against its SHA-256) on the full history, instead of `gitleaks/gitleaks-action`. On a push
+  the action scans `<first pushed commit>^..<last>`, which fails on the first push of a new
+  repository with more than one commit and leaves that history unscanned afterwards. Found in a real setup. B5 now
+  reads the first run and reports it truthfully.
 
 ---
 
