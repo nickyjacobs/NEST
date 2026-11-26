@@ -105,7 +105,8 @@ tests in B4 that write a fake key or remove a test file.
    end of B1, before the stamp of step 11; the only other writes into `.claude/` are
    `settings.local.json` before B1 (the short permission list, the check on dialogs) and its
    clean-up in the wrap-up.
-2. `git init -b main` (some systems still start on `master`; the rules and the workflows expect
+2. First `pwd` (Windows PowerShell `Get-Location`): the shell keeps the folder of its last `cd`,
+   and in a trial `git init` landed in `_setup/`. Only in the workspace root: `git init -b main` (some systems still start on `master`; the rules and the workflows expect
    `main`), the commit identity from E5 set for this repo (`git config user.name` and
    `user.email` without `--global`), and a `.gitignore` from `kit/github/gitignore.template`:
    keep the `/wiki/` line only when E4 is (a) (check: `git status` runs; `git config user.name`
