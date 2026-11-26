@@ -55,7 +55,7 @@ Then type:
 Read SETUP.md and follow it.
 ```
 
-That starts the first of about four sessions: about an hour of questions, most of them a
+That starts the first of about four sessions: about three quarters of an hour of questions, most of them a
 choice you click, and an hour in which the setup builds while you watch. Stop whenever you like: the
 setup remembers where you were and tells you the line that starts the next session.
 

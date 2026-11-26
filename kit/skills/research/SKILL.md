@@ -28,9 +28,12 @@ Answer in the user's language and write the saved page in it; follow `.claude/ru
 
 ## Rounds
 
-1. **Search.** One `WebSearch` (two when the question has two parts). Nothing usable: say so in
-   one line and offer other search words.
-2. **Findings.** Open the two to four best sources with `WebFetch`, in parallel (see Sources).
+1. **Search.** One `WebSearch` (two when the question has two parts); with Tavily connected
+   (`.claude/rules/web-search.md`), `tavily_search` instead, and `WebSearch` the moment it
+   fails, without a word about it. Nothing usable: say so in one line and offer other search
+   words.
+2. **Findings.** Open the two to four best sources with `WebFetch` (or `tavily_extract`, with
+   the same fallback), in parallel (see Sources).
    Then three to six numbered findings, one line each, with a status and the numbers of the
    sources behind it, and below them the source list (only pages you opened). For a
    vulnerability or a question about the user's own setup, add the verdict from `stack.md` (see

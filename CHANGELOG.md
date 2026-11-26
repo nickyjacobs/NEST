@@ -25,9 +25,17 @@ section in plain words: what it means if you already built a workspace with an e
 - Nothing changes in a workspace that exists. The new check on dialogs only runs while a setup
   is running, and NEST now looks every week whether the plugins it installs have a newer
   version, so a new setup does not fall behind.
+- The research skill can use Tavily, a better web search, when you connect it (a new
+  workspace is offered it in the setup; for yours, ask your assistant to connect Tavily). With
+  Tavily missing or its free searches used up, it quietly uses the normal search.
 
 ### ✨ Added
 
+- Tavily as an optional web search (`kit/integrations/tavily/README.md`): Tavily's own server,
+  signed in once in the browser, so no key passes the chat or lands in a file. Free for 1,000
+  credits a month. The research and wiki-ingest skills fall back to `WebSearch` and `WebFetch`
+  without a word when it is missing, refuses or is out of credits (the fallback rule in the
+  guide becomes `.claude/rules/web-search.md`).
 - A check on the setup's own dialogs (`kit/scripts/ask_guard.py`, a PreToolUse hook on
   AskUserQuestion). In a real setup a summary and a folder tree were four times only in the
   model's reasoning, and the user approved what she never saw; the rule in 4.2 did not stop it.
@@ -46,6 +54,24 @@ section in plain words: what it means if you already built a workspace with an e
 
 ### 🔧 Changed
 
+- The interview asks now what the build needs and leaves the rest for later. A real setup
+  took seventy minutes of interview, twelve on one open question and twenty-one on block D.
+  A1 starts with choices and one short open question; A5 is a choice; B4 and C2 are not asked
+  of a beginner. Block D is one proposal for everyone (the skills, the plugins and the defaults
+  in the preview; The Council and The Architects; connections now, later or not), with "show
+  me everything" for the old route. Customise questions are no longer asked: skills get the
+  value earlier answers give or a default, listed under "Fine-tune later" in
+  `docs/next-session.md`. Connections (mail, calendar, Tavily) are set up after the setup by
+  default, when the user asks. Block E is one proposal for a beginner. The name starts with a
+  choice of kind: a name that stands for something, a nice name, or their own. A trial with a
+  fictional beginner, in Claude Code's default mode: 29 dialogs with 48 questions and 6 typed
+  messages (the real run on 1.3.0: 36 dialogs with 81 questions and 15 typed), 38 permission
+  questions (60 in the last trial), no proposal out of sight. The promised time is now about
+  three quarters of an hour.
+- "I see nothing" now means the content is missing, not the dialog: the setup puts it in the
+  preview and keeps using dialogs. In a real setup and a trial that remark turned the rest of
+  the interview into typed answers. The language question is in English and at most the
+  language of the first message.
 - The handover opens the new workspace for the user (`code "<path>"` in VS Code, the Open Folder
   steps when that fails) and writes a short `CLAUDE.md` there, so any first message, a plain
   "continue", starts the build: no English start line any more. A real user had to ask "open

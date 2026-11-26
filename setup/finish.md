@@ -61,7 +61,8 @@ did not run yet. Tick each only when it is done; the wrap-up is not done while o
    end of session, maintenance once a week.
 5. Only after the overview and the cheat sheet have been sent, propose three or four **first tasks** with the choice dialog. When C7 found notes the user
    wants to bring in, that move is the first one on the list: an empty wiki next to a full old
-   vault does not get used. The others answer the top pain points from B3, for example:
+   vault does not get used. A connection postponed in D4 ("Connect later") may be one of the
+   tasks, never the first: the user has just spent an hour on the setup. The others answer the top pain points from B3, for example:
    - "Notes pile up": put ten old notes in the inbox and run the inbox skill together.
    - "Ideas never get decided": run the verdict skill on the idea they mentioned in block B.
    - "Mail chaos": a first organizer run on the inbox, board only, no moves.
