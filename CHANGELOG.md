@@ -10,6 +10,7 @@ section in plain words: what it means if you already built a workspace with an e
 
 | Release | Date | In short |
 |---|---|---|
+| [1.3.1](#131---2026-11-26) | 2026-11-26 | Fixes from a second real setup: the secret scan on GitHub now checks your whole history, and the setup introduces itself as NEST, keeps to your language and gives one honest time. |
 | [1.3.0](#130---2026-11-25) | 2026-11-25 | The setup can now suggest a few ready-made plugins for Claude Code that fit you, each read through by NEST first, from diagrams and PowerPoint files to a writing assistant for Dutch and English. |
 | [1.2.0](#120---2026-11-23) | 2026-11-23 | Made for the person who never opened a terminal: a guide with a picture of every click, questions you answer by clicking, a setup that builds and tests by itself, installs your Obsidian plugins, and asks far less. |
 | [1.1.0](#110---2026-11-22) | 2026-11-22 | Everything an audit of 1.0.0 found, fixed and tested: safer updates and undo, a secret scan that sees more, guards that hold, a setup that resumes where you stopped, and a roadmap. |
@@ -18,6 +19,12 @@ section in plain words: what it means if you already built a workspace with an e
 <sub>Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versions: [Semantic Versioning](https://semver.org/) · How a release is made: [docs/project/releasing.md](docs/project/releasing.md)</sub>
 
 ## [Unreleased]
+
+---
+
+## [1.3.1] - 2026-11-26
+
+> **In short:** Fixes from a second real setup: the secret scan on GitHub now checks your whole history, and the setup introduces itself as NEST, keeps to your language and gives one honest time.
 
 ### 🏠 For your workspace
 
@@ -710,7 +717,8 @@ Nothing breaks: everything you have keeps working. What you will notice after `/
   scoring, the idea page builder, the writing-style check and the wiki backup, tested on macOS,
   Linux and Windows.
 
-[Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/nickyjacobs/NEST/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/nickyjacobs/NEST/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/nickyjacobs/NEST/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/nickyjacobs/NEST/compare/v1.0.0...v1.1.0
