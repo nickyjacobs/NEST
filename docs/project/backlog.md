@@ -186,3 +186,10 @@ for users is in the [roadmap](../../ROADMAP.md).
 - The session guard, the lesson hook, the plan hook and the blind seat guard are tested as
   scripts; nobody has watched them through a real compaction, a real second session or a real
   Council run yet.
+- Not tried in 1.4.0 (2026-11-26): signing in to GitHub with the one-time code
+  (`gh auth login --web` in the background) on Windows (it works on macOS); Tavily's `/mcp`
+  sign-in in the VS Code panel; the ask guard (`kit/scripts/ask_guard.py`) in a real session
+  on Windows. The interview trial for 1.4.0 ran up to the handover and the build trial through
+  B2; the Obsidian steps of B2 and B3 to the wrap-up need a person with Obsidian.
+- Notebook Navigator 3.5.3 was released upstream on 2026-11-26; the lock file stays on 3.5.2
+  until a newer version is tried in a real vault (the weekly version check lists it).

@@ -9,14 +9,14 @@ Branch, commit and pull request conventions are in [CONTRIBUTING.md](../../CONTR
 
 ```mermaid
 gitGraph
-    commit id: "v1.3.0" tag: "v1.3.0"
+    commit id: "v1.4.0" tag: "v1.4.0"
     branch develop
     commit id: "Add: a skill"
     commit id: "Fix: a script"
-    branch release/1.4.0
+    branch release/1.5.0
     commit id: "Docs: changelog and version"
     checkout main
-    merge release/1.4.0 id: "Release: v1.4.0" tag: "v1.4.0"
+    merge release/1.5.0 id: "Release: v1.5.0" tag: "v1.5.0"
     checkout develop
     merge main id: "merge back"
 ```
@@ -41,8 +41,8 @@ the STATE template in `SETUP.md`, and the newest heading in `CHANGELOG.md`.
 ```markdown
 | Release | Date | In short |
 |---|---|---|
-| [1.4.0](#140---2027-03-01) | 2027-03-01 | One sentence a newcomer understands. |
-| [1.3.0](#130---2026-11-25) | 2026-11-25 | ... |
+| [1.5.0](#150---2027-03-01) | 2027-03-01 | One sentence a newcomer understands. |
+| [1.4.0](#140---2026-11-26) | 2026-11-26 | ... |
 
 ## [Unreleased]
 
@@ -56,7 +56,7 @@ the STATE template in `SETUP.md`, and the newest heading in `CHANGELOG.md`.
 
 ---
 
-## [1.4.0] - 2027-03-01
+## [1.5.0] - 2027-03-01
 
 > **In short:** One sentence a newcomer understands.
 
@@ -87,13 +87,13 @@ the STATE template in `SETUP.md`, and the newest heading in `CHANGELOG.md`.
 
 ---
 
-## [1.3.0] - 2026-11-25
+## [1.4.0] - 2026-11-26
 
 ...
 
-[Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.4.0...HEAD
-[1.4.0]: https://github.com/nickyjacobs/NEST/compare/v1.3.0...v1.4.0
-[1.3.0]: https://github.com/nickyjacobs/NEST/compare/v1.2.0...v1.3.0
+[Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/nickyjacobs/NEST/compare/v1.4.0...v1.5.0
+[1.4.0]: https://github.com/nickyjacobs/NEST/compare/v1.3.1...v1.4.0
 ```
 
 Rules:

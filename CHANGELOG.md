@@ -10,6 +10,7 @@ section in plain words: what it means if you already built a workspace with an e
 
 | Release | Date | In short |
 |---|---|---|
+| [1.4.0](#140---2026-11-26) | 2026-11-26 | A shorter setup that shows you everything it asks you to approve, opens your new workspace for you, signs you in to GitHub with a code, and can add a better web search. |
 | [1.3.1](#131---2026-11-26) | 2026-11-26 | Fixes from a second real setup: the secret scan on GitHub now checks your whole history, and the setup introduces itself as NEST, keeps to your language and gives one honest time. |
 | [1.3.0](#130---2026-11-25) | 2026-11-25 | The setup can now suggest a few ready-made plugins for Claude Code that fit you, each read through by NEST first, from diagrams and PowerPoint files to a writing assistant for Dutch and English. |
 | [1.2.0](#120---2026-11-23) | 2026-11-23 | Made for the person who never opened a terminal: a guide with a picture of every click, questions you answer by clicking, a setup that builds and tests by itself, installs your Obsidian plugins, and asks far less. |
@@ -20,14 +21,21 @@ section in plain words: what it means if you already built a workspace with an e
 
 ## [Unreleased]
 
+---
+
+## [1.4.0] - 2026-11-26
+
+> **In short:** A shorter setup that shows you everything it asks you to approve, opens your new workspace for you, signs you in to GitHub with a code, and can add a better web search.
+
 ### 🏠 For your workspace
 
-- Nothing changes in a workspace that exists. The new check on dialogs only runs while a setup
-  is running, and NEST now looks every week whether the plugins it installs have a newer
-  version, so a new setup does not fall behind.
-- The research skill can use Tavily, a better web search, when you connect it (a new
-  workspace is offered it in the setup; for yours, ask your assistant to connect Tavily). With
-  Tavily missing or its free searches used up, it quietly uses the normal search.
+- Your research skill can now use Tavily, a better web search, once it is connected; without
+  it, or when its free searches for the month are used up, it quietly uses the normal search.
+  `/nest-update` offers the new version of the skill. To connect Tavily, ask your assistant to
+  follow `kit/integrations/tavily/README.md` from NEST: you sign in once in the browser and no
+  key is needed.
+- Everything else in this release changes how a new workspace is set up. A workspace you have
+  keeps working as it is.
 
 ### ✨ Added
 
@@ -54,6 +62,10 @@ section in plain words: what it means if you already built a workspace with an e
 
 ### 🔧 Changed
 
+- The roadmap no longer lists "Ready in one sitting": the shorter interview below is that
+  point. `assets/roadmap.svg` and `assets/roadmap.png` follow, one row lower.
+- The examples in the docs and the update GIF moved one release up (1.5.0 is now the example of
+  a release still to come).
 - The interview asks now what the build needs and leaves the rest for later. A real setup
   took seventy minutes of interview, twelve on one open question and twenty-one on block D.
   A1 starts with choices and one short open question; A5 is a choice; B4 and C2 are not asked
@@ -790,7 +802,8 @@ Nothing breaks: everything you have keeps working. What you will notice after `/
   scoring, the idea page builder, the writing-style check and the wiki backup, tested on macOS,
   Linux and Windows.
 
-[Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/nickyjacobs/NEST/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/nickyjacobs/NEST/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/nickyjacobs/NEST/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/nickyjacobs/NEST/compare/v1.1.0...v1.2.0
