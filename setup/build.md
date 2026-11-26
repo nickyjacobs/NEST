@@ -345,6 +345,12 @@ tests in B4 that write a fake key or remove a test file.
       dutchquill: `/dutchquill:instellen` runs in the test session, after the yes from its card;
       it asks where its work folder goes, and its first `dq` command downloads its Python
       packages into the plugin's data folder, so say that once.
+      **A plugin folder inside the workspace** (a work folder, settings, output a plugin keeps,
+      such as DutchQuill's `dutchquill.yaml` and its output folders) is checked before the next
+      snapshot: what it holds about the user (their name, school or employer, their texts) is
+      private. Add it to `.gitignore` unless the user says it may be saved and sent with the
+      rest, and say so in one line. In a real setup a moved DutchQuill folder put a surname and
+      a school under git, and the question about it was lost with a `/clear`.
    5. In `CLAUDE.md`, under the skills list, one line per plugin: what it is for, and that its
       maker keeps it up to date.
 7. Stop point: STATE.md `next: B3b` (or `next: B4` without integrations to connect now), the

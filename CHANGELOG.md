@@ -68,6 +68,10 @@ section in plain words: what it means if you already built a workspace with an e
   messages (the real run on 1.3.0: 36 dialogs with 81 questions and 15 typed), 38 permission
   questions (60 in the last trial), no proposal out of sight. The promised time is now about
   three quarters of an hour.
+- A plugin folder that ends up inside the workspace (DutchQuill's work folder, for example) is
+  checked before the next snapshot and kept out of git unless the user says otherwise; an
+  unanswered question to the user goes into STATE.md the moment it is asked, so a `/clear`
+  does not lose it.
 - "I see nothing" now means the content is missing, not the dialog: the setup puts it in the
   preview and keeps using dialogs. In a real setup and a trial that remark turned the rest of
   the interview into typed answers. The language question is in English and at most the
