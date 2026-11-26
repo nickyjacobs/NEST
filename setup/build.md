@@ -8,7 +8,8 @@ when to read this one. Read `SETUP.md` first.
 ## 8. Build
 
 At the start of each build phase (B1, B2, B3, B3b, B5) show the whole plan for that phase as one
-short tree or list and ask **one yes for the phase**, with the choice dialog. Then build its
+short tree or list, in the preview of the dialog's first option (section 4.2), and ask **one yes
+for the phase**. Then build its
 steps one after the other without asking again, unless something deviates from the plan, leaves
 the machine, or cannot be undone. After each step run its check and tick the line in STATE.md.
 If a check fails, fix the cause; never tick around it.
@@ -65,7 +66,12 @@ assistant's own settings, and saving a snapshot. Then one dialog: yes, use the s
   edits for the rest of the session, and that picking it once is reasonable. It is their
   choice.
 
-Either way: never change the permission mode yourself, and never suggest skipping permissions
+Either way, also add the check on dialogs (section 4.2) to the same file: the `hooks` block of
+`kit/claude/ask-guard.example.json`, with `uv` as `command` as in the workspace's other hooks and
+`_setup/nest/kit` in the script path, plus the line
+`- [ ] take the dialog check out again (wrap-up)` under "Open during the setup" in STATE.md.
+
+Never change the permission mode yourself, and never suggest skipping permissions
 altogether. The copy into `.claude/` and a commit stay questions on purpose.
 
 **Work in plain single commands, or the list does not help.** (This holds for the whole setup,
@@ -96,8 +102,9 @@ tests in B4 that write a fake key or remove a test file.
    staging folder (see the top of this section), in B1 and in every later phase: the rules, the
    settings, the terms list, and a later change to one of them (a status word added to the wiki
    rule in B2 is a change in the staging copy, then one copy). One copy into `.claude/` at the
-   end of B1, before the stamp of step 11; the only other write into `.claude/` is the short
-   permission list itself.
+   end of B1, before the stamp of step 11; the only other writes into `.claude/` are
+   `settings.local.json` before B1 (the short permission list, the check on dialogs) and its
+   clean-up in the wrap-up.
 2. `git init -b main` (some systems still start on `master`; the rules and the workflows expect
    `main`), the commit identity from E5 set for this repo (`git config user.name` and
    `user.email` without `--global`), and a `.gitignore` from `kit/github/gitignore.template`:

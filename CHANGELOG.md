@@ -22,11 +22,21 @@ section in plain words: what it means if you already built a workspace with an e
 
 ### 🏠 For your workspace
 
-- Nothing changes in a workspace that exists. NEST now looks every week whether the plugins it
-  installs have a newer version, so a new setup does not fall behind.
+- Nothing changes in a workspace that exists. The new check on dialogs only runs while a setup
+  is running, and NEST now looks every week whether the plugins it installs have a newer
+  version, so a new setup does not fall behind.
 
 ### ✨ Added
 
+- A check on the setup's own dialogs (`kit/scripts/ask_guard.py`, a PreToolUse hook on
+  AskUserQuestion). In a real setup a summary and a folder tree were four times only in the
+  model's reasoning, and the user approved what she never saw; the rule in 4.2 did not stop it.
+  A dialog that asks the user to judge something without showing it is now refused once, with
+  the reason; the same question asked again passes, so it cannot loop. It acts only while
+  `_setup/STATE.md` exists and `next:` is not `done`, and lets everything through on its own
+  error. The setup adds it to `.claude/settings.local.json` at the end of Phase 0 (with the full
+  path of uv) and in the build, and takes it out at the handover and the wrap-up. It runs
+  from the kit itself; `/nest-update` never offers it to a workspace (`SETUP_ONLY`).
 - A weekly version check (`tools/version_check.py`, `.github/workflows/versions.yml`). Every
   Monday it compares what NEST pins with upstream: a newer tag for a pinned plugin card in
   Appendix C, commits since the card's reading date for Anthropic's and unpinned plugins, and
@@ -36,6 +46,8 @@ section in plain words: what it means if you already built a workspace with an e
 
 ### 🔧 Changed
 
+- A proposal now goes in the dialog itself, in the `preview` of the first option, as plain text
+  (section 4.2). Tested by hand: the preview shows in the terminal and in the VS Code panel.
 - The playground, frontend-design and dutchquill cards in Appendix C carry their reading date
   too, so the version check knows since when to look.
 

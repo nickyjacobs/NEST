@@ -642,6 +642,22 @@ def test_a_declined_new_file_comes_back_when_nest_changes_it(ws, nest_repo, tmp_
     assert status(ws)["scripts/guard.py"] == "new"
 
 
+def test_a_setup_only_script_is_never_offered(ws, nest_repo, tmp_path, monkeypatch):
+    newer = tmp_path / "newer-source"
+    subprocess.run(["git", "clone", "--quiet", str(nest_repo), str(newer)], check=True, capture_output=True)
+    (newer / "kit/scripts/ask_guard.py").write_text("print('ask guard')\n", encoding="utf-8")
+    git(newer, "add", "kit/scripts/ask_guard.py")
+    git(newer, "commit", "--quiet", "-m", "Release: v1.2.0")
+    git(newer, "tag", "v1.2.0")
+    data = json.loads((ws / "nest.json").read_text(encoding="utf-8"))
+    data["nest"]["source"] = str(newer)
+    data["nest"]["version"] = "1.1.0"
+    (ws / "nest.json").write_text(json.dumps(data), encoding="utf-8")
+    assert not any("ask_guard" in key for key in status(ws))
+    monkeypatch.setattr(nu, "SETUP_ONLY", set())  # without the exception it would be offered
+    assert any("ask_guard" in key for key in status(ws))
+
+
 @pytest.mark.skipif(sys.platform == "win32", reason="symbolic links need extra rights on Windows")
 def test_symlinks_are_never_followed(ws, nest_repo, tmp_path):
     secret = tmp_path / "secret.txt"
@@ -1148,6 +1164,8 @@ def test_the_obsidian_lock_file_travels_with_the_scripts():
     assert nu.target_for("kit/scripts/obsidian_setup.py", set()) == "scripts/obsidian_setup.py"
     assert nu.target_for("kit/scripts/obsidian.lock.json", set()) == "scripts/obsidian.lock.json"
     assert nu.target_for("kit/scripts/wiki.config.example.json", set()) is None
+    # run from the kit during a setup, never copied, so never offered to a workspace
+    assert nu.target_for("kit/scripts/ask_guard.py", set()) is None
 
 
 # --- renames: a kit path that got another name ------------------------------------------------
