@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/nickyjacobs/NEST/releases/latest"><img src="https://img.shields.io/badge/NEST_v1.3.0-3fb950?logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDMgMjIgOSAxMiAxNSAyIDlaIi8+PHBhdGggZD0iTTIgMTQuNSAxMiAyMC41IDIyIDE0LjUiLz48L3N2Zz4K" alt="NEST v1.3.0"></a>
+  <a href="https://github.com/nickyjacobs/NEST/releases/latest"><img src="https://img.shields.io/badge/NEST_v1.3.1-3fb950?logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTEyIDMgMjIgOSAxMiAxNSAyIDlaIi8+PHBhdGggZD0iTTIgMTQuNSAxMiAyMC41IDIyIDE0LjUiLz48L3N2Zz4K" alt="NEST v1.3.1"></a>
   <a href="https://code.claude.com/docs/en/overview"><img src="https://img.shields.io/badge/Claude_Code-D97757?logo=claude&logoColor=white" alt="Claude Code"></a>
   <a href="https://obsidian.md"><img src="https://img.shields.io/badge/Obsidian-7C3AED?logo=obsidian&logoColor=white" alt="Obsidian"></a>
   <img src="https://img.shields.io/badge/macOS-2b2b2b?logo=apple&logoColor=white" alt="macOS">
@@ -55,7 +55,7 @@ Then type:
 Read SETUP.md and follow it.
 ```
 
-That starts the first of about four sessions: an hour and a half of questions, most of them a
+That starts the first of about four sessions: about an hour of questions, most of them a
 choice you click, and an hour in which the setup builds while you watch. Stop whenever you like: the
 setup remembers where you were and tells you the line that starts the next session.
 

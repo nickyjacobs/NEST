@@ -10,6 +10,7 @@ section in plain words: what it means if you already built a workspace with an e
 
 | Release | Date | In short |
 |---|---|---|
+| [1.3.1](#131---2026-11-26) | 2026-11-26 | Fixes from a second real setup: the secret scan on GitHub now checks your whole history, and the setup introduces itself as NEST, keeps to your language and gives one honest time. |
 | [1.3.0](#130---2026-11-25) | 2026-11-25 | The setup can now suggest a few ready-made plugins for Claude Code that fit you, each read through by NEST first, from diagrams and PowerPoint files to a writing assistant for Dutch and English. |
 | [1.2.0](#120---2026-11-23) | 2026-11-23 | Made for the person who never opened a terminal: a guide with a picture of every click, questions you answer by clicking, a setup that builds and tests by itself, installs your Obsidian plugins, and asks far less. |
 | [1.1.0](#110---2026-11-22) | 2026-11-22 | Everything an audit of 1.0.0 found, fixed and tested: safer updates and undo, a secret scan that sees more, guards that hold, a setup that resumes where you stopped, and a roadmap. |
@@ -18,6 +19,53 @@ section in plain words: what it means if you already built a workspace with an e
 <sub>Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versions: [Semantic Versioning](https://semver.org/) · How a release is made: [docs/project/releasing.md](docs/project/releasing.md)</sub>
 
 ## [Unreleased]
+
+---
+
+## [1.3.1] - 2026-11-26
+
+> **In short:** Fixes from a second real setup: the secret scan on GitHub now checks your whole history, and the setup introduces itself as NEST, keeps to your language and gives one honest time.
+
+### 🏠 For your workspace
+
+- The secret scan on GitHub now checks your whole history every time. Before, it failed on the
+  first upload of a new workspace (when it held more than one snapshot, as it always does after
+  the setup) and from then on only looked at what was new, so the first upload was never
+  checked on GitHub. The check on your own computer, if you chose it, did run before every
+  snapshot. If your workspace has the scan on GitHub, `/nest-update` offers the new version:
+  say yes, and from the next upload on it checks everything.
+- The other fixes in this release change the setup for new workspaces only.
+
+### 🔧 Changed
+
+- The setup introduces itself as NEST, not as Claude, and says at the end that from then on
+  the user talks to their own assistant and no longer needs the setup line. A session started
+  with that line after the setup is done says so too.
+- One honest time in the setup, the README and the guide: the interview takes about an hour
+  (measured in a real setup: 70 minutes), the build about an hour. The setup no longer names
+  another number of sessions halfway.
+- The short progress lines in the chat stay in the user's language: the rule names the English
+  lines a real setup let slip, bookkeeping gets no line at all, and a helper's brief carries the
+  user's language.
+- claude-hud is only proposed to someone who works in a terminal: the Claude Code panel in VS
+  Code and the desktop app show no status line, so a real setup installed it and saw nothing.
+- The Outlook guide (`kit/integrations/microsoft-graph/README.md`) says that a personal
+  Microsoft account often has no directory of its own, how to check, and the route that worked:
+  the free Azure account with the same account. It no longer suggests Azure for Students, which
+  lands in the school's directory.
+- The roadmap no longer lists plugins under Now: they shipped in 1.3.0. `ROADMAP.md` and
+  `assets/roadmap.png` (drawn from `assets/roadmap.svg`) show the two points that are left.
+
+### 🐛 Fixed
+
+- On Windows with only the VS Code extension, `claude` is not on the path, so installing a
+  plugin failed with "command not found". Build step B3.6 now uses the `claude.exe` that the
+  extension brings, by its full path.
+- `kit/github/workflows/gitleaks.yml` runs the gitleaks command itself (8.30.1, checked
+  against its SHA-256) on the full history, instead of `gitleaks/gitleaks-action`. On a push
+  the action scans `<first pushed commit>^..<last>`, which fails on the first push of a new
+  repository with more than one commit and leaves that history unscanned afterwards. Found in
+  a real setup. B5 now reads the first run and reports it truthfully.
 
 ---
 
@@ -669,7 +717,8 @@ Nothing breaks: everything you have keeps working. What you will notice after `/
   scoring, the idea page builder, the writing-style check and the wiki backup, tested on macOS,
   Linux and Windows.
 
-[Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/nickyjacobs/NEST/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/nickyjacobs/NEST/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/nickyjacobs/NEST/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/nickyjacobs/NEST/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/nickyjacobs/NEST/compare/v1.0.0...v1.1.0

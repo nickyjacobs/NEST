@@ -107,6 +107,10 @@ for users is in the [roadmap](../../ROADMAP.md).
   characters, and a secret written in a sentence. `SECURITY.md` lists the limits.
 - **After a shell command** the scan reads files changed in the last two minutes, within a
   budget; a commit on another branch and a stash are not followed.
+- **NEST's own `.github/workflows/gitleaks.yml`** still uses `gitleaks/gitleaks-action`, which
+  on a push scans only the pushed commits. The kit's copy runs the gitleaks command on the full
+  history since 1.3.1; moving this repository to the same (job name `scan` kept, it is a
+  required check) is open.
 
 - Left open by the last review of the scanner and the read-only guard, none of them reachable
   without access to the workspace already:

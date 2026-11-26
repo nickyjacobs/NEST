@@ -32,7 +32,9 @@ nothing is asked of them; report per finished piece as it comes in.
 
 **A helper gets the rules of this section in its brief, word for word:** one command per call,
 files changed with the edit tools, nothing written into `.claude/` except under the staging
-folder, and no chain such as `; echo "exit=$?"` or `| head`. A helper does not read this file,
+folder, no chain such as `; echo "exit=$?"` or `| head`, and every line it writes for the user
+(a report you pass on, text in a file the user reads) in the language in `language:` of
+STATE.md, named in the brief. A helper does not read this file,
 so a rule you do not hand it does not exist for it. In a trial fourteen of the permission
 questions of one build came from helpers, ten of them from the security reviewer in the final
 check.
@@ -303,7 +305,11 @@ tests in B4 that write a fake key or remove a test file.
       GitHub; for `claude-plugins-official` the folder `plugins/<name>/` there). When it brings
       a hook, a server or a script the card does not name, do not install it: tell the user
       what changed, and it becomes an open item.
-   3. **Install** in the project scope, one command per call:
+   3. **Install** in the project scope, one command per call. When `claude` is not found (Windows
+      with only the VS Code extension has no `claude` on its path), use the program the
+      extension brings: `<home>\.vscode\extensions\anthropic.claude-code-<version>-win32-x64\resources\native-binary\claude.exe`,
+      the newest version folder there, by its full path; the same folder holds `claude` on
+      macOS and Linux. Only when there is none, the lines below are for the user, as said there.
       `claude plugin install <name> --marketplace <source> --scope project`, with `<source>` from
       the card (`anthropics/claude-plugins-official` for Anthropic's plugins, the
       `owner/repo#tag` given otherwise). An older Claude Code that does not know `--marketplace`:
@@ -435,7 +441,12 @@ user wants a README, and go on to the final check.
    `workflows/checks.yml` (it runs the skills catalogue check and the secret scan on every
    push) and `dependabot.yml`.
 3. Ask the `security-reviewer` agent to scan everything that will be pushed. Fix hard findings.
-4. `gh repo create <name> --private --source . --remote origin`, then push after a yes.
+4. `gh repo create <name> --private --source . --remote origin`, then push after a yes. With
+   the gitleaks workflow, find its first run (`gh run list --workflow gitleaks.yml --limit 1`;
+   ask again after a few seconds when none is listed yet), wait for it with
+   `gh run watch <id> --exit-status`, and tell the user the result in one line. It scans the whole history on every run. When it
+   fails, read the log (`gh run view <id> --log-failed`) and say what it found; never tell the
+   user that a later run will fix a failed scan.
 5. Wiki backup per E4 (a): the backup needs its own private repository, so after a yes
    `gh repo create <name>-wiki --private` (no `--source`: the script fills it). Then
    `uv run scripts/wiki_backup.py init <private-repo-url>` and the first backup after a yes;
