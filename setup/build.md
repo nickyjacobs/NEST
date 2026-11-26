@@ -118,7 +118,8 @@ tests in B4 that write a fake key or remove a test file.
    wiki rules (the four from section 1, points 1 to 4, in one short list); when the assistant
    acts on its own (D5); with a yes to lessons in D8, one line that a lesson goes into
    `.claude/lessons.json`; the skills list (one line each); and at the top a
-   temporary line: "Setup in progress: next session, read `_setup/nest/SETUP.md` and follow it."
+   temporary line: "Setup in progress: whatever the first message of a session says, read
+   `_setup/nest/SETUP.md` and follow it."
    Write it in the user's language unless they chose English. No project facts that change weekly:
    those live in the wiki (check: `wc -l` under 150; the assistant's name appears in the title).
 4. `CLAUDE.local.md` with the private context from A2, A4, C7, and a section "Approved to keep here"
@@ -183,8 +184,8 @@ tests in B4 that write a fake key or remove a test file.
     release found, or that it could not reach the source. All four are fine here). The stamp
     is run again at the end of B3, B3b and B5 (each has its own step): it only adds what is new.
     A kit file installed under another name gets `--map <workspace path>=<kit path>`.
-12. Update STATE.md (`next: B2`, `read: setup/build.md (B2)`,
-    `trigger: Read _setup/nest/SETUP.md and follow it.`). The guards are active now: say so in
+12. Update STATE.md (`next: B2`, `read: setup/build.md (B2)`; `trigger:` stays the plain
+    "continue"). The guards are active now: say so in
     one line. Offer a stop; otherwise go on with B2 in this session.
 
 ### B2. The wiki

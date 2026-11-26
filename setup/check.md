@@ -59,10 +59,33 @@ paste it there.
 
 After an install, run the tool's check again. A tool that was just installed is often not
 found yet, because this app started before it existed. Do not stop for that: find where the
-installer put the program (it usually prints the path), use that full path for the rest of
-this session, and set `restart_app: yes` in STATE.md. The user then quits and restarts the app
-once, at the next moment they reopen something anyway (section 3). Only when you cannot find
-the program at all is this a stop point.
+installer put the program (it usually prints the path), use that full path from then on, and
+write it under `tool_paths:` in STATE.md, so a later session that still cannot find it by name
+uses it too (a new conversation inherits the app's old list of programs). Only for uv set
+`restart_app: yes`: the workspace's hooks call it by name, and a hook cannot use a path from
+STATE.md. The user then quits and restarts the app once, at the next moment they reopen
+something anyway (section 3). Only when you cannot find the program at all is this a stop
+point.
+
+**Signing in to GitHub.** When the GitHub CLI is installed and `gh auth status` says it is not
+signed in (now, in block E or in the build, whichever comes first with a GitHub account), first
+say in one line what happens: GitHub asks once whether this computer may work in their
+account. Then one *choice*: I start the sign-in and you only log in on the GitHub website
+(recommended); or you do it yourself in a terminal, step by step.
+- **I start it:** run `gh auth login --web --hostname github.com --git-protocol https` as a
+  background command (with the full path from `tool_paths:` when `gh` is not found by name).
+  Without a terminal to type in, it prints a one-time code (`XXXX-XXXX`) and the address
+  `https://github.com/login/device`, and waits. Read the code from its output, give it to the
+  user in a message of its own with the code alone on a line, and open the address in their
+  browser (macOS `open`, Windows `start ""`, Linux `xdg-open`). The code is not a secret: it
+  only works for the person who logs in, for a few minutes. The user logs in, types the code
+  and approves. When the background command has finished, check with `gh auth status`, then
+  run `gh auth setup-git` so git uses the same sign-in. When it ended without a sign-in (the
+  code expired, the user cancelled), offer it once more, then the other route.
+- **Yourself:** the steps for where they work (section 3): in a terminal `! gh auth login`, in
+  the VS Code panel Terminal > New Terminal, with the answers to its questions written out
+  (GitHub.com, HTTPS, yes, log in with a web browser) and "say done when you are through".
+  Then the same checks.
 
 **0.3 Fetch the docs.** Save these Claude Code docs pages to `_setup/docs/` with `curl -sL`
 (`curl.exe -sL` on Windows; append `.md` to the URL if the page comes back as HTML), not with a
