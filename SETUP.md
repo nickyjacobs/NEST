@@ -237,6 +237,10 @@ Rules:
 
 - One line per step, with the check that proves it in brackets. Tick a step only after its check
   passed. A step that failed or was skipped goes under "Open during the setup" with the reason.
+- A question to the user that is not answered yet (a choice they put off, a "may I remove
+  this?") goes under "Open during the setup" the moment you ask it, and is ticked when
+  answered: a `/clear` or a closed window loses the conversation, not STATE.md. In a real setup
+  a privacy question vanished that way.
 - `next:` always points at the next concrete action, also in the middle of the interview (for
   example `next: interview block B, question B3`). `read:` names the parts it needs, as file
   names (`setup/interview.md, setup/catalogue.md`). Update both whenever you write answers to a block file, so a session that ends without
