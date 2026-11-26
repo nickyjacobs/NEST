@@ -32,7 +32,9 @@ nothing is asked of them; report per finished piece as it comes in.
 
 **A helper gets the rules of this section in its brief, word for word:** one command per call,
 files changed with the edit tools, nothing written into `.claude/` except under the staging
-folder, and no chain such as `; echo "exit=$?"` or `| head`. A helper does not read this file,
+folder, no chain such as `; echo "exit=$?"` or `| head`, and every line it writes for the user
+(a report you pass on, text in a file the user reads) in the language in `language:` of
+STATE.md, named in the brief. A helper does not read this file,
 so a rule you do not hand it does not exist for it. In a trial fourteen of the permission
 questions of one build came from helpers, ten of them from the security reviewer in the final
 check.
@@ -303,7 +305,11 @@ tests in B4 that write a fake key or remove a test file.
       GitHub; for `claude-plugins-official` the folder `plugins/<name>/` there). When it brings
       a hook, a server or a script the card does not name, do not install it: tell the user
       what changed, and it becomes an open item.
-   3. **Install** in the project scope, one command per call:
+   3. **Install** in the project scope, one command per call. When `claude` is not found (Windows
+      with only the VS Code extension has no `claude` on its path), use the program the
+      extension brings: `<home>\.vscode\extensions\anthropic.claude-code-<version>-win32-x64\resources\native-binary\claude.exe`,
+      the newest version folder there, by its full path; the same folder holds `claude` on
+      macOS and Linux. Only when there is none, the lines below are for the user, as said there.
       `claude plugin install <name> --marketplace <source> --scope project`, with `<source>` from
       the card (`anthropics/claude-plugins-official` for Anthropic's plugins, the
       `owner/repo#tag` given otherwise). An older Claude Code that does not know `--marketplace`:

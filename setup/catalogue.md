@@ -97,7 +97,7 @@ Rules for every plugin:
 | obsidian | Takes the place of the two Obsidian skills NEST would copy: the same skills, kept up to date by Obsidian itself, plus reading web pages as clean notes and working with the open Obsidian app | the wiki skills were chosen (D1); recommend yes, it is not a second copy |
 | skill-creator | Tests a skill and sharpens when it starts, next to the skill builder | skill-builder was chosen |
 | session-report | A page that shows where their usage went: which sessions and requests cost the most | they run into usage limits, or want to know what a session costs |
-| claude-hud | A line under the chat that always shows how full the conversation is and how much of their usage is left | they run into limits, lose track in long conversations, or are new to Claude Code |
+| claude-hud | A line under the chat that always shows how full the conversation is and how much of their usage is left | they work in Claude Code in a terminal (`surface: terminal`) and run into limits, lose track in long conversations, or are new to Claude Code. Never with `vscode` or `desktop`: those show no status line |
 | diagram-design | Diagrams (a process, a timeline, a map of ideas) as a page or an image | they explain plans, processes or projects to others, or think in pictures |
 | playground | A small interactive page: buttons and a live preview to try choices, then a prompt to copy back | they decide by seeing options (a design, a concept map, a document to review) |
 | ppt-master | Real PowerPoint files that stay editable, from a document or a topic | presentations are part of their work or study |
@@ -141,7 +141,9 @@ from Google Fonts when it is opened. Needs: Node. Read again on 2026-11-25.
 Runs: a status line program in a locked-down Node process with no network access; no hooks, no
 server. Its `/hud` command sets Claude Code's status line in the user's own settings, after
 asking: the line then shows in every Claude Code project on this computer, not only this
-workspace. Say that before the yes; an existing status line is only replaced after a second
+workspace. It shows only in Claude Code in a terminal: the Claude Code panel in VS Code and the
+desktop app have no status line (a real setup in the VS Code panel installed it and saw nothing),
+so it is never proposed there. Say that before the yes; an existing status line is only replaced after a second
 yes. It reads the git status of the project folder. Leaves the machine: nothing; its bug report
 command opens a GitHub issue only after the user's OK. Needs: Node 22.18 or newer. Read again on
 2026-11-25.

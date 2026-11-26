@@ -19,10 +19,36 @@ section in plain words: what it means if you already built a workspace with an e
 
 ## [Unreleased]
 
+### 🏠 For your workspace
+
+- Nothing changes in a workspace that exists. These are fixes to the setup itself, for people
+  who start a new one.
+
 ### 🔧 Changed
 
+- The setup introduces itself as NEST, not as Claude, and says at the end that from then on
+  the user talks to their own assistant and no longer needs the setup line. A session started
+  with that line after the setup is done says so too.
+- One honest time in the setup, the README and the guide: the interview takes about an hour
+  (measured in a real setup: 70 minutes), the build about an hour. The setup no longer names
+  another number of sessions halfway.
+- The short progress lines in the chat stay in the user's language: the rule names the English
+  lines a real setup let slip, bookkeeping gets no line at all, and a helper's brief carries the
+  user's language.
+- claude-hud is only proposed to someone who works in a terminal: the Claude Code panel in VS
+  Code and the desktop app show no status line, so a real setup installed it and saw nothing.
+- The Outlook guide (`kit/integrations/microsoft-graph/README.md`) says that a personal
+  Microsoft account often has no directory of its own, how to check, and the route that worked:
+  the free Azure account with the same account. It no longer suggests Azure for Students, which
+  lands in the school's directory.
 - The roadmap no longer lists plugins under Now: they shipped in 1.3.0. `ROADMAP.md` and
   `assets/roadmap.png` (drawn from `assets/roadmap.svg`) show the two points that are left.
+
+### 🐛 Fixed
+
+- On Windows with only the VS Code extension, `claude` is not on the path, so installing a
+  plugin failed with "command not found". Build step B3.6 now uses the `claude.exe` that the
+  extension brings, by its full path.
 
 ---
 

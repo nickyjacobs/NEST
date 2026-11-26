@@ -53,7 +53,9 @@ did not run yet. Tick each only when it is done; the wrap-up is not done while o
    start, by typing the command),
    the three commands they will use most, what they maintain themselves (the context pages,
    the sensitive terms list, the open questions), and how they open the workspace tomorrow, in
-   the form for where they work (section 3).
+   the form for where they work (section 3). Say in so many words that the setup line is not
+   needed any more: from now on they open the workspace and say what they want, and they talk
+   to their own assistant by its name, not to NEST.
 4. A cheat sheet: capture (drop it in the inbox), file (the inbox skill), find (the query skill),
    end of session, maintenance once a week.
 5. Only after the overview and the cheat sheet have been sent, propose three or four **first tasks** with the choice dialog. When C7 found notes the user

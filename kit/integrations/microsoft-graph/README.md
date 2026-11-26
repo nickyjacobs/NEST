@@ -30,7 +30,18 @@ Verified 2026-11-21 against:
 [Device authorization grant](https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-device-code).
 
 1. Sign in to the [Microsoft Entra admin center](https://entra.microsoft.com) with the same
-   Microsoft account (a personal account gets a default directory).
+   Microsoft account. **A personal account (Outlook.com, Hotmail, Live) often has no directory
+   of its own.** Check before step 2: the account menu (top right) names a directory such as
+   *Default Directory*. When it says *Microsoft Services*, or the sign-in ends in an error such
+   as `AADSTS50020`, app registration is not allowed there. The route that worked in a real
+   setup (2026-11-26): create the free Azure account with that same personal account
+   ([azure.microsoft.com/free](https://azure.microsoft.com/free), *Try Azure for free*, not
+   *Pay as you go*). Microsoft asks for a phone number and a debit or credit card (no prepaid)
+   to check the person, and may hold a small amount for a moment. Afterwards the account menu
+   shows *Default Directory*. Tell the user this before they start, and that it takes about a
+   quarter of an hour. Do not recommend *Azure for Students*: it signs in with the school
+   account and lands in the school's directory, which the user does not manage and loses after
+   graduating.
 2. **Entra ID > App registrations > New registration.** A name the user recognises, such as
    `<assistant name> mail`.
 3. **Supported account types:** *Personal accounts only* for Outlook.com, Hotmail and Live
