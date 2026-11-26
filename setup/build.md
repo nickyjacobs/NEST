@@ -172,7 +172,10 @@ tests in B4 that write a fake key or remove a test file.
    `test -x .githooks/pre-commit` succeeds. Git skips a hook that is not executable without
    saying so).
 10. `docs/next-session.md`: a title, then one line per open item as a Markdown checkbox
-    (`- [ ] ...`); a done item becomes `- [x] ...`. The session-start line shows the first unchecked
+    (`- [ ] ...`); a done item becomes `- [x] ...`. Two sections fill up in B3: "Connect later"
+    (each connection postponed in D4, with the sentence to say, "say: connect my calendar") and
+    "Fine-tune later" (each default given to a skill instead of asking, with the sentence to
+    say, "say: adjust the morning briefing"). The session-start line shows the first unchecked
     one (check: `uv run --script scripts/session_context.py` prints it).
 11. The stamp: `uv run --script scripts/nest_update.py stamp`. It writes into `nest.json` which
     NEST release this workspace is built from and which kit file each installed file came from,
@@ -294,6 +297,8 @@ tests in B4 that write a fake key or remove a test file.
    no `customise:` left). Saving verdict and blueprint results always goes through
    `scripts/idea_page.py`, never through a script you write yourself.
 3. `disable-model-invocation` per skill from D5. The skills list in CLAUDE.md, one line each.
+   Every customise marker the interview did not fill gets its default here, and the defaults a
+   user may want to change go under "Fine-tune later" in `docs/next-session.md` (B1 step 10).
 4. `uv run scripts/skills_catalog.py` to write `docs/skills.md`, then
    `uv run scripts/skills_catalog.py --check --installed` (check: zero problems; `--installed`
    also fails on a `customise:` or `<fill in` marker left in a skill or agent).
@@ -349,8 +354,11 @@ tests in B4 that write a fake key or remove a test file.
 
 ### B3b. Integrations
 
-Per integration skill the user wants connected now (D4), in a fresh session. A skill whose
-connection was postponed has nothing to do here: its open item stays.
+Per integration skill the user wants connected now (D4), and Tavily when chosen, in a fresh
+session. A connection that was postponed has nothing to do here: its line in
+`docs/next-session.md` stays, and it is set up when the user asks after the setup. With
+everything postponed, skip B3b. Tavily has its own steps: `kit/integrations/tavily/README.md`
+(one command, a new conversation, the user signs in once in the browser, a read-only search).
 
 1. Connect the route the user chose: add the MCP server, enable the connector, or run the login
    script. Only after a yes; a login the user does themselves, in the form for where they work (section 3). Tokens stay where the

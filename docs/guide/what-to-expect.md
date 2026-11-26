@@ -21,7 +21,7 @@ and Linux. You do not need to know how to code.
 
 ## The four sessions
 
-The setup suggests four sessions. The interview takes about an hour, in the first one or two; the build about an hour, in which you mostly watch and say yes. You start each
+The setup suggests four sessions. The interview takes about three quarters of an hour, in the first one or two; the build about an hour, in which you mostly watch and say yes. You start each
 session with the same line, and you can stop between any two steps.
 
 | Session | What happens | It ends with |

@@ -35,7 +35,11 @@ that fit their life. Everything comes from an interview; nothing is assumed.
   also read `setup/routing.md`. Then continue at `next:`.
 - **`next:` says `done`:** the setup is finished. Say so in one line, and that from now on they
   just say what they want: the setup line is not needed any more. Name what is still under
-  "Open during the setup", and offer the nest-update skill or one of the open items. Build nothing.
+  "Open during the setup", and offer the nest-update skill or one of the open items. Build
+  nothing, with one exception: a connection the user postponed in D4 ("Connect later" in
+  `docs/next-session.md`) is set up when they ask for it, now or in any later session. Read
+  `setup/interview.md` (D4) and `setup/build.md` (B3b), ask the D4 rounds for that one
+  connection, run B3b for it including its test, then tick its line.
 - **`next:` says `handover`:** see "The handover" at the end of `setup/interview.md`: check
   whether the workspace folder exists and continue there.
 - **Why several sessions:** the setup is long, and a person's attention is not. A new session
@@ -262,7 +266,7 @@ new session follows so the new tools load before they are tested. A user with en
 may do sessions 1 and 2 in one sitting; never push for it.
 
 Tell the user this plan in Phase 0, in two or three lines, with an honest time: the interview
-takes about an hour, in one sitting or two, the build about an hour in which they mostly watch
+takes about three quarters of an hour, in one sitting or two, the build about an hour in which they mostly watch
 and say yes. Give that one plan and keep to it: do not name another number of sessions later.
 
 **Starting a session.** Whenever the user has to open a folder, start a new session or come
@@ -294,7 +298,8 @@ Without that, the first hook in the workspace cannot find uv and every write is 
 
 Ask one question, in English and in the language of the user's first message if that differs:
 **which language should we use?** That question is the whole first message: once in English,
-once more in their language when that is another one, and nothing else. No introduction before
+once more in their language when that is another one, and nothing else: no third language,
+no line before it about the setup not having started. No introduction before
 the answer, and no word about this file or its sections ("section 4.1 says ..."): the user
 never hears how the prompt is built. Everything after that (questions, dialogs, the wiki, folder
 names if the user wants, the assistant's tone) follows that choice. The repo-facing parts
@@ -355,6 +360,11 @@ the few questions where the user's own words matter.
   was saved: say so in one line and show the same dialog once more. Do not turn it into typed
   questions. Only when the dialog does not exist in this session at all (the tool is missing or
   errors every time) do you ask the same choice as a short lettered list.
+- **"I see nothing" means the content is missing, not the dialog.** When the user says they
+  cannot see what a question is about, put that content in the preview of the first option
+  (or in the question) and ask with the dialog again. Never conclude from it that dialogs do
+  not work for this user: in a real setup and in a trial that conclusion turned the rest of
+  the interview into typed answers.
 - **An answer you can read two ways** ("all of them", "the second") goes back as a dialog with
   the two readings, not as a guess.
 - **Write answers down as they come.** After every message with answers, append them verbatim

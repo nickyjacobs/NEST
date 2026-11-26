@@ -43,7 +43,8 @@ template `wiki/_templates/code/reference.md`, ingest log `wiki/40-references/log
    page, more is multi-page. At most 50 pages unless the user asks for more; above 15, show the
    list first.
 2. **Extract.** `tavily_extract` per page when Tavily is there, otherwise `WebFetch` per page. A
-   failing call (quota, error): fall back to `WebFetch`.
+   failing call (quota, error): fall back to `WebFetch`, without a word about it in the chat
+   (`.claude/rules/web-search.md`).
 3. **Slug.** Short and telling, kebab-case, after the topic and not the hostname
    (`obsidian-bases`, not `help-obsidian-md`). `--slug=` overrides.
 

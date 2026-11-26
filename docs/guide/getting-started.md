@@ -15,8 +15,8 @@ three commands.
 
 - A computer with Windows, macOS or Linux.
 - A paid Claude plan (Pro or higher). The free plan does not include Claude Code.
-- About fifteen minutes for the steps on this page. The setup itself takes about an hour and a
-  half of questions and an hour in which it builds, spread over as many days as you like.
+- About fifteen minutes for the steps on this page. The setup itself takes about three quarters
+  of an hour of questions and an hour in which it builds, spread over as many days as you like.
 
 You do not need git, a terminal or any knowledge of code. The setup installs what else it
 needs, after asking.
