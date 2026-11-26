@@ -189,7 +189,13 @@ for users is in the [roadmap](../../ROADMAP.md).
 - Not tried in 1.4.0 (2026-11-26): signing in to GitHub with the one-time code
   (`gh auth login --web` in the background) on Windows (it works on macOS); Tavily's `/mcp`
   sign-in in the VS Code panel; the ask guard (`kit/scripts/ask_guard.py`) in a real session
-  on Windows. The interview trial for 1.4.0 ran up to the handover and the build trial through
-  B2; the Obsidian steps of B2 and B3 to the wrap-up need a person with Obsidian.
+  on Windows. A full trial of 1.4.0 ran in a throwaway Linux container (terminal, a fictional
+  beginner, no Obsidian, no GitHub): interview, handover, build and wrap-up to `next: done`;
+  the dialog check was placed and removed both times. Not covered: Obsidian itself, a plugin
+  install (refused in the trial), B3b and a GitHub push.
+- "Fine-tune later" in `docs/next-session.md` got one line in that trial (the colours), not
+  one per skill default; one English progress line ("Now the kit files.") still slipped
+  through. Old notes from another app were listed under "Connect later".
+
 - Notebook Navigator 3.5.3 was released upstream on 2026-11-26; the lock file stays on 3.5.2
   until a newer version is tried in a real vault (the weekly version check lists it).
