@@ -68,6 +68,8 @@ section in plain words: what it means if you already built a workspace with an e
   messages (the real run on 1.3.0: 36 dialogs with 81 questions and 15 typed), 38 permission
   questions (60 in the last trial), no proposal out of sight. The promised time is now about
   three quarters of an hour.
+- B1 checks that the shell is in the workspace root before `git init`: the shell keeps the
+  folder of its last `cd`, and in a trial the repository landed in `_setup/`.
 - A plugin folder that ends up inside the workspace (DutchQuill's work folder, for example) is
   checked before the next snapshot and kept out of git unless the user says otherwise; an
   unanswered question to the user goes into STATE.md the moment it is asked, so a `/clear`
