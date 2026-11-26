@@ -23,7 +23,8 @@ section in plain words: what it means if you already built a workspace with an e
 ### 🏠 For your workspace
 
 - Nothing changes in a workspace that exists. The new check on dialogs only runs while a setup
-  is running.
+  is running, and NEST now looks every week whether the plugins it installs have a newer
+  version, so a new setup does not fall behind.
 
 ### ✨ Added
 
@@ -36,11 +37,19 @@ section in plain words: what it means if you already built a workspace with an e
   error. The setup adds it to `.claude/settings.local.json` at the end of Phase 0 (with the full
   path of uv) and in the build, and takes it out at the handover and the wrap-up. It runs
   from the kit itself; `/nest-update` never offers it to a workspace (`SETUP_ONLY`).
+- A weekly version check (`tools/version_check.py`, `.github/workflows/versions.yml`). Every
+  Monday it compares what NEST pins with upstream: a newer tag for a pinned plugin card in
+  Appendix C, commits since the card's reading date for Anthropic's and unpinned plugins, and
+  `tools/obsidian_lock.py --check` for the Obsidian plugins and theme. What moved goes into one
+  open issue, "Weekly version check", which closes when nothing moved. Moving a pin stays a
+  human step: read, try, release.
 
 ### 🔧 Changed
 
 - A proposal now goes in the dialog itself, in the `preview` of the first option, as plain text
   (section 4.2). Tested by hand: the preview shows in the terminal and in the VS Code panel.
+- The playground, frontend-design and dutchquill cards in Appendix C carry their reading date
+  too, so the version check knows since when to look.
 
 ---
 

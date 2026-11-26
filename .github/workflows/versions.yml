@@ -1,0 +1,43 @@
+name: versions
+
+# Every Monday: is there something newer upstream than what NEST installs at a fixed version
+# (the plugin cards in Appendix C, the Obsidian lock file)? Keeps one open issue up to date with
+# what moved, and closes it when nothing did. Moving a pin stays a human step.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.4.0
+
+      - name: Look upstream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: uv run --script tools/version_check.py > "$RUNNER_TEMP/report.md"
+
+      - name: Keep one issue up to date
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TITLE: "Weekly version check"
+        run: |
+          number=$(gh issue list --state open --search "\"$TITLE\" in:title" --json number,title \
+            --jq "map(select(.title == env.TITLE)) | .[0].number // empty")
+          if [ -s "$RUNNER_TEMP/report.md" ]; then
+            if [ -n "$number" ]; then
+              gh issue edit "$number" --body-file "$RUNNER_TEMP/report.md"
+            else
+              gh issue create --title "$TITLE" --body-file "$RUNNER_TEMP/report.md"
+            fi
+          elif [ -n "$number" ]; then
+            gh issue close "$number" --comment "Nothing moved upstream any more."
+          fi
